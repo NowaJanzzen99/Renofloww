@@ -39,8 +39,12 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Step 1
-  const [selectedType, setSelectedType] = useState<ProjectType | null>(null);
+  // Step 1 — multi-select project types
+  const [selectedTypes, setSelectedTypes] = useState<ProjectType[]>([]);
+  const toggleType = (t: ProjectType) =>
+    setSelectedTypes((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
+  // Primary type stored in DB: use the single selection, or 'anders' when multiple
+  const primaryType: ProjectType = selectedTypes.length === 1 ? selectedTypes[0] : 'anders';
 
   // Step 2
   const [projectNaam, setProjectNaam] = useState('');
@@ -99,7 +103,7 @@ export default function OnboardingPage() {
           .insert({
             user_id: user.id,
             name: projectNaam,
-            type: selectedType || 'anders',
+            type: primaryType,
             budget: budget ? parseFloat(budget.replace(/\./g, '').replace(',', '.')) : null,
             start_date: startDatum || null,
             end_date: eindDatum || null,
@@ -176,28 +180,47 @@ export default function OnboardingPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
-                {projectTypes.map(({ type, label, emoji }) => (
-                  <button
-                    key={type}
-                    onClick={() => setSelectedType(type)}
-                    className="rounded-2xl p-5 border-2 text-center transition-all"
-                    style={{
-                      borderColor: selectedType === type ? '#288760' : '#E5E7EB',
-                      backgroundColor: selectedType === type ? '#F8FAF9' : '#FFFFFF',
-                      boxShadow: selectedType === type ? '0 0 0 3px rgba(40,135,96,0.15)' : '0 2px 12px rgba(0,0,0,0.06)',
-                    }}
-                  >
-                    <div className="text-3xl mb-2">{emoji}</div>
-                    <div className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{label}</div>
-                  </button>
-                ))}
+              <p className="text-center text-xs mb-4" style={{ color: '#9CA3AF' }}>Selecteer alles wat van toepassing is</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-3">
+                {projectTypes.map(({ type, label, emoji }) => {
+                  const selected = selectedTypes.includes(type);
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => toggleType(type)}
+                      className="rounded-2xl p-5 border-2 text-center transition-all relative"
+                      style={{
+                        borderColor: selected ? '#288760' : '#E5E7EB',
+                        backgroundColor: selected ? '#F0FAF5' : '#FFFFFF',
+                        boxShadow: selected ? '0 0 0 3px rgba(40,135,96,0.15)' : '0 2px 12px rgba(0,0,0,0.06)',
+                      }}
+                    >
+                      {selected && (
+                        <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#288760' }}>
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                      )}
+                      <div className="text-3xl mb-2">{emoji}</div>
+                      <div className="text-sm font-semibold" style={{ color: selected ? '#288760' : '#1A1A1A' }}>{label}</div>
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="flex justify-end">
+              {selectedTypes.length > 0 && (
+                <p className="text-center text-sm mb-6" style={{ color: '#288760' }}>
+                  ✓ {selectedTypes.length === 1
+                    ? projectTypes.find(t => t.type === selectedTypes[0])?.label
+                    : `${selectedTypes.length} typen geselecteerd`}
+                </p>
+              )}
+
+              <div className="flex justify-end mt-4">
                 <button
                   onClick={handleNext}
-                  disabled={!selectedType}
+                  disabled={selectedTypes.length === 0}
                   className="px-6 py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
                   style={{ backgroundColor: '#288760' }}
                 >
@@ -218,7 +241,7 @@ export default function OnboardingPage() {
                   Project details
                 </h1>
                 <p className="text-base" style={{ color: '#6B7280' }}>
-                  Vertel ons meer over je {projectTypes.find(t => t.type === selectedType)?.label.toLowerCase()} verbouwing.
+                  Vertel ons meer over je verbouwing.
                 </p>
               </div>
 

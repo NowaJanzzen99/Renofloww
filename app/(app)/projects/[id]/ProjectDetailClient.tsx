@@ -14,6 +14,7 @@ import KostenTab from '@/components/projects/tabs/KostenTab';
 import MeerwerkTab from '@/components/projects/tabs/MeerwerkTab';
 import DocumentenTab from '@/components/projects/tabs/DocumentenTab';
 import FotosTab from '@/components/projects/tabs/FotosTab';
+import InstellingenTab from '@/components/projects/tabs/InstellingenTab';
 
 const tabs = [
   { id: 'overzicht', label: 'Overzicht' },
@@ -25,6 +26,7 @@ const tabs = [
   { id: 'meerwerk', label: 'Meerwerk' },
   { id: 'documenten', label: 'Documenten' },
   { id: 'fotos', label: "Foto's" },
+  { id: 'instellingen', label: '⚙️ Instellingen' },
 ];
 
 const statusOptions = ['gepland', 'lopend', 'gepauzeerd', 'afgerond'];
@@ -237,6 +239,15 @@ export default function ProjectDetailClient({
             <FotosTab
               project={project}
               initialRooms={initialRooms}
+            />
+          )}
+          {activeTab === 'instellingen' && (
+            <InstellingenTab
+              project={project}
+              onProjectUpdated={(updated) => {
+                setProject(updated);
+                setNameInput(updated.name);
+              }}
             />
           )}
         </div>
