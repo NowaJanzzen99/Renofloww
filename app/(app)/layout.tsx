@@ -3,6 +3,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Navbar from '@/components/layout/Navbar';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import TrialBanner from '@/components/TrialBanner';
+import ChatSidebar from '@/components/ai/ChatSidebar';
 import type { Profile } from '@/types';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -40,6 +41,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* Mobile bottom nav */}
         <MobileBottomNav />
       </div>
+
+      {/* AI Chat Sidebar */}
+      <ChatSidebar />
     </div>
   );
 }
