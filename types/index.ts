@@ -24,7 +24,7 @@ export type ProjectType =
   | 'gehele_woning'
   | 'anders';
 
-export type ProjectStatus = 'gepland' | 'lopend' | 'gepauzeerd' | 'afgerond';
+export type ProjectStatus = 'gepland' | 'lopend' | 'gepauzeerd' | 'afgerond' | 'active';
 
 export type Project = {
   id: string;
@@ -64,7 +64,7 @@ export type Contractor = {
   id: string;
   project_id: string;
   name: string;
-  specialty: string | null;
+  type: string | null;
   phone: string | null;
   email: string | null;
   notes: string | null;

@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       try {
         const [projectRes, contractorsRes, quotesRes, expensesRes, tasksRes] = await Promise.all([
           supabase.from('projects').select('*').eq('id', project_id).single(),
-          supabase.from('contractors').select('name, type, specialty').eq('project_id', project_id),
+          supabase.from('contractors').select('name, type').eq('project_id', project_id),
           supabase.from('quotes').select('amount, status, description').eq('project_id', project_id),
           supabase.from('expenses').select('amount, category, description').eq('project_id', project_id),
           supabase.from('tasks').select('title, status, due_date').eq('project_id', project_id).limit(10),

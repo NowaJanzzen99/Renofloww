@@ -18,7 +18,7 @@ function ContractorModal({ project, contractor, onClose, onSaved }: {
   onSaved: (c: Contractor) => void;
 }) {
   const [name, setName] = useState(contractor?.name || '');
-  const [specialty, setSpecialty] = useState(contractor?.specialty || '');
+  const [specialty, setSpecialty] = useState(contractor?.type || '');
   const [phone, setPhone] = useState(contractor?.phone || '');
   const [email, setEmail] = useState(contractor?.email || '');
   const [notes, setNotes] = useState(contractor?.notes || '');
@@ -28,7 +28,7 @@ function ContractorModal({ project, contractor, onClose, onSaved }: {
     e.preventDefault();
     setLoading(true);
     const supabase = createClient();
-    const payload = { project_id: project.id, name, specialty: specialty || null, phone: phone || null, email: email || null, notes: notes || null };
+    const payload = { project_id: project.id, name, type: specialty || null, phone: phone || null, email: email || null, notes: notes || null };
 
     let data;
     if (contractor) {
@@ -128,8 +128,8 @@ export default function AannemersTab({ project, initialContractors }: Props) {
                   </div>
                   <div>
                     <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{contractor.name}</p>
-                    {contractor.specialty && (
-                      <p className="text-xs capitalize" style={{ color: '#6B7280' }}>{contractor.specialty}</p>
+                    {contractor.type && (
+                      <p className="text-xs capitalize" style={{ color: '#6B7280' }}>{contractor.type}</p>
                     )}
                   </div>
                 </div>
