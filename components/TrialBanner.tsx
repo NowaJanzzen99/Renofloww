@@ -23,19 +23,28 @@ export default function TrialBanner({ profile }: TrialBannerProps) {
   const diffMs = trialEnd.getTime() - now.getTime();
   const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-  let bannerStyle: { backgroundColor: string; color: string; borderColor: string };
+  let bg: string;
+  let textColor: string;
+  let borderColor: string;
+
   if (daysRemaining > 7) {
-    bannerStyle = { backgroundColor: '#B7E5BA', color: '#1A5140', borderColor: '#5CA87C' };
+    bg = 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)';
+    textColor = '#065F46';
+    borderColor = '#6EE7B7';
   } else if (daysRemaining > 3) {
-    bannerStyle = { backgroundColor: '#FEF3C7', color: '#92400E', borderColor: '#FCD34D' };
+    bg = 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)';
+    textColor = '#92400E';
+    borderColor = '#FCD34D';
   } else {
-    bannerStyle = { backgroundColor: '#FEE2E2', color: '#991B1B', borderColor: '#FCA5A5' };
+    bg = 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)';
+    textColor = '#991B1B';
+    borderColor = '#FCA5A5';
   }
 
   return (
     <div
       className="flex items-center justify-between px-4 py-2 text-sm border-b"
-      style={bannerStyle}
+      style={{ background: bg, color: textColor, borderColor }}
     >
       <div className="flex items-center gap-2">
         <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

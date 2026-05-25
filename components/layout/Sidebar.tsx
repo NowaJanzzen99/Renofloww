@@ -88,15 +88,15 @@ export default function Sidebar() {
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }}
       >
         {/* Logo */}
-        <div className="p-5 border-b" style={{ borderColor: '#E5E7EB' }}>
-          <Link href="/dashboard" className="flex items-center gap-2">
+        <div className="px-5 py-4 border-b" style={{ borderColor: '#E5E7EB' }}>
+          <Link href="/dashboard" className="flex items-center gap-2.5">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
-              style={{ backgroundColor: '#288760' }}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-base shrink-0"
+              style={{ background: 'linear-gradient(135deg, #1a5140 0%, #288760 100%)', boxShadow: '0 2px 8px rgba(40,135,96,0.35)' }}
             >
               R
             </div>
-            <span className="font-bold text-base" style={{ color: '#1A1A1A' }}>Renofloww</span>
+            <span className="text-xl font-black tracking-tight" style={{ color: '#288760' }}>Renofloww</span>
           </Link>
         </div>
 
