@@ -29,6 +29,30 @@ function SkeletonCard() {
   );
 }
 
+function DonutGauge({ percentage, color }: { percentage: number; color: string }) {
+  const r = 36;
+  const circ = 2 * Math.PI * r;
+  const filled = (percentage / 100) * circ;
+  return (
+    <svg width="96" height="96" viewBox="0 0 96 96">
+      {/* Track */}
+      <circle cx="48" cy="48" r={r} fill="none" stroke="#E5E7EB" strokeWidth="9" />
+      {/* Fill */}
+      <circle
+        cx="48" cy="48" r={r} fill="none"
+        stroke={color} strokeWidth="9"
+        strokeLinecap="round"
+        strokeDasharray={`${filled} ${circ - filled}`}
+        strokeDashoffset={circ / 4}
+        style={{ transition: 'stroke-dasharray 0.6s ease' }}
+      />
+      {/* Percentage */}
+      <text x="48" y="44" textAnchor="middle" fontSize="15" fontWeight="700" fill={color} fontFamily="inherit">{percentage}%</text>
+      <text x="48" y="60" textAnchor="middle" fontSize="9" fill="#9CA3AF" fontFamily="inherit">gebruikt</text>
+    </svg>
+  );
+}
+
 export default function DashboardClient({
   greeting,
   profile,
@@ -194,19 +218,10 @@ export default function DashboardClient({
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Budget gauge */}
-        <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium" style={{ color: '#6B7280' }}>Budget gebruikt</p>
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ background: `conic-gradient(${budgetColor} ${budgetPercentage * 3.6}deg, #E5E7EB 0deg)` }}
-            >
-              <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-xs font-bold" style={{ color: budgetColor }}>
-                {budgetPercentage}%
-              </div>
-            </div>
-          </div>
-          <p className="text-lg font-bold" style={{ color: '#1A1A1A' }}>
+        <div className="rounded-2xl p-5 bg-white border flex flex-col items-center text-center" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <p className="text-xs font-medium mb-2 self-start" style={{ color: '#6B7280' }}>Budget gebruikt</p>
+          <DonutGauge percentage={budgetPercentage} color={budgetColor} />
+          <p className="text-base font-bold mt-2" style={{ color: '#1A1A1A' }}>
             {budget > 0 ? formatCurrency(totalExpenses) : '—'}
           </p>
           <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>

@@ -7,6 +7,14 @@ import { createClient } from '@/lib/supabase/client';
 import type { Notification, Profile } from '@/types';
 import { timeAgo } from '@/lib/utils';
 
+interface SearchResult {
+  id: string;
+  label: string;
+  sub?: string;
+  href: string;
+  type: 'project' | 'task' | 'contractor';
+}
+
 export default function Navbar() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -14,8 +22,12 @@ export default function Navbar() {
   const [showNotifs, setShowNotifs] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -73,10 +85,46 @@ export default function Navbar() {
       if (userRef.current && !userRef.current.contains(e.target as Node)) {
         setShowUserMenu(false);
       }
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSearch(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Debounced search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setShowSearch(false);
+      return;
+    }
+    setSearchLoading(true);
+    const timer = setTimeout(async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setSearchLoading(false); return; }
+
+      const q = `%${searchQuery.trim()}%`;
+      const [projRes, taskRes, contrRes] = await Promise.all([
+        supabase.from('projects').select('id, name').ilike('name', q).eq('user_id', user.id).limit(5),
+        supabase.from('tasks').select('id, title, project_id').ilike('title', q).limit(6),
+        supabase.from('contractors').select('id, name, project_id').ilike('name', q).limit(4),
+      ]);
+
+      const results: SearchResult[] = [
+        ...(projRes.data ?? []).map((p) => ({ id: p.id, label: p.name, sub: 'Project', href: `/projects/${p.id}`, type: 'project' as const })),
+        ...(taskRes.data ?? []).map((t) => ({ id: t.id, label: t.title, sub: 'Taak', href: `/projects/${t.project_id}?tab=taken`, type: 'task' as const })),
+        ...(contrRes.data ?? []).map((c) => ({ id: c.id, label: c.name, sub: 'Aannemer', href: `/projects/${c.project_id}?tab=aannemers`, type: 'contractor' as const })),
+      ];
+
+      setSearchResults(results);
+      setShowSearch(results.length > 0);
+      setSearchLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const markAsRead = async (id: string) => {
     const supabase = createClient();
@@ -122,21 +170,90 @@ export default function Navbar() {
       </Link>
 
       {/* Search bar */}
-      <div className="hidden md:flex flex-1 max-w-md">
+      <div className="hidden md:flex flex-1 max-w-md" ref={searchRef}>
         <div className="relative w-full">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#9CA3AF' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          {searchLoading ? (
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#288760', borderTopColor: 'transparent' }} />
+          ) : (
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#9CA3AF' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          )}
           <input
             type="text"
             placeholder="Zoek projecten, taken, aannemers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && searchResults.length > 0) {
+                router.push(searchResults[0].href);
+                setSearchQuery('');
+                setShowSearch(false);
+              }
+              if (e.key === 'Escape') {
+                setShowSearch(false);
+                setSearchQuery('');
+              }
+            }}
             className="w-full pl-10 pr-4 py-2 rounded-xl border text-sm outline-none transition-colors"
-            style={{ borderColor: '#E5E7EB', color: '#1A1A1A', backgroundColor: '#F8FAF9' }}
-            onFocus={(e) => (e.target.style.borderColor = '#288760')}
-            onBlur={(e) => (e.target.style.borderColor = '#E5E7EB')}
+            style={{ borderColor: showSearch ? '#288760' : '#E5E7EB', color: '#1A1A1A', backgroundColor: '#F8FAF9' }}
+            onFocus={() => { if (searchResults.length > 0) setShowSearch(true); }}
           />
+
+          {/* Search dropdown */}
+          {showSearch && searchResults.length > 0 && (
+            <div
+              className="absolute top-full left-0 right-0 mt-2 rounded-2xl border bg-white z-50 overflow-hidden"
+              style={{ borderColor: '#E5E7EB', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
+            >
+              {(['project', 'task', 'contractor'] as const).map((type) => {
+                const group = searchResults.filter((r) => r.type === type);
+                if (group.length === 0) return null;
+                const groupLabel = type === 'project' ? 'Projecten' : type === 'task' ? 'Taken' : 'Aannemers';
+                const icon = type === 'project'
+                  ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  : type === 'task'
+                  ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />;
+                return (
+                  <div key={type}>
+                    <p className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>{groupLabel}</p>
+                    {group.map((result) => (
+                      <button
+                        key={result.id}
+                        onClick={() => {
+                          router.push(result.href);
+                          setSearchQuery('');
+                          setShowSearch(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#F0FAF5' }}>
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#288760' }}>
+                            {icon}
+                          </svg>
+                        </div>
+                        <span className="text-sm" style={{ color: '#1A1A1A' }}>{result.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                );
+              })}
+              <div className="px-4 py-2 border-t" style={{ borderColor: '#F3F4F6' }}>
+                <p className="text-xs" style={{ color: '#9CA3AF' }}>↵ Enter voor eerste resultaat · Esc om te sluiten</p>
+              </div>
+            </div>
+          )}
+
+          {/* No results */}
+          {showSearch && searchResults.length === 0 && searchQuery.trim() && !searchLoading && (
+            <div
+              className="absolute top-full left-0 right-0 mt-2 rounded-2xl border bg-white z-50 px-4 py-6 text-center"
+              style={{ borderColor: '#E5E7EB', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
+            >
+              <p className="text-sm" style={{ color: '#6B7280' }}>Geen resultaten voor "{searchQuery}"</p>
+            </div>
+          )}
         </div>
       </div>
 
