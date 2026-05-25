@@ -90,7 +90,7 @@ function ActiveDaysCard({
 
   return (
     <div
-      className="rounded-2xl p-3 sm:p-5 border flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      className="rounded-2xl p-3 sm:p-5 border flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md h-full"
       style={{ backgroundColor: '#FAF5FF', borderColor: '#E9D5FF', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
     >
       {/* Header */}
@@ -155,11 +155,16 @@ function ActiveDaysCard({
       )}
 
       {/* Footer */}
-      <p className="text-xs mt-3" style={{ color: '#9CA3AF' }}>
-        {startDate
-          ? `Gestart op ${new Date(startDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}`
-          : 'Geen startdatum ingesteld'}
-      </p>
+      <div className="flex items-center justify-between mt-3">
+        <p className="text-xs" style={{ color: '#9CA3AF' }}>
+          {startDate
+            ? `Gestart op ${new Date(startDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}`
+            : 'Geen startdatum ingesteld'}
+        </p>
+        <Link href="/streak" className="text-xs font-semibold whitespace-nowrap" style={{ color: '#9333EA' }}>
+          Bekijk streak →
+        </Link>
+      </div>
     </div>
   );
 }
@@ -191,21 +196,23 @@ function DraggableCard({
       onDragOver={onDragOver}
       onDrop={onDrop}
       onDragEnd={onDragEnd}
-      className="relative transition-all duration-200 cursor-grab active:cursor-grabbing select-none"
+      className="relative h-full transition-all duration-200 select-none group"
       style={{
         opacity: isDragging ? 0.45 : 1,
         transform: isOver ? 'scale(1.02)' : 'scale(1)',
         zIndex: isDragging ? 10 : 1,
       }}
     >
-      {/* Drag handle indicator — desktop only */}
+      {/* Drag handle — top-right corner, desktop only */}
       <div
-        className="hidden md:flex absolute top-3 left-1/2 -translate-x-1/2 gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+        className="hidden md:flex absolute top-2 right-2 gap-0.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-1 rounded-lg"
+        style={{ backgroundColor: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}
+        title="Verschuiven"
       >
-        {[0,1].map(col => (
+        {[0, 1].map((col) => (
           <div key={col} className="flex flex-col gap-0.5">
-            {[0,1,2].map(row => (
-              <div key={row} className="w-1 h-1 rounded-full" style={{ backgroundColor: '#C4B5FD' }} />
+            {[0, 1, 2].map((row) => (
+              <div key={row} className="w-1 h-1 rounded-full" style={{ backgroundColor: '#9CA3AF' }} />
             ))}
           </div>
         ))}
@@ -213,7 +220,7 @@ function DraggableCard({
       {isOver && (
         <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ boxShadow: '0 0 0 3px #A855F7', borderRadius: '1rem' }} />
       )}
-      {children}
+      <div className="h-full">{children}</div>
     </div>
   );
 }
@@ -359,7 +366,7 @@ export default function DashboardClient({
   const cardContent: Record<string, React.ReactNode> = {
     budget: (
       <div
-        className="rounded-2xl p-3 sm:p-5 border flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+        className="rounded-2xl p-3 sm:p-5 border flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md h-full"
         style={{ backgroundColor: '#F0FDF4', borderColor: '#BBF7D0', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
       >
         <p className="text-xs font-semibold uppercase tracking-wide self-start mb-2" style={{ color: '#6B7280' }}>Budget gebruikt</p>
@@ -370,7 +377,7 @@ export default function DashboardClient({
     ),
     taken: (
       <div
-        className="rounded-2xl p-3 sm:p-5 border flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+        className="rounded-2xl p-3 sm:p-5 border flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md h-full"
         style={{ backgroundColor: '#EFF6FF', borderColor: '#BFDBFE', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
       >
         <div className="flex items-start justify-between mb-3">
@@ -391,7 +398,7 @@ export default function DashboardClient({
     ),
     offertes: (
       <div
-        className="rounded-2xl p-3 sm:p-5 border flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+        className="rounded-2xl p-3 sm:p-5 border flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md h-full"
         style={{ backgroundColor: '#FFFBEB', borderColor: '#FDE68A', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
       >
         <div className="flex items-start justify-between mb-3">
@@ -449,9 +456,6 @@ export default function DashboardClient({
       </div>
 
       {/* ── Stat cards (drag & drop) ── */}
-      <p className="text-xs mb-2 hidden md:block" style={{ color: '#C4B5FD' }}>
-        ⠿ Sleep de kaarten om de volgorde aan te passen
-      </p>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-4 sm:mb-7">
         {cardOrder.map(id => (
           <DraggableCard
