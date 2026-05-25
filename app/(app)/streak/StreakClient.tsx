@@ -135,7 +135,7 @@ export default function StreakClient({ profile, activeProject, tasks, expenses }
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <div
-        className="relative overflow-hidden px-4 sm:px-6 py-12 sm:py-20 text-center"
+        className="relative overflow-hidden px-4 sm:px-6 py-14 sm:py-24 text-center"
         style={{ background: 'linear-gradient(135deg, #1a0533 0%, #3b0764 40%, #6d28d9 100%)' }}
       >
         {/* Ambient rings */}
@@ -174,30 +174,30 @@ export default function StreakClient({ profile, activeProject, tasks, expenses }
       </div>
 
       {/* ── Content ──────────────────────────────────────────────────────── */}
-      <div className="p-4 sm:p-6 max-w-2xl mx-auto">
+      <div className="px-4 sm:px-6 py-8 sm:py-10 max-w-3xl mx-auto">
 
-        {/* Stats row — overlaps hero slightly */}
-        <div className="grid grid-cols-3 gap-3 -mt-7 mb-6">
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-4 sm:gap-6 mb-8">
           {[
             { label: 'Huidige streak',  value: currentStreak,    emoji: '🔥', accent: '#F97316' },
             { label: 'Langste streak',  value: longestStreak,    emoji: '⭐', accent: '#A855F7' },
             { label: 'Totaal actief',   value: totalActiveDays,  emoji: '📅', accent: '#3B82F6' },
           ].map((s) => (
-            <div key={s.label} className="bg-white rounded-2xl p-3 sm:p-4 text-center shadow-xl border" style={{ borderColor: '#E9D5FF' }}>
-              <div className="text-2xl sm:text-4xl font-black" style={{ color: s.accent }}>{s.value}</div>
-              <div className="text-base mt-0.5">{s.emoji}</div>
-              <div className="text-[9px] sm:text-[11px] font-medium mt-1" style={{ color: '#6B7280' }}>{s.label}</div>
+            <div key={s.label} className="bg-white rounded-2xl p-4 sm:p-6 text-center shadow-lg border" style={{ borderColor: '#E9D5FF' }}>
+              <div className="text-3xl sm:text-5xl font-black" style={{ color: s.accent }}>{s.value}</div>
+              <div className="text-xl mt-1">{s.emoji}</div>
+              <div className="text-[11px] sm:text-xs font-semibold mt-1.5" style={{ color: '#6B7280' }}>{s.label}</div>
             </div>
           ))}
         </div>
 
         {/* ── Deze week ──────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl p-4 sm:p-6 border mb-5" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
+        <div className="bg-white rounded-2xl p-5 sm:p-8 border mb-6 sm:mb-8" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
           <h2 className="text-base font-bold mb-4" style={{ color: '#1A1A1A' }}>Deze week</h2>
-          <div className="grid grid-cols-7 gap-1.5">
+          <div className="grid grid-cols-7 gap-2 sm:gap-3">
             {thisWeek.map((day, i) => (
-              <div key={i} className="flex flex-col items-center gap-1.5">
-                <span className="text-[10px] font-semibold" style={{ color: '#C4B5FD' }}>{day.label}</span>
+              <div key={i} className="flex flex-col items-center gap-2">
+                <span className="text-[10px] sm:text-xs font-semibold" style={{ color: '#C4B5FD' }}>{day.label}</span>
                 <div
                   className="w-full rounded-full flex items-center justify-center transition-all duration-300"
                   style={{
@@ -233,7 +233,7 @@ export default function StreakClient({ profile, activeProject, tasks, expenses }
         </div>
 
         {/* ── Activiteit kalender ─────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl p-4 sm:p-6 border mb-5" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
+        <div className="bg-white rounded-2xl p-5 sm:p-8 border mb-6 sm:mb-8" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold" style={{ color: '#1A1A1A' }}>Activiteit kalender</h2>
             <div className="flex items-center gap-1.5 text-xs" style={{ color: '#6B7280' }}>
@@ -295,8 +295,8 @@ export default function StreakClient({ profile, activeProject, tasks, expenses }
         </div>
 
         {/* ── Achievements ───────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl p-4 sm:p-6 border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
-          <h2 className="text-base font-bold mb-4" style={{ color: '#1A1A1A' }}>Achievements</h2>
+        <div className="bg-white rounded-2xl p-5 sm:p-8 border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
+          <h2 className="text-base font-bold mb-5" style={{ color: '#1A1A1A' }}>Achievements</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {achievements.map((a) => (
               <div

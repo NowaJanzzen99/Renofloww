@@ -203,19 +203,19 @@ function DraggableCard({
         zIndex: isDragging ? 10 : 1,
       }}
     >
-      {/* Drag handle — top-right corner, desktop only */}
+      {/* Drag handle — centered top, desktop only */}
       <div
-        className="hidden md:flex absolute top-2 right-2 gap-0.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-1 rounded-lg"
-        style={{ backgroundColor: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}
-        title="Verschuiven"
+        className="hidden md:flex absolute top-2.5 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-40 hover:!opacity-80 transition-all duration-200 cursor-grab active:cursor-grabbing"
+        title="Kaart verplaatsen"
       >
-        {[0, 1].map((col) => (
-          <div key={col} className="flex flex-col gap-0.5">
-            {[0, 1, 2].map((row) => (
-              <div key={row} className="w-1 h-1 rounded-full" style={{ backgroundColor: '#9CA3AF' }} />
-            ))}
-          </div>
-        ))}
+        <svg width="20" height="8" viewBox="0 0 20 8" fill="#64748B">
+          <circle cx="2"  cy="2" r="1.5" />
+          <circle cx="10" cy="2" r="1.5" />
+          <circle cx="18" cy="2" r="1.5" />
+          <circle cx="2"  cy="6" r="1.5" />
+          <circle cx="10" cy="6" r="1.5" />
+          <circle cx="18" cy="6" r="1.5" />
+        </svg>
       </div>
       {isOver && (
         <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ boxShadow: '0 0 0 3px #A855F7', borderRadius: '1rem' }} />
