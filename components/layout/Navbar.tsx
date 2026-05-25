@@ -38,14 +38,21 @@ export default function Navbar() {
       if (profileRes.data) setProfile(profileRes.data);
       if (notifsRes.data) setNotifications(notifsRes.data);
 
-      // Realtime notifications
+      // Realtime: notifications + profile updates (avatar, name)
       const channel = supabase
-        .channel('notifications')
+        .channel('navbar-realtime')
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
           (payload) => {
             setNotifications((prev) => [payload.new as Notification, ...prev]);
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+          (payload) => {
+            setProfile((prev) => prev ? { ...prev, ...(payload.new as Profile) } : payload.new as Profile);
           }
         )
         .subscribe();
@@ -212,11 +219,21 @@ export default function Navbar() {
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-gray-100 transition-colors"
           >
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold"
-              style={{ backgroundColor: '#288760' }}
-            >
-              {profile?.name ? profile.name[0].toUpperCase() : profile?.email?.[0]?.toUpperCase() || 'U'}
+            <div className="w-7 h-7 rounded-full overflow-hidden shrink-0">
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.name || 'Avatar'}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center text-white text-xs font-semibold"
+                  style={{ backgroundColor: '#288760' }}
+                >
+                  {profile?.name ? profile.name[0].toUpperCase() : profile?.email?.[0]?.toUpperCase() || 'U'}
+                </div>
+              )}
             </div>
             <span className="hidden sm:block text-sm font-medium" style={{ color: '#1A1A1A' }}>
               {profile?.name?.split(' ')[0] || 'Gebruiker'}
@@ -231,9 +248,27 @@ export default function Navbar() {
               className="absolute right-0 top-full mt-2 w-52 rounded-2xl border bg-white shadow-xl z-50"
               style={{ borderColor: '#E5E7EB', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
             >
-              <div className="px-4 py-3 border-b" style={{ borderColor: '#E5E7EB' }}>
-                <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{profile?.name || 'Gebruiker'}</p>
-                <p className="text-xs" style={{ color: '#6B7280' }}>{profile?.email}</p>
+              <div className="px-4 py-3 border-b flex items-center gap-3" style={{ borderColor: '#E5E7EB' }}>
+                <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
+                  {profile?.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt={profile.name || 'Avatar'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center text-white text-sm font-semibold"
+                      style={{ backgroundColor: '#288760' }}
+                    >
+                      {profile?.name ? profile.name[0].toUpperCase() : profile?.email?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: '#1A1A1A' }}>{profile?.name || 'Gebruiker'}</p>
+                  <p className="text-xs truncate" style={{ color: '#6B7280' }}>{profile?.email}</p>
+                </div>
               </div>
               <div className="p-1.5">
                 <Link
