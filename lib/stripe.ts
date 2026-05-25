@@ -1,10 +1,9 @@
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set');
-}
+const stripeKey = process.env.STRIPE_SECRET_KEY;
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+// Stripe client — will throw at runtime if key is missing, not at build time
+export const stripe = new Stripe(stripeKey || 'sk_placeholder_for_build', {
   apiVersion: '2026-04-22.dahlia',
   typescript: true,
 });

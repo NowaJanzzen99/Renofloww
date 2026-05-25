@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
   }
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    return NextResponse.json({ error: 'Webhook secret niet geconfigureerd' }, { status: 500 });
+  if (!webhookSecret || !process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: 'Stripe is niet geconfigureerd' }, { status: 503 });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
