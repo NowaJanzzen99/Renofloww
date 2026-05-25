@@ -160,19 +160,47 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Keyframes for the slow AI pulse rings */}
+      <style>{`
+        @keyframes ai-ring {
+          0%   { transform: scale(1); opacity: 0.55; }
+          100% { transform: scale(2.1); opacity: 0; }
+        }
+        .ai-ring-1 { animation: ai-ring 3.5s cubic-bezier(0.4,0,0.6,1) infinite; }
+        .ai-ring-2 { animation: ai-ring 3.5s cubic-bezier(0.4,0,0.6,1) 1.75s infinite; }
+      `}</style>
+
+      {/* Floating AI button */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg transition-transform hover:scale-105 z-40"
-        style={{ backgroundColor: '#288760', boxShadow: '0 4px 20px rgba(40,135,96,0.4)' }}
+        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 w-16 h-16 rounded-full flex items-center justify-center text-white transition-transform hover:scale-105 z-40"
+        style={{
+          background: 'linear-gradient(135deg, #0f2027 0%, #1a3a2a 50%, #288760 100%)',
+          boxShadow: '0 6px 28px rgba(40,135,96,0.55), 0 2px 8px rgba(0,0,0,0.3)',
+        }}
         aria-label="AI Assistent openen"
       >
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        {/* Slow pulse rings */}
+        <span
+          className="ai-ring-1 absolute inset-0 rounded-full pointer-events-none"
+          style={{ backgroundColor: 'rgba(40,135,96,0.35)' }}
+        />
+        <span
+          className="ai-ring-2 absolute inset-0 rounded-full pointer-events-none"
+          style={{ backgroundColor: 'rgba(40,135,96,0.2)' }}
+        />
+
+        {/* AI sparkle icon */}
+        <svg className="w-7 h-7 relative z-10" viewBox="0 0 24 24" fill="currentColor">
+          {/* Large 4-pointed star */}
+          <path d="M12 2c0 0 .9 5.2 3.2 7.6C17.5 12 23 12 23 12s-5.5 0-7.8 2.4C12.9 16.8 12 22 12 22s-.9-5.2-3.2-7.6C6.5 12 1 12 1 12s5.5 0 7.8-2.4C11.1 7.2 12 2 12 2z" />
+          {/* Small sparkle top-right */}
+          <path d="M19.5 3c0 0 .4 2.1 1.4 3.1 1 1 3.1 1.4 3.1 1.4s-2.1.4-3.1 1.4c-1 1-1.4 3.1-1.4 3.1s-.4-2.1-1.4-3.1C17.1 7.9 15 7.5 15 7.5s2.1-.4 3.1-1.4c1-1 1.4-3.1 1.4-3.1z" opacity="0.75" />
         </svg>
+
         {hasUnread && (
           <span
-            className="absolute top-1 right-1 w-3 h-3 rounded-full border-2 border-white"
+            className="absolute top-1.5 right-1.5 w-3 h-3 rounded-full border-2 border-white z-20"
             style={{ backgroundColor: '#EF4444' }}
           />
         )}
@@ -200,14 +228,20 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
             >
               <div className="flex items-center gap-3">
                 <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
-                  style={{ backgroundColor: '#288760' }}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #0f2027 0%, #1a3a2a 50%, #288760 100%)' }}
                 >
-                  🏠
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2c0 0 .9 5.2 3.2 7.6C17.5 12 23 12 23 12s-5.5 0-7.8 2.4C12.9 16.8 12 22 12 22s-.9-5.2-3.2-7.6C6.5 12 1 12 1 12s5.5 0 7.8-2.4C11.1 7.2 12 2 12 2z" />
+                    <path d="M19.5 3c0 0 .4 2.1 1.4 3.1 1 1 3.1 1.4 3.1 1.4s-2.1.4-3.1 1.4c-1 1-1.4 3.1-1.4 3.1s-.4-2.1-1.4-3.1C17.1 7.9 15 7.5 15 7.5s2.1-.4 3.1-1.4c1-1 1.4-3.1 1.4-3.1z" opacity="0.75" />
+                  </svg>
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Renofloww AI</h3>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>Altijd klaar om te helpen</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#22C55E' }} />
+                    <p className="text-xs" style={{ color: '#6B7280' }}>Altijd klaar om te helpen</p>
+                  </div>
                 </div>
               </div>
               <button
@@ -225,8 +259,16 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
             <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ backgroundColor: '#F8FAF9' }}>
               {messages.length === 0 && (
                 <div className="text-center py-8">
-                  <div className="text-4xl mb-3">🏠</div>
-                  <p className="text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Hallo! Ik ben je AI bouw assistent.</p>
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-white mx-auto mb-4"
+                    style={{ background: 'linear-gradient(135deg, #0f2027 0%, #1a3a2a 50%, #288760 100%)', boxShadow: '0 4px 20px rgba(40,135,96,0.4)' }}
+                  >
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2c0 0 .9 5.2 3.2 7.6C17.5 12 23 12 23 12s-5.5 0-7.8 2.4C12.9 16.8 12 22 12 22s-.9-5.2-3.2-7.6C6.5 12 1 12 1 12s5.5 0 7.8-2.4C11.1 7.2 12 2 12 2z" />
+                      <path d="M19.5 3c0 0 .4 2.1 1.4 3.1 1 1 3.1 1.4 3.1 1.4s-2.1.4-3.1 1.4c-1 1-1.4 3.1-1.4 3.1s-.4-2.1-1.4-3.1C17.1 7.9 15 7.5 15 7.5s2.1-.4 3.1-1.4c1-1 1.4-3.1 1.4-3.1z" opacity="0.75" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold mb-1" style={{ color: '#1A1A1A' }}>Hallo! Ik ben je AI bouw assistent.</p>
                   <p className="text-xs" style={{ color: '#6B7280' }}>Stel me een vraag over je verbouwing, budget, of aannemers.</p>
                   <div className="mt-4 grid gap-2">
                     {placeholders.slice(0, 3).map((p) => (
@@ -250,10 +292,12 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
                 >
                   {msg.role === 'assistant' && (
                     <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs shrink-0 mr-2 mt-1"
-                      style={{ backgroundColor: '#288760' }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0 mr-2 mt-1"
+                      style={{ background: 'linear-gradient(135deg, #0f2027 0%, #1a3a2a 50%, #288760 100%)' }}
                     >
-                      AI
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2c0 0 .9 5.2 3.2 7.6C17.5 12 23 12 23 12s-5.5 0-7.8 2.4C12.9 16.8 12 22 12 22s-.9-5.2-3.2-7.6C6.5 12 1 12 1 12s5.5 0 7.8-2.4C11.1 7.2 12 2 12 2z" />
+                      </svg>
                     </div>
                   )}
                   <div
