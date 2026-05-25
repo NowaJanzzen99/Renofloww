@@ -26,7 +26,7 @@ function DonutGauge({ percentage, color }: { percentage: number; color: string }
   const circ = 2 * Math.PI * r;
   const filled = (percentage / 100) * circ;
   return (
-    <svg width="96" height="96" viewBox="0 0 96 96">
+    <svg className="w-20 h-20 sm:w-24 sm:h-24" viewBox="0 0 96 96">
       <circle cx="48" cy="48" r={r} fill="none" stroke="#E5E7EB" strokeWidth="10" />
       <circle
         cx="48" cy="48" r={r} fill="none"
@@ -90,13 +90,13 @@ function ActiveDaysCard({
 
   return (
     <div
-      className="rounded-2xl p-5 border flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      className="rounded-2xl p-3 sm:p-5 border flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
       style={{ backgroundColor: '#FAF5FF', borderColor: '#E9D5FF', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>Actieve dagen</p>
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#9333EA22' }}>
+        <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#9333EA22' }}>
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#9333EA' }}>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
@@ -359,7 +359,7 @@ export default function DashboardClient({
   const cardContent: Record<string, React.ReactNode> = {
     budget: (
       <div
-        className="rounded-2xl p-5 border flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+        className="rounded-2xl p-3 sm:p-5 border flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
         style={{ backgroundColor: '#F0FDF4', borderColor: '#BBF7D0', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
       >
         <p className="text-xs font-semibold uppercase tracking-wide self-start mb-2" style={{ color: '#6B7280' }}>Budget gebruikt</p>
@@ -370,12 +370,12 @@ export default function DashboardClient({
     ),
     taken: (
       <div
-        className="rounded-2xl p-5 border flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+        className="rounded-2xl p-3 sm:p-5 border flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
         style={{ backgroundColor: '#EFF6FF', borderColor: '#BFDBFE', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
       >
         <div className="flex items-start justify-between mb-3">
           <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>Taken vandaag</p>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#3B82F622' }}>
+          <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#3B82F622' }}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#3B82F6' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
             </svg>
@@ -391,12 +391,12 @@ export default function DashboardClient({
     ),
     offertes: (
       <div
-        className="rounded-2xl p-5 border flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+        className="rounded-2xl p-3 sm:p-5 border flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
         style={{ backgroundColor: '#FFFBEB', borderColor: '#FDE68A', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
       >
         <div className="flex items-start justify-between mb-3">
           <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>Open offertes</p>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#F59E0B22' }}>
+          <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#F59E0B22' }}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#F59E0B' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
@@ -436,7 +436,7 @@ export default function DashboardClient({
       )}
 
       {/* Greeting */}
-      <div className="mb-7">
+      <div className="mb-4 sm:mb-7">
         <h1 className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>
           {greeting}, {profile?.name?.split(' ')[0] || 'daar'}! 👋
         </h1>
@@ -452,7 +452,7 @@ export default function DashboardClient({
       <p className="text-xs mb-2 hidden md:block" style={{ color: '#C4B5FD' }}>
         ⠿ Sleep de kaarten om de volgorde aan te passen
       </p>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-7">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-4 sm:mb-7">
         {cardOrder.map(id => (
           <DraggableCard
             key={id}
@@ -470,11 +470,11 @@ export default function DashboardClient({
       </div>
 
       {/* ── Bottom grid ── */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
 
         {/* Budget overview */}
         {activeProject && budget > 0 && (
-          <div className="rounded-2xl p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+          <div className="rounded-2xl p-4 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
             style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
             <h2 className="text-base font-semibold mb-5" style={{ color: '#1A1A1A' }}>Budget overzicht</h2>
             <div className="grid grid-cols-3 gap-4 mb-5">
@@ -500,7 +500,7 @@ export default function DashboardClient({
         )}
 
         {!activeProject && (
-          <div className="rounded-2xl p-6 bg-white border text-center" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
+          <div className="rounded-2xl p-4 sm:p-6 bg-white border text-center" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
             <div className="text-4xl mb-3">🏗️</div>
             <h3 className="text-base font-semibold mb-2" style={{ color: '#1A1A1A' }}>Geen actief project</h3>
             <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Maak je eerste verbouwingsproject aan om te beginnen.</p>
@@ -509,7 +509,7 @@ export default function DashboardClient({
         )}
 
         {/* Taken vandaag */}
-        <div className="rounded-2xl p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+        <div className="rounded-2xl p-4 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
           style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-base font-semibold" style={{ color: '#1A1A1A' }}>Taken vandaag</h2>
@@ -543,7 +543,7 @@ export default function DashboardClient({
         </div>
 
         {/* Recente activiteit */}
-        <div className="rounded-2xl p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+        <div className="rounded-2xl p-4 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
           style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
           <h2 className="text-base font-semibold mb-5" style={{ color: '#1A1A1A' }}>Recente activiteit</h2>
           {recentActivity.length === 0 ? (

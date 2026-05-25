@@ -136,43 +136,44 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F8FAF9' }}>
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 bg-white border-b" style={{ borderColor: '#E5E7EB' }}>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#288760' }}>
-            R
+      <header className="px-4 sm:px-6 py-3 sm:py-4 bg-white border-b" style={{ borderColor: '#E5E7EB' }}>
+        {/* Row 1: logo + skip */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#288760' }}>
+              R
+            </div>
+            <span className="font-bold text-base" style={{ color: '#1A1A1A' }}>Renofloww</span>
           </div>
-          <span className="font-bold text-base" style={{ color: '#1A1A1A' }}>Renofloww</span>
+          <button
+            onClick={handleSkip}
+            className="text-sm font-medium"
+            style={{ color: '#6B7280' }}
+          >
+            Overslaan
+          </button>
         </div>
-
-        {/* Progress bar */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm" style={{ color: '#6B7280' }}>Stap {step} van {totalSteps}</span>
-          <div className="w-24 h-1.5 rounded-full" style={{ backgroundColor: '#E5E7EB' }}>
+        {/* Row 2: progress (full width) */}
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-xs shrink-0" style={{ color: '#6B7280' }}>Stap {step} van {totalSteps}</span>
+          <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: '#E5E7EB' }}>
             <div
               className="h-1.5 rounded-full transition-all duration-500"
               style={{ width: `${(step / totalSteps) * 100}%`, backgroundColor: '#288760' }}
             />
           </div>
         </div>
-
-        <button
-          onClick={handleSkip}
-          className="text-sm font-medium"
-          style={{ color: '#6B7280' }}
-        >
-          Overslaan
-        </button>
       </header>
 
       {/* Content */}
-      <main className="flex-1 flex items-center justify-center p-6">
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-2xl">
 
           {/* Step 1: Project type */}
           {step === 1 && (
             <div>
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold mb-2" style={{ color: '#1A1A1A' }}>
+              <div className="text-center mb-5 sm:mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: '#1A1A1A' }}>
                   Welkom bij Renofloww 👋
                 </h1>
                 <p className="text-base" style={{ color: '#6B7280' }}>
@@ -188,7 +189,7 @@ export default function OnboardingPage() {
                     <button
                       key={type}
                       onClick={() => toggleType(type)}
-                      className="rounded-2xl p-5 border-2 text-center transition-all relative"
+                      className="rounded-2xl p-3 sm:p-5 border-2 text-center transition-all relative"
                       style={{
                         borderColor: selected ? '#288760' : '#E5E7EB',
                         backgroundColor: selected ? '#F0FAF5' : '#FFFFFF',
@@ -236,8 +237,8 @@ export default function OnboardingPage() {
           {/* Step 2: Project details */}
           {step === 2 && (
             <div>
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold mb-2" style={{ color: '#1A1A1A' }}>
+              <div className="text-center mb-5 sm:mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: '#1A1A1A' }}>
                   Project details
                 </h1>
                 <p className="text-base" style={{ color: '#6B7280' }}>
@@ -245,7 +246,7 @@ export default function OnboardingPage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl p-6 bg-white border space-y-5" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+              <div className="rounded-2xl p-4 sm:p-6 bg-white border space-y-5" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                 <div>
                   <label className="block text-sm font-medium mb-1.5" style={{ color: '#1A1A1A' }}>
                     Project naam <span style={{ color: '#EF4444' }}>*</span>
@@ -339,8 +340,8 @@ export default function OnboardingPage() {
           {/* Step 3: First room */}
           {step === 3 && (
             <div>
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold mb-2" style={{ color: '#1A1A1A' }}>
+              <div className="text-center mb-5 sm:mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: '#1A1A1A' }}>
                   Eerste ruimte (optioneel)
                 </h1>
                 <p className="text-base" style={{ color: '#6B7280' }}>
@@ -348,7 +349,7 @@ export default function OnboardingPage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl p-6 bg-white border mb-6" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+              <div className="rounded-2xl p-4 sm:p-6 bg-white border mb-6" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: '#1A1A1A' }}>
                   Ruimte naam
                 </label>
@@ -401,8 +402,8 @@ export default function OnboardingPage() {
           {/* Step 4: App tour */}
           {step === 4 && (
             <div>
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold mb-2" style={{ color: '#1A1A1A' }}>
+              <div className="text-center mb-5 sm:mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: '#1A1A1A' }}>
                   Klaar om te beginnen!
                 </h1>
                 <p className="text-base" style={{ color: '#6B7280' }}>
@@ -411,7 +412,7 @@ export default function OnboardingPage() {
               </div>
 
               {/* Tour slide */}
-              <div className="rounded-2xl p-8 bg-white border text-center mb-6" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', minHeight: '240px' }}>
+              <div className="rounded-2xl p-5 sm:p-8 bg-white border text-center mb-6" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', minHeight: '200px' }}>
                 <div className="text-5xl mb-4">{tourSlides[tourSlide].icon}</div>
                 <h3 className="text-xl font-bold mb-3" style={{ color: '#1A1A1A' }}>
                   {tourSlides[tourSlide].title}

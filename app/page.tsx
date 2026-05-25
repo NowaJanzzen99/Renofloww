@@ -163,13 +163,23 @@ export default function LandingPage() {
               Gratis proberen
             </Link>
 
-            <Link
-              href="/register"
-              className="md:hidden inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold text-white"
-              style={{ backgroundColor: '#288760' }}
-            >
-              Probeer gratis
-            </Link>
+            {/* Mobile: login + register */}
+            <div className="md:hidden flex items-center gap-2">
+              <Link
+                href="/login"
+                className="text-sm font-semibold"
+                style={{ color: '#288760' }}
+              >
+                Inloggen
+              </Link>
+              <Link
+                href="/register"
+                className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold text-white"
+                style={{ backgroundColor: '#288760' }}
+              >
+                Probeer gratis
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
