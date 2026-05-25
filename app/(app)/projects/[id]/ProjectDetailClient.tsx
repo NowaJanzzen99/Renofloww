@@ -42,6 +42,7 @@ interface Props {
   initialQuotes: (Quote & { contractors?: { name: string } | null })[];
   initialExpenses: Expense[];
   initialExtraWork: (ExtraWork & { contractors?: { name: string } | null })[];
+  initialTab?: string;
 }
 
 export default function ProjectDetailClient({
@@ -52,9 +53,10 @@ export default function ProjectDetailClient({
   initialQuotes,
   initialExpenses,
   initialExtraWork,
+  initialTab = 'overzicht',
 }: Props) {
   const [project, setProject] = useState(initialProject);
-  const [activeTab, setActiveTab] = useState('overzicht');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(project.name);
 

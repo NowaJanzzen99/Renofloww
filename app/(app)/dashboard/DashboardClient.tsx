@@ -51,14 +51,15 @@ interface StatCardProps {
   value: React.ReactNode;
   sub: React.ReactNode;
   bg: string;
+  borderColor: string;
   iconColor: string;
   icon: React.ReactNode;
 }
-function StatCard({ label, value, sub, bg, iconColor, icon }: StatCardProps) {
+function StatCard({ label, value, sub, bg, borderColor, iconColor, icon }: StatCardProps) {
   return (
     <div
       className="rounded-2xl p-5 border flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-default"
-      style={{ backgroundColor: bg, borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
+      style={{ backgroundColor: bg, borderColor, boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
     >
       <div className="flex items-start justify-between mb-3">
         <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>{label}</p>
@@ -70,6 +71,66 @@ function StatCard({ label, value, sub, bg, iconColor, icon }: StatCardProps) {
         <div className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>{value}</div>
         <div className="text-xs mt-1" style={{ color: '#6B7280' }}>{sub}</div>
       </div>
+    </div>
+  );
+}
+
+// ─── Actieve Dagen gamified card ─────────────────────────────────────────────
+function ActiveDaysCard({ activeDays, startDate }: { activeDays: number; startDate?: string | null }) {
+  const COLS = 7;
+  // Show at least 7 cells, always full rows
+  const totalCells = Math.ceil(Math.max(activeDays, 1) / COLS) * COLS;
+  const capped = Math.min(totalCells, 35); // max 5 rows
+
+  return (
+    <div
+      className="rounded-2xl p-5 border flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      style={{ backgroundColor: '#FAF5FF', borderColor: '#E9D5FF', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>Actieve dagen</p>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#9333EA22' }}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#9333EA' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Big number + flame */}
+      <div className="flex items-baseline gap-1.5 mb-3">
+        <span className="text-3xl font-black" style={{ color: '#1A1A1A' }}>{activeDays}</span>
+        <span className="text-xl leading-none">🔥</span>
+        <span className="text-xs font-medium" style={{ color: '#9333EA' }}>dagen</span>
+      </div>
+
+      {/* Dot grid — like a streak tracker */}
+      <div
+        className="grid gap-1 flex-1"
+        style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
+      >
+        {Array.from({ length: capped }).map((_, i) => {
+          const isDone = i < activeDays;
+          const isToday = i === activeDays - 1;
+          return (
+            <div
+              key={i}
+              className="aspect-square rounded-sm transition-all duration-300"
+              style={{
+                backgroundColor: isDone
+                  ? isToday ? '#9333EA' : '#C084FC'
+                  : '#EDE9FE',
+                opacity: isDone ? 1 : 0.4,
+                transform: isToday ? 'scale(1.15)' : 'scale(1)',
+                boxShadow: isToday ? '0 0 6px rgba(147,51,234,0.6)' : 'none',
+              }}
+            />
+          );
+        })}
+      </div>
+
+      <p className="text-xs mt-2" style={{ color: '#9CA3AF' }}>
+        {startDate ? `Gestart op ${new Date(startDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}` : 'Geen startdatum'}
+      </p>
     </div>
   );
 }
@@ -224,7 +285,7 @@ export default function DashboardClient({
 
         {/* Budget gauge card */}
         <div
-          className="rounded-2xl p-5 border flex flex-col items-center justify-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+          className="rounded-2xl p-5 border flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
           style={{ backgroundColor: '#F0FDF4', borderColor: '#BBF7D0', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
         >
           <p className="text-xs font-semibold uppercase tracking-wide self-start mb-2" style={{ color: '#6B7280' }}>Budget gebruikt</p>
@@ -241,8 +302,9 @@ export default function DashboardClient({
         <StatCard
           label="Taken vandaag"
           value={todayTasks.length}
-          sub={<Link href={activeProject ? `/projects/${activeProject.id}` : '/projects'} style={{ color: '#3B82F6' }}>Bekijk taken →</Link>}
+          sub={<Link href={activeProject ? `/projects/${activeProject.id}?tab=taken` : '/projects'} style={{ color: '#3B82F6' }}>Bekijk taken →</Link>}
           bg="#EFF6FF"
+          borderColor="#BFDBFE"
           iconColor="#3B82F6"
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -255,8 +317,9 @@ export default function DashboardClient({
         <StatCard
           label="Open offertes"
           value={pendingQuotesCount}
-          sub={<Link href={activeProject ? `/projects/${activeProject.id}` : '/projects'} style={{ color: '#F59E0B' }}>Bekijk offertes →</Link>}
+          sub={<Link href={activeProject ? `/projects/${activeProject.id}?tab=offertes` : '/projects'} style={{ color: '#F59E0B' }}>Bekijk offertes →</Link>}
           bg="#FFFBEB"
+          borderColor="#FDE68A"
           iconColor="#F59E0B"
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -265,19 +328,8 @@ export default function DashboardClient({
           }
         />
 
-        {/* Active days */}
-        <StatCard
-          label="Actieve dagen"
-          value={activeDays}
-          sub={activeProject?.start_date ? 'Sinds start project' : 'Geen startdatum'}
-          bg="#FAF5FF"
-          iconColor="#9333EA"
-          icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          }
-        />
+        {/* Active days — gamified streak card */}
+        <ActiveDaysCard activeDays={activeDays} startDate={activeProject?.start_date} />
       </div>
 
       {/* ── Bottom grid ── */}

@@ -2,8 +2,15 @@ import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import ProjectDetailClient from './ProjectDetailClient';
 
-export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProjectDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const { id } = await params;
+  const { tab } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -36,6 +43,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       initialQuotes={quotesRes.data || []}
       initialExpenses={expensesRes.data || []}
       initialExtraWork={extraWorkRes.data || []}
+      initialTab={tab || 'overzicht'}
     />
   );
 }
