@@ -128,8 +128,8 @@ export default function AannemersTab({ project, initialContractors }: Props) {
                   </div>
                   <div>
                     <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{contractor.name}</p>
-                    {(contractor.specialty || contractor.type) && (
-                      <p className="text-xs capitalize" style={{ color: '#6B7280' }}>{contractor.specialty || contractor.type}</p>
+                    {contractor.specialty && (
+                      <p className="text-xs capitalize" style={{ color: '#6B7280' }}>{contractor.specialty}</p>
                     )}
                   </div>
                 </div>

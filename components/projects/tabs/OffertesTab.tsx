@@ -248,7 +248,7 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
                       <td className="py-3 pr-4 font-medium" style={{ color: '#6B7280' }}>{label}</td>
                       {compareQuotes.map((q) => (
                         <td key={q.id} className="py-3 px-2" style={{ color: '#1A1A1A' }}>
-                          {format((q as Record<string, string>)[key] || '')}
+                          {format(String((q as unknown as Record<string, unknown>)[key] ?? ''))}
                         </td>
                       ))}
                     </tr>

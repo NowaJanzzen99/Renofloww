@@ -233,7 +233,7 @@ export default function AnalyticsPage() {
                         <Cell key={entry.category} fill={CATEGORY_COLORS[entry.category] || '#9CA3AF'} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                     <Legend iconType="circle" iconSize={8} formatter={(value) => <span style={{ fontSize: '11px', color: '#6B7280' }}>{value}</span>} />
                   </PieChart>
                 </ResponsiveContainer>

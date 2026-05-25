@@ -303,7 +303,7 @@ export default function SettingsPage() {
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => handleUpgrade('price_pro_monthly')} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#288760' }}>
+                <button onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || 'price_pro_monthly')} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#288760' }}>
                   Upgrade naar Pro
                 </button>
               </div>
@@ -324,7 +324,7 @@ export default function SettingsPage() {
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => handleUpgrade('price_pro_yearly')} className="w-full py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50" style={{ borderColor: '#288760', color: '#288760' }}>
+                <button onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY || 'price_pro_yearly')} className="w-full py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50" style={{ borderColor: '#288760', color: '#288760' }}>
                   Jaarlijks starten
                 </button>
               </div>

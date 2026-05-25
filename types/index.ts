@@ -46,7 +46,7 @@ export type Room = {
   created_at: string;
 };
 
-export type TaskStatus = 'openstaand' | 'in_uitvoering' | 'voltooid' | 'verlopen';
+export type TaskStatus = 'openstaand' | 'in_uitvoering' | 'voltooid' | 'verlopen' | 'todo' | 'in_progress' | 'done';
 
 export type Task = {
   id: string;
@@ -71,7 +71,7 @@ export type Contractor = {
   created_at: string;
 };
 
-export type QuoteStatus = 'in_behandeling' | 'geaccepteerd' | 'afgewezen';
+export type QuoteStatus = 'in_behandeling' | 'geaccepteerd' | 'afgewezen' | 'pending' | 'accepted' | 'rejected';
 
 export type Quote = {
   id: string;
