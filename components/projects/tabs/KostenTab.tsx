@@ -45,7 +45,7 @@ export default function KostenTab({ project, initialExpenses }: Props) {
     const supabase = createClient();
     const { data } = await supabase
       .from('expenses')
-      .insert({ project_id: project.id, description, category, amount: parseFloat(amount.replace(',', '.')), date })
+      .insert({ project_id: project.id, description, category, amount: parseFloat(amount.replace(/\./g, '').replace(',', '.')), date })
       .select()
       .single();
 

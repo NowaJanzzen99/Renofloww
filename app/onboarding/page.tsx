@@ -100,7 +100,7 @@ export default function OnboardingPage() {
             user_id: user.id,
             name: projectNaam,
             type: selectedType || 'anders',
-            budget: budget ? parseFloat(budget.replace(',', '.')) : null,
+            budget: budget ? parseFloat(budget.replace(/\./g, '').replace(',', '.')) : null,
             start_date: startDatum || null,
             end_date: eindDatum || null,
             status: 'lopend',

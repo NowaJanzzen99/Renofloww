@@ -40,7 +40,7 @@ function AddQuoteModal({ project, contractors, onClose, onAdded }: {
         project_id: project.id,
         contractor_id: contractorId || null,
         description: description || null,
-        amount: parseFloat(amount.replace(',', '.')),
+        amount: parseFloat(amount.replace(/\./g, '').replace(',', '.')),
         status,
       })
       .select()

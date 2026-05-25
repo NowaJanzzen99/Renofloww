@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, timeAgo } from '@/lib/utils';
@@ -34,87 +34,114 @@ export default function DashboardClient({
   profile,
   activeProject,
   todayTasks: initialTodayTasks,
-  allTasks,
-  expenses,
-  pendingQuotesCount,
-  totalExpenses,
+  allTasks: initialAllTasks,
+  expenses: initialExpenses,
+  pendingQuotesCount: initialPendingQuotesCount,
+  totalExpenses: initialTotalExpenses,
   budget,
-  budgetPercentage,
+  budgetPercentage: initialBudgetPercentage,
   activeDays,
 }: Props) {
+  // Live reactive state — all derived from server props, kept fresh by Realtime
   const [todayTasks, setTodayTasks] = useState<Task[]>(initialTodayTasks);
-  const [loading, setLoading] = useState(false);
+  const [allTasks, setAllTasks] = useState<Task[]>(initialAllTasks);
+  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
+  const [pendingQuotesCount, setPendingQuotesCount] = useState(initialPendingQuotesCount);
   const [upgradedBanner, setUpgradedBanner] = useState(false);
 
+  // Derived values computed from live state
+  const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+  const budgetPercentage = budget > 0 ? Math.min(Math.round((totalExpenses / budget) * 100), 100) : 0;
+
   useEffect(() => {
-    // Check for upgraded query param
     const params = new URLSearchParams(window.location.search);
     if (params.get('upgraded') === 'true') {
       setUpgradedBanner(true);
-      // Remove from URL
       window.history.replaceState({}, '', '/dashboard');
     }
   }, []);
 
+  // Refresh functions
+  const refreshTasks = useCallback(async (supabase: ReturnType<typeof createClient>) => {
+    if (!activeProject) return;
+    const today = new Date().toISOString().split('T')[0];
+    const [todayRes, allRes] = await Promise.all([
+      supabase.from('tasks').select('*').eq('project_id', activeProject.id).eq('due_date', today),
+      supabase.from('tasks').select('*').eq('project_id', activeProject.id).order('created_at', { ascending: false }),
+    ]);
+    if (todayRes.data) setTodayTasks(todayRes.data);
+    if (allRes.data) setAllTasks(allRes.data);
+  }, [activeProject]);
+
+  const refreshExpenses = useCallback(async (supabase: ReturnType<typeof createClient>) => {
+    if (!activeProject) return;
+    const { data } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('project_id', activeProject.id)
+      .order('created_at', { ascending: false });
+    if (data) setExpenses(data);
+  }, [activeProject]);
+
+  const refreshQuotes = useCallback(async (supabase: ReturnType<typeof createClient>) => {
+    if (!activeProject) return;
+    const { count } = await supabase
+      .from('quotes')
+      .select('*', { count: 'exact', head: true })
+      .eq('project_id', activeProject.id)
+      .in('status', ['in_behandeling', 'pending']);
+    setPendingQuotesCount(count ?? 0);
+  }, [activeProject]);
+
+  // Supabase Realtime subscriptions
   useEffect(() => {
     if (!activeProject) return;
-
     const supabase = createClient();
-    const today = new Date().toISOString().split('T')[0];
 
     const channel = supabase
-      .channel('tasks-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tasks',
-          filter: `project_id=eq.${activeProject.id}`,
-        },
-        async () => {
-          const { data } = await supabase
-            .from('tasks')
-            .select('*')
-            .eq('project_id', activeProject.id)
-            .eq('due_date', today);
-          if (data) setTodayTasks(data);
-        }
-      )
+      .channel(`dashboard-${activeProject.id}`)
+      // Tasks: any change → refresh tasks
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'tasks',
+        filter: `project_id=eq.${activeProject.id}`,
+      }, () => refreshTasks(supabase))
+      // Expenses: any change → refresh expenses (budget updates instantly)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'expenses',
+        filter: `project_id=eq.${activeProject.id}`,
+      }, () => refreshExpenses(supabase))
+      // Quotes: any change → refresh pending count
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'quotes',
+        filter: `project_id=eq.${activeProject.id}`,
+      }, () => refreshQuotes(supabase))
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [activeProject]);
+    return () => { supabase.removeChannel(channel); };
+  }, [activeProject, refreshTasks, refreshExpenses, refreshQuotes]);
 
   const toggleTask = async (task: Task) => {
     const supabase = createClient();
     const newStatus = task.status === 'voltooid' || task.status === 'done' ? 'openstaand' : 'voltooid';
     const { data } = await supabase
       .from('tasks')
-      .update({
-        status: newStatus,
-        completed_at: newStatus === 'voltooid' ? new Date().toISOString() : null,
-      })
+      .update({ status: newStatus, completed_at: newStatus === 'voltooid' ? new Date().toISOString() : null })
       .eq('id', task.id)
       .select()
       .single();
 
     if (data) {
-      setTodayTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, status: newStatus as Task['status'] } : t))
-      );
+      const update = (prev: Task[]) => prev.map((t) => t.id === task.id ? { ...t, status: newStatus as Task['status'], completed_at: data.completed_at } : t);
+      setTodayTasks(update);
+      setAllTasks(update);
     }
   };
 
-  const isTaskCompleted = (task: Task) =>
-    task.status === 'voltooid' || task.status === ('done' as string);
+  const isTaskCompleted = (task: Task) => task.status === 'voltooid' || task.status === ('done' as string);
 
-  const budgetColor =
-    budgetPercentage >= 90 ? '#EF4444' : budgetPercentage >= 75 ? '#F59E0B' : '#288760';
+  const budgetColor = budgetPercentage >= 90 ? '#EF4444' : budgetPercentage >= 75 ? '#F59E0B' : '#288760';
 
-  // Build recent activity feed
+  // Build recent activity feed from live state
   const recentActivity = [
     ...expenses.slice(0, 5).map((e) => ({
       id: e.id,
@@ -123,7 +150,7 @@ export default function DashboardClient({
       time: e.created_at,
     })),
     ...allTasks
-      .filter((t) => t.status === 'voltooid' && t.completed_at)
+      .filter((t) => (t.status === 'voltooid' || t.status === 'done') && t.completed_at)
       .slice(0, 5)
       .map((t) => ({
         id: t.id,
@@ -167,17 +194,12 @@ export default function DashboardClient({
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Budget gauge */}
-        <div
-          className="rounded-2xl p-5 bg-white border"
-          style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-        >
+        <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-medium" style={{ color: '#6B7280' }}>Budget gebruikt</p>
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white"
-              style={{
-                background: `conic-gradient(${budgetColor} ${budgetPercentage * 3.6}deg, #E5E7EB 0deg)`,
-              }}
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ background: `conic-gradient(${budgetColor} ${budgetPercentage * 3.6}deg, #E5E7EB 0deg)` }}
             >
               <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-xs font-bold" style={{ color: budgetColor }}>
                 {budgetPercentage}%
@@ -193,10 +215,7 @@ export default function DashboardClient({
         </div>
 
         {/* Tasks today */}
-        <div
-          className="rounded-2xl p-5 bg-white border"
-          style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-        >
+        <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <p className="text-xs font-medium mb-3" style={{ color: '#6B7280' }}>Taken vandaag</p>
           <p className="text-3xl font-bold" style={{ color: '#1A1A1A' }}>{todayTasks.length}</p>
           <Link href={activeProject ? `/projects/${activeProject.id}` : '/projects'} className="text-xs mt-1 block" style={{ color: '#288760' }}>
@@ -205,10 +224,7 @@ export default function DashboardClient({
         </div>
 
         {/* Open quotes */}
-        <div
-          className="rounded-2xl p-5 bg-white border"
-          style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-        >
+        <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <p className="text-xs font-medium mb-3" style={{ color: '#6B7280' }}>Openstaande offertes</p>
           <p className="text-3xl font-bold" style={{ color: '#1A1A1A' }}>{pendingQuotesCount}</p>
           <Link href={activeProject ? `/projects/${activeProject.id}` : '/projects'} className="text-xs mt-1 block" style={{ color: '#288760' }}>
@@ -217,10 +233,7 @@ export default function DashboardClient({
         </div>
 
         {/* Active days */}
-        <div
-          className="rounded-2xl p-5 bg-white border"
-          style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-        >
+        <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <p className="text-xs font-medium mb-3" style={{ color: '#6B7280' }}>Actieve dagen</p>
           <p className="text-3xl font-bold" style={{ color: '#1A1A1A' }}>{activeDays}</p>
           <p className="text-xs mt-1" style={{ color: '#6B7280' }}>
@@ -232,12 +245,8 @@ export default function DashboardClient({
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Budget card */}
         {activeProject && budget > 0 && (
-          <div
-            className="rounded-2xl p-6 bg-white border"
-            style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-          >
+          <div className="rounded-2xl p-6 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <h2 className="text-base font-semibold mb-4" style={{ color: '#1A1A1A' }}>Budget overzicht</h2>
-
             <div className="grid grid-cols-3 gap-4 mb-5">
               <div>
                 <p className="text-xs" style={{ color: '#6B7280' }}>Totaal budget</p>
@@ -252,8 +261,6 @@ export default function DashboardClient({
                 <p className="text-base font-bold mt-1" style={{ color: '#1A1A1A' }}>{formatCurrency(Math.max(budget - totalExpenses, 0))}</p>
               </div>
             </div>
-
-            {/* Progress bar */}
             <div className="w-full rounded-full h-3 mb-2" style={{ backgroundColor: '#E5E7EB' }}>
               <div
                 className="h-3 rounded-full transition-all duration-500"
@@ -265,12 +272,8 @@ export default function DashboardClient({
               <span className="text-xs font-medium" style={{ color: budgetColor }}>{budgetPercentage}%</span>
               <span className="text-xs" style={{ color: '#6B7280' }}>100%</span>
             </div>
-
             {budgetPercentage >= 80 && (
-              <div
-                className="mt-4 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2"
-                style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}
-              >
+              <div className="mt-4 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -282,28 +285,18 @@ export default function DashboardClient({
 
         {/* No active project */}
         {!activeProject && (
-          <div
-            className="rounded-2xl p-6 bg-white border text-center"
-            style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-          >
+          <div className="rounded-2xl p-6 bg-white border text-center" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <div className="text-4xl mb-3">🏗️</div>
             <h3 className="text-base font-semibold mb-2" style={{ color: '#1A1A1A' }}>Geen actief project</h3>
             <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Maak je eerste verbouwingsproject aan om te beginnen.</p>
-            <Link
-              href="/projects"
-              className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ backgroundColor: '#288760' }}
-            >
+            <Link href="/projects" className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#288760' }}>
               Project aanmaken
             </Link>
           </div>
         )}
 
         {/* Today's tasks */}
-        <div
-          className="rounded-2xl p-6 bg-white border"
-          style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-        >
+        <div className="rounded-2xl p-6 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold" style={{ color: '#1A1A1A' }}>Taken vandaag</h2>
             {activeProject && (
@@ -312,7 +305,6 @@ export default function DashboardClient({
               </Link>
             )}
           </div>
-
           {todayTasks.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-2xl mb-2">🎉</p>
@@ -321,17 +313,11 @@ export default function DashboardClient({
           ) : (
             <ul className="space-y-2">
               {todayTasks.map((task) => (
-                <li
-                  key={task.id}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-gray-50 transition-colors"
-                >
+                <li key={task.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-gray-50 transition-colors">
                   <button
                     onClick={() => toggleTask(task)}
                     className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all"
-                    style={{
-                      borderColor: isTaskCompleted(task) ? '#288760' : '#E5E7EB',
-                      backgroundColor: isTaskCompleted(task) ? '#288760' : 'transparent',
-                    }}
+                    style={{ borderColor: isTaskCompleted(task) ? '#288760' : '#E5E7EB', backgroundColor: isTaskCompleted(task) ? '#288760' : 'transparent' }}
                   >
                     {isTaskCompleted(task) && (
                       <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -339,13 +325,7 @@ export default function DashboardClient({
                       </svg>
                     )}
                   </button>
-                  <span
-                    className="text-sm flex-1"
-                    style={{
-                      color: isTaskCompleted(task) ? '#9CA3AF' : '#1A1A1A',
-                      textDecoration: isTaskCompleted(task) ? 'line-through' : 'none',
-                    }}
-                  >
+                  <span className="text-sm flex-1" style={{ color: isTaskCompleted(task) ? '#9CA3AF' : '#1A1A1A', textDecoration: isTaskCompleted(task) ? 'line-through' : 'none' }}>
                     {task.title}
                   </span>
                 </li>
@@ -354,13 +334,9 @@ export default function DashboardClient({
           )}
         </div>
 
-        {/* Recent activity */}
-        <div
-          className="rounded-2xl p-6 bg-white border lg:col-span-2"
-          style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-        >
+        {/* Recent activity — updates in real-time as expenses/tasks change */}
+        <div className="rounded-2xl p-6 bg-white border lg:col-span-2" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <h2 className="text-base font-semibold mb-4" style={{ color: '#1A1A1A' }}>Recente activiteit</h2>
-
           {recentActivity.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-sm" style={{ color: '#6B7280' }}>Nog geen activiteit. Voeg kosten of taken toe om te beginnen.</p>
@@ -371,9 +347,7 @@ export default function DashboardClient({
                 <li key={activity.id} className="flex items-center gap-3">
                   <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                    style={{
-                      backgroundColor: activity.type === 'expense' ? '#FEF3C7' : '#B7E5BA',
-                    }}
+                    style={{ backgroundColor: activity.type === 'expense' ? '#FEF3C7' : '#B7E5BA' }}
                   >
                     {activity.type === 'expense' ? (
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#F59E0B' }}>

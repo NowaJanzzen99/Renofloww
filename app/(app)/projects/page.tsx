@@ -118,7 +118,7 @@ function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreate
           user_id: user.id,
           name: naam,
           type,
-          budget: budget ? parseFloat(budget.replace(',', '.')) : null,
+          budget: budget ? parseFloat(budget.replace(/\./g, '').replace(',', '.')) : null,
           start_date: startDatum || null,
           end_date: eindDatum || null,
           status: 'lopend',

@@ -41,7 +41,7 @@ export default function MeerwerkTab({ project, initialExtraWork, initialContract
     const supabase = createClient();
     const { data } = await supabase
       .from('extra_work')
-      .insert({ project_id: project.id, contractor_id: contractorId || null, description, amount: parseFloat(amount.replace(',', '.')), status: 'aangevraagd' })
+      .insert({ project_id: project.id, contractor_id: contractorId || null, description, amount: parseFloat(amount.replace(/\./g, '').replace(',', '.')), status: 'aangevraagd' })
       .select('*, contractors(name)')
       .single();
     if (data) setExtraWork((prev) => [data, ...prev]);
