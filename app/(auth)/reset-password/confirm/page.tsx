@@ -5,38 +5,41 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-export default function LoginPage() {
+export default function ResetPasswordConfirmPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
   const [wachtwoord, setWachtwoord] = useState('');
+  const [bevestiging, setBevestiging] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (wachtwoord.length < 8) {
+      setError('Wachtwoord moet minimaal 8 tekens bevatten.');
+      return;
+    }
+
+    if (wachtwoord !== bevestiging) {
+      setError('Wachtwoorden komen niet overeen.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+      const { error: updateError } = await supabase.auth.updateUser({
         password: wachtwoord,
       });
 
-      if (signInError) {
-        if (signInError.message.includes('Invalid login credentials')) {
-          setError('Onjuist e-mailadres of wachtwoord. Probeer het opnieuw.');
-        } else if (signInError.message.includes('Email not confirmed')) {
-          setError('Je e-mailadres is nog niet bevestigd. Controleer je inbox.');
-        } else {
-          setError('Er is iets misgegaan. Probeer het opnieuw.');
-        }
+      if (updateError) {
+        setError('Er is iets misgegaan. Probeer opnieuw een reset link aan te vragen.');
         return;
       }
 
-      router.push('/dashboard');
-      router.refresh();
+      router.push('/login?reset=success');
     } catch {
       setError('Er is een onverwachte fout opgetreden. Probeer het opnieuw.');
     } finally {
@@ -48,26 +51,27 @@ export default function LoginPage() {
     <div className="w-full max-w-md">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-2" style={{ color: '#1A1A1A' }}>
-          Welkom terug
+          Nieuw wachtwoord instellen
         </h1>
         <p className="text-base" style={{ color: '#6B7280' }}>
-          Log in op je Renofloww account.
+          Kies een sterk nieuw wachtwoord voor je account.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-1.5" style={{ color: '#1A1A1A' }}>
-            E-mailadres
+          <label htmlFor="wachtwoord" className="block text-sm font-medium mb-1.5" style={{ color: '#1A1A1A' }}>
+            Nieuw wachtwoord
           </label>
           <input
-            id="email"
-            type="email"
-            autoComplete="email"
+            id="wachtwoord"
+            type="password"
+            autoComplete="new-password"
             required
-            placeholder="jan@voorbeeld.nl"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            minLength={8}
+            placeholder="Minimaal 8 tekens"
+            value={wachtwoord}
+            onChange={(e) => setWachtwoord(e.target.value)}
             className="w-full px-4 py-3 rounded-xl border text-sm transition-colors outline-none"
             style={{
               borderColor: '#E5E7EB',
@@ -80,26 +84,17 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="wachtwoord" className="block text-sm font-medium" style={{ color: '#1A1A1A' }}>
-              Wachtwoord
-            </label>
-            <Link
-              href="/reset-password"
-              className="text-sm font-medium"
-              style={{ color: '#288760' }}
-            >
-              Wachtwoord vergeten?
-            </Link>
-          </div>
+          <label htmlFor="bevestiging" className="block text-sm font-medium mb-1.5" style={{ color: '#1A1A1A' }}>
+            Wachtwoord bevestigen
+          </label>
           <input
-            id="wachtwoord"
+            id="bevestiging"
             type="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
             required
-            placeholder="••••••••"
-            value={wachtwoord}
-            onChange={(e) => setWachtwoord(e.target.value)}
+            placeholder="Herhaal je wachtwoord"
+            value={bevestiging}
+            onChange={(e) => setBevestiging(e.target.value)}
             className="w-full px-4 py-3 rounded-xl border text-sm transition-colors outline-none"
             style={{
               borderColor: '#E5E7EB',
@@ -126,14 +121,13 @@ export default function LoginPage() {
           className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
           style={{ backgroundColor: '#288760' }}
         >
-          {loading ? 'Inloggen...' : 'Inloggen'}
+          {loading ? 'Opslaan...' : 'Wachtwoord opslaan'}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm" style={{ color: '#6B7280' }}>
-        Nog geen account?{' '}
-        <Link href="/register" className="font-medium" style={{ color: '#288760' }}>
-          Gratis registreren
+        <Link href="/login" className="font-medium" style={{ color: '#288760' }}>
+          Terug naar inloggen
         </Link>
       </p>
     </div>
