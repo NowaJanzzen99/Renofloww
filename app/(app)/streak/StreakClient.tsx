@@ -35,7 +35,7 @@ export default function StreakClient({ profile, activeProject, tasks, expenses }
     let streak = 0;
     const d = new Date();
     while (true) {
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = localDateStr(d);
       if (activeDates.has(dateStr)) {
         streak++;
         d.setDate(d.getDate() - 1);

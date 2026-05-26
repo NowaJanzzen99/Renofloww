@@ -44,6 +44,9 @@ export type Room = {
   id: string;
   project_id: string;
   name: string;
+  start_date: string | null;
+  end_date: string | null;
+  color: string | null;
   created_at: string;
 };
 

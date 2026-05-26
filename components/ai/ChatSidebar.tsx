@@ -8,18 +8,19 @@ import type { AiMessage } from '@/types';
 const MAX_FREE_CHATS = 5;
 
 const placeholders = [
-  'Wat kost een gemiddelde badkamer verbouwing?',
-  'Heb ik een vergunning nodig voor een dakkapel?',
-  'Analyseer mijn budget',
+  'Maak een taak: tegels leggen in de badkamer',
+  'Registreer €450 voor materiaal: vloertegels',
+  'Zet een herinnering voor volgende week dinsdag',
+  'Analyseer mijn budget en geef advies',
   'Welke aannemer heeft de laagste offerte?',
-  'Maak een herinnering voor volgende week',
-  'Hoeveel heb ik al uitgegeven aan materialen?',
+  'Wat kost een gemiddelde keukenrenovatie?',
 ];
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   id: string;
+  toolExecuted?: boolean;
 }
 
 interface ChatSidebarProps {
@@ -50,6 +51,20 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
       });
     }, 3000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Listen for open-ai-chat events (e.g., from Offertes comparison AI advice button)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ message: string }>).detail;
+      if (detail?.message) {
+        setOpen(true);
+        setInput(detail.message);
+        setTimeout(() => inputRef.current?.focus(), 100);
+      }
+    };
+    window.addEventListener('open-ai-chat', handler);
+    return () => window.removeEventListener('open-ai-chat', handler);
   }, []);
 
   // Load user profile and message count
@@ -171,8 +186,11 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Verzoek mislukt');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Verzoek mislukt');
       }
+
+      const toolExecuted = response.headers.get('X-Tool-Executed') === 'true';
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -186,17 +204,18 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
           fullContent += chunk;
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantMessageId ? { ...m, content: fullContent } : m
+              m.id === assistantMessageId
+                ? { ...m, content: fullContent, toolExecuted }
+                : m
             )
           );
         }
       }
-    } catch {
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Er is een fout opgetreden. Probeer het opnieuw.';
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === assistantMessageId
-            ? { ...m, content: 'Er is een fout opgetreden. Probeer het opnieuw.' }
-            : m
+          m.id === assistantMessageId ? { ...m, content: errMsg } : m
         )
       );
     } finally {
@@ -394,16 +413,22 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
                         </svg>
                       </div>
                       <p className="text-sm font-semibold mb-1" style={{ color: '#1A1A1A' }}>Hallo! Ik ben je AI bouw assistent.</p>
-                      <p className="text-xs" style={{ color: '#6B7280' }}>Stel me een vraag over je verbouwing, budget, of aannemers.</p>
-                      <div className="mt-4 grid gap-2">
-                        {placeholders.slice(0, 3).map((p) => (
+                      <p className="text-xs mb-3" style={{ color: '#6B7280' }}>Ik kan taken aanmaken, kosten registreren, herinneringen instellen én vragen beantwoorden.</p>
+                      <div className="grid gap-2">
+                        {[
+                          { icon: '✅', text: 'Maak een taak aan' },
+                          { icon: '💶', text: 'Registreer kosten' },
+                          { icon: '⏰', text: 'Zet een herinnering' },
+                          { icon: '📊', text: 'Analyseer mijn budget' },
+                        ].map(({ icon, text }) => (
                           <button
-                            key={p}
-                            onClick={() => { setInput(p); inputRef.current?.focus(); }}
-                            className="text-left px-3 py-2 rounded-xl text-xs border transition-colors hover:bg-white"
+                            key={text}
+                            onClick={() => { setInput(`${text}`); inputRef.current?.focus(); }}
+                            className="flex items-center gap-2 text-left px-3 py-2 rounded-xl text-xs border transition-colors hover:bg-white"
                             style={{ borderColor: '#E5E7EB', color: '#6B7280' }}
                           >
-                            {p}
+                            <span>{icon}</span>
+                            {text}
                           </button>
                         ))}
                       </div>
@@ -444,7 +469,20 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
                             ))}
                           </div>
                         ) : (
-                          <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                          <>
+                            {msg.toolExecuted && (
+                              <div
+                                className="flex items-center gap-1 text-xs font-semibold mb-2 px-2 py-1 rounded-lg"
+                                style={{ backgroundColor: '#F0FDF4', color: '#15803D' }}
+                              >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                </svg>
+                                ⚡ Actie uitgevoerd
+                              </div>
+                            )}
+                            <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                          </>
                         )}
                       </div>
                     </div>

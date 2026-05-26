@@ -13,9 +13,11 @@ interface Props {
 
 const statusConfig = {
   in_behandeling: { label: 'In behandeling', color: '#F59E0B', bg: '#FFFBEB' },
-  geaccepteerd: { label: 'Geaccepteerd', color: '#10B981', bg: '#ECFDF5' },
-  afgewezen: { label: 'Afgewezen', color: '#EF4444', bg: '#FEF2F2' },
-  pending: { label: 'In behandeling', color: '#F59E0B', bg: '#FFFBEB' },
+  geaccepteerd:   { label: 'Geaccepteerd',   color: '#10B981', bg: '#ECFDF5' },
+  afgewezen:      { label: 'Afgewezen',      color: '#EF4444', bg: '#FEF2F2' },
+  pending:        { label: 'In behandeling', color: '#F59E0B', bg: '#FFFBEB' },
+  accepted:       { label: 'Geaccepteerd',   color: '#10B981', bg: '#ECFDF5' },
+  rejected:       { label: 'Afgewezen',      color: '#EF4444', bg: '#FEF2F2' },
 };
 
 function AddQuoteModal({ project, contractors, onClose, onAdded }: {
@@ -97,11 +99,277 @@ function AddQuoteModal({ project, contractors, onClose, onAdded }: {
   );
 }
 
+// ── Versus.com-style compare modal ────────────────────────────────────────────
+function CompareModal({
+  quotes,
+  getContractorName,
+  onClose,
+}: {
+  quotes: (Quote & { contractors?: { name: string } | null })[];
+  getContractorName: (q: Quote & { contractors?: { name: string } | null }) => string | null;
+  onClose: () => void;
+}) {
+  const amounts = quotes.map((q) => Number(q.amount));
+  const minAmt = Math.min(...amounts);
+  const maxAmt = Math.max(...amounts);
+  const savings = maxAmt - minAmt;
+
+  const handleAiAdvice = () => {
+    const quoteDetails = quotes
+      .map((q, i) => {
+        const name = getContractorName(q) || `Offerte ${i + 1}`;
+        return `- ${name}: ${formatCurrency(Number(q.amount))}${q.description ? ` (${q.description})` : ''}`;
+      })
+      .join('\n');
+
+    const message = `Analyseer deze offertes voor mijn verbouwing en geef advies welke ik moet kiezen:\n\n${quoteDetails}\n\nVerschil: ${formatCurrency(savings)}. Waar moet ik op letten bij het kiezen?`;
+
+    window.dispatchEvent(new CustomEvent('open-ai-chat', { detail: { message } }));
+    onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b shrink-0" style={{ borderColor: '#E5E7EB' }}>
+          <div>
+            <h2 className="text-base font-bold" style={{ color: '#1A1A1A' }}>Offertes vergelijken</h2>
+            <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{quotes.length} offertes naast elkaar</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+            style={{ color: '#6B7280' }}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 p-6 space-y-6">
+
+          {/* Versus table */}
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse" style={{ minWidth: `${quotes.length * 180 + 140}px` }}>
+              <thead>
+                <tr>
+                  <th className="text-left pb-4 pr-4 w-36 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
+                    Onderdeel
+                  </th>
+                  {quotes.map((q) => {
+                    const isMin = Number(q.amount) === minAmt;
+                    const isMax = Number(q.amount) === maxAmt && quotes.length > 1;
+                    const name = getContractorName(q);
+                    return (
+                      <th
+                        key={q.id}
+                        className="px-4 pb-4 text-center rounded-t-2xl"
+                        style={{
+                          backgroundColor: isMin ? '#ECFDF5' : isMax ? '#FFF1F2' : '#F9FAFB',
+                          minWidth: '160px',
+                        }}
+                      >
+                        {/* Badge */}
+                        {isMin && (
+                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold mb-2" style={{ backgroundColor: '#DCFCE7', color: '#15803D' }}>
+                            🏆 Laagste
+                          </div>
+                        )}
+                        {isMax && quotes.length > 1 && (
+                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold mb-2" style={{ backgroundColor: '#FEE2E2', color: '#B91C1C' }}>
+                            Hoogste
+                          </div>
+                        )}
+                        {!isMin && !isMax && <div className="mb-2 h-5" />}
+
+                        {/* Contractor name */}
+                        <p className="text-sm font-bold" style={{ color: '#1A1A1A' }}>
+                          {name || <em style={{ color: '#9CA3AF', fontStyle: 'italic', fontWeight: 400 }}>Geen aannemer</em>}
+                        </p>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+
+              <tbody>
+                {/* Bedrag row */}
+                <tr>
+                  <td className="py-4 pr-4 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: '#9CA3AF' }}>
+                    Bedrag
+                  </td>
+                  {quotes.map((q) => {
+                    const amt = Number(q.amount);
+                    const isMin = amt === minAmt;
+                    const isMax = amt === maxAmt && quotes.length > 1;
+                    const barPct = maxAmt > 0 ? (amt / maxAmt) * 100 : 100;
+                    return (
+                      <td
+                        key={q.id}
+                        className="px-4 py-4 text-center align-top"
+                        style={{ backgroundColor: isMin ? '#ECFDF5' : isMax ? '#FFF1F2' : '#F9FAFB' }}
+                      >
+                        <p
+                          className="text-2xl font-black mb-2"
+                          style={{ color: isMin ? '#15803D' : isMax ? '#B91C1C' : '#1A1A1A' }}
+                        >
+                          {formatCurrency(amt)}
+                        </p>
+                        {/* Price bar */}
+                        <div className="w-full h-2 rounded-full overflow-hidden mx-auto" style={{ backgroundColor: isMin ? '#BBF7D0' : isMax ? '#FECACA' : '#E5E7EB', maxWidth: '120px' }}>
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{
+                              width: `${barPct}%`,
+                              backgroundColor: isMin ? '#22C55E' : isMax ? '#EF4444' : '#9CA3AF',
+                            }}
+                          />
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+
+                {/* Besparing row (only when > 1 quote and savings > 0) */}
+                {savings > 0 && (
+                  <tr className="border-t" style={{ borderColor: '#F3F4F6' }}>
+                    <td className="py-4 pr-4 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: '#9CA3AF' }}>
+                      Besparing
+                    </td>
+                    {quotes.map((q) => {
+                      const amt = Number(q.amount);
+                      const isMin = amt === minAmt;
+                      const isMax = amt === maxAmt;
+                      const diff = amt - minAmt;
+                      return (
+                        <td
+                          key={q.id}
+                          className="px-4 py-4 text-center align-top"
+                          style={{ backgroundColor: isMin ? '#ECFDF5' : isMax ? '#FFF1F2' : '#F9FAFB' }}
+                        >
+                          {isMin ? (
+                            <span className="inline-flex items-center gap-1 text-sm font-bold" style={{ color: '#15803D' }}>
+                              ✅ Voordeligst
+                            </span>
+                          ) : (
+                            <span className="text-sm font-semibold" style={{ color: '#EF4444' }}>
+                              +{formatCurrency(diff)} duurder
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                )}
+
+                {/* Omschrijving row */}
+                <tr className="border-t" style={{ borderColor: '#F3F4F6' }}>
+                  <td className="py-4 pr-4 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: '#9CA3AF' }}>
+                    Omschrijving
+                  </td>
+                  {quotes.map((q) => {
+                    const isMin = Number(q.amount) === minAmt;
+                    const isMax = Number(q.amount) === maxAmt && quotes.length > 1;
+                    return (
+                      <td
+                        key={q.id}
+                        className="px-4 py-4 text-center align-top"
+                        style={{ backgroundColor: isMin ? '#ECFDF5' : isMax ? '#FFF1F2' : '#F9FAFB' }}
+                      >
+                        <p className="text-xs leading-relaxed" style={{ color: '#6B7280' }}>
+                          {q.description || <em>Geen omschrijving</em>}
+                        </p>
+                      </td>
+                    );
+                  })}
+                </tr>
+
+                {/* Status row */}
+                <tr className="border-t" style={{ borderColor: '#F3F4F6' }}>
+                  <td className="py-4 pr-4 pb-0 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: '#9CA3AF' }}>
+                    Status
+                  </td>
+                  {quotes.map((q) => {
+                    const isMin = Number(q.amount) === minAmt;
+                    const isMax = Number(q.amount) === maxAmt && quotes.length > 1;
+                    const sInfo = statusConfig[q.status as keyof typeof statusConfig] || statusConfig.in_behandeling;
+                    return (
+                      <td
+                        key={q.id}
+                        className="px-4 py-4 pb-0 text-center align-top rounded-b-2xl"
+                        style={{ backgroundColor: isMin ? '#ECFDF5' : isMax ? '#FFF1F2' : '#F9FAFB' }}
+                      >
+                        <span
+                          className="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                          style={{ backgroundColor: sInfo.bg, color: sInfo.color }}
+                        >
+                          {sInfo.label}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Savings summary card */}
+          {savings > 0 && (
+            <div
+              className="flex items-center gap-4 p-4 rounded-2xl border"
+              style={{ backgroundColor: '#F0FDF4', borderColor: '#86EFAC' }}
+            >
+              <div className="text-3xl shrink-0">💰</div>
+              <div>
+                <p className="text-sm font-bold" style={{ color: '#1A1A1A' }}>
+                  Kies de voordeligste offerte en bespaar {formatCurrency(savings)}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
+                  ten opzichte van de duurste offerte
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* AI advice button */}
+          <button
+            onClick={handleAiAdvice}
+            className="w-full py-3.5 rounded-2xl text-sm font-bold text-white flex items-center justify-center gap-2.5 transition-opacity hover:opacity-90 active:opacity-80"
+            style={{
+              background: 'linear-gradient(135deg, #0f2027 0%, #1a3a2a 50%, #288760 100%)',
+              boxShadow: '0 4px 20px rgba(40,135,96,0.35)',
+            }}
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2c0 0 .9 5.2 3.2 7.6C17.5 12 23 12 23 12s-5.5 0-7.8 2.4C12.9 16.8 12 22 12 22s-.9-5.2-3.2-7.6C6.5 12 1 12 1 12s5.5 0 7.8-2.4C11.1 7.2 12 2 12 2z" />
+            </svg>
+            Vraag AI advies over deze offertes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main tab component ─────────────────────────────────────────────────────────
 export default function OffertesTab({ project, initialQuotes, initialContractors }: Props) {
   const [quotes, setQuotes] = useState(initialQuotes);
   const [showAddModal, setShowAddModal] = useState(false);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [showCompare, setShowCompare] = useState(false);
+
+  const getContractorName = (q: Quote & { contractors?: { name: string } | null }): string | null =>
+    q.contractors?.name || initialContractors.find((c) => c.id === q.contractor_id)?.name || null;
 
   if (quotes.length === 0) {
     return (
@@ -134,15 +402,16 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
   };
 
   const toggleCompare = (id: string) => {
-    setCompareIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 3 ? [...prev, id] : prev);
+    setCompareIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 4 ? [...prev, id] : prev
+    );
   };
 
   const compareQuotes = quotes.filter((q) => compareIds.includes(q.id));
-  const getContractorName = (q: Quote & { contractors?: { name: string } | null }): string | null =>
-    q.contractors?.name || initialContractors.find((c) => c.id === q.contractor_id)?.name || null;
 
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold" style={{ color: '#1A1A1A' }}>Offertes ({quotes.length})</h2>
@@ -152,7 +421,7 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
                 ? 'Vink offertes aan om ze te vergelijken'
                 : compareIds.length === 1
                 ? '1 geselecteerd — selecteer nog minimaal 1'
-                : `${compareIds.length} geselecteerd`}
+                : `${compareIds.length} geselecteerd — klaar om te vergelijken`}
             </p>
           )}
         </div>
@@ -161,74 +430,98 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
             <button
               onClick={() => compareIds.length >= 2 ? setShowCompare(true) : undefined}
               disabled={compareIds.length < 2}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-all"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border transition-all"
               style={{
                 borderColor: compareIds.length >= 2 ? '#288760' : '#E5E7EB',
                 color: compareIds.length >= 2 ? '#288760' : '#9CA3AF',
                 backgroundColor: compareIds.length >= 2 ? '#F0FDF4' : 'transparent',
               }}
-              title={compareIds.length < 2 ? 'Selecteer 2 of meer offertes om te vergelijken' : undefined}
+              title={compareIds.length < 2 ? 'Selecteer minimaal 2 offertes om te vergelijken' : undefined}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
               </svg>
-              Vergelijk offertes{compareIds.length >= 2 ? ` (${compareIds.length})` : ''}
+              Vergelijk{compareIds.length >= 2 ? ` (${compareIds.length})` : ''}
             </button>
           )}
-          <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-white" style={{ backgroundColor: '#288760' }}>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-white"
+            style={{ backgroundColor: '#288760' }}
+          >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             Offerte toevoegen
           </button>
         </div>
       </div>
 
+      {/* Quote cards */}
       <div className="space-y-3">
         {quotes.map((quote) => {
           const isMin = Number(quote.amount) === minAmount && quotes.length > 1;
           const isMax = Number(quote.amount) === maxAmount && quotes.length > 1;
           const statusInfo = statusConfig[quote.status as keyof typeof statusConfig] || statusConfig.in_behandeling;
           const isSelected = compareIds.includes(quote.id);
+          const contractorName = getContractorName(quote);
 
           return (
             <div
               key={quote.id}
-              className="rounded-2xl p-4 bg-white border"
+              className="rounded-2xl p-4 bg-white border transition-all"
               style={{
-                borderColor: isMin ? '#10B981' : isMax && quotes.length > 1 ? '#FCA5A5' : '#E5E7EB',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                borderColor: isSelected ? '#288760' : isMin ? '#86EFAC' : '#E5E7EB',
+                boxShadow: isSelected ? '0 0 0 2px #28876022' : '0 2px 12px rgba(0,0,0,0.06)',
                 backgroundColor: isMin ? '#F0FDF4' : 'white',
               }}
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => toggleCompare(quote.id)}
-                    className="w-4 h-4 rounded mt-0.5 shrink-0"
-                    style={{ accentColor: '#288760' }}
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  {/* Checkbox */}
+                  <button
+                    onClick={() => toggleCompare(quote.id)}
+                    className="mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+                    style={{
+                      borderColor: isSelected ? '#288760' : '#D1D5DB',
+                      backgroundColor: isSelected ? '#288760' : 'white',
+                    }}
                     title="Selecteer voor vergelijking"
                     aria-label="Selecteer voor vergelijking"
-                  />
-                  <div className="flex-1">
+                  >
+                    {isSelected && (
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      {getContractorName(quote) ? (
-                        <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>
-                          {getContractorName(quote)}
-                        </p>
+                      {contractorName ? (
+                        <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{contractorName}</p>
                       ) : (
-                        <p className="text-sm italic" style={{ color: '#9CA3AF' }}>
-                          Geen aannemer gekoppeld
-                        </p>
+                        <p className="text-sm italic" style={{ color: '#9CA3AF' }}>Geen aannemer gekoppeld</p>
                       )}
-                      {isMin && <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: '#DCFCE7', color: '#166534' }}>Laagste</span>}
-                      {isMax && quotes.length > 1 && <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>Hoogste</span>}
+                      {isMin && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: '#DCFCE7', color: '#15803D' }}>
+                          🏆 Laagste
+                        </span>
+                      )}
+                      {isMax && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>
+                          Hoogste
+                        </span>
+                      )}
                     </div>
-                    {quote.description && <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{quote.description}</p>}
+                    {quote.description && (
+                      <p className="text-xs mt-0.5 truncate" style={{ color: '#6B7280' }}>{quote.description}</p>
+                    )}
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3 shrink-0">
-                  <p className="text-base font-bold" style={{ color: '#1A1A1A' }}>{formatCurrency(Number(quote.amount))}</p>
+                  <p className="text-base font-bold" style={{ color: '#1A1A1A' }}>
+                    {formatCurrency(Number(quote.amount))}
+                  </p>
                   <select
                     value={quote.status}
                     onChange={(e) => updateStatus(quote.id, e.target.value)}
@@ -246,50 +539,38 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
         })}
       </div>
 
-      {/* Compare modal */}
-      {showCompare && compareQuotes.length >= 2 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl max-h-[80vh] overflow-auto">
-            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: '#E5E7EB' }}>
-              <h2 className="text-base font-semibold" style={{ color: '#1A1A1A' }}>Offertes vergelijken</h2>
-              <button onClick={() => setShowCompare(false)} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center" style={{ color: '#6B7280' }}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <div className="p-6">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left py-2 pr-4" style={{ color: '#6B7280' }}>Onderdeel</th>
-                    {compareQuotes.map((q) => (
-                      <th key={q.id} className="text-left py-2 px-2" style={{ color: '#1A1A1A' }}>{getContractorName(q) ?? <em style={{ color: '#9CA3AF' }}>Geen aannemer</em>}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { label: 'Bedrag', key: 'amount', format: (v: string) => formatCurrency(Number(v)) },
-                    { label: 'Omschrijving', key: 'description', format: (v: string) => v || '—' },
-                    { label: 'Status', key: 'status', format: (v: string) => statusConfig[v as keyof typeof statusConfig]?.label || v },
-                  ].map(({ label, key, format }) => (
-                    <tr key={label} className="border-t" style={{ borderColor: '#E5E7EB' }}>
-                      <td className="py-3 pr-4 font-medium" style={{ color: '#6B7280' }}>{label}</td>
-                      {compareQuotes.map((q) => (
-                        <td key={q.id} className="py-3 px-2" style={{ color: '#1A1A1A' }}>
-                          {format(String((q as unknown as Record<string, unknown>)[key] ?? ''))}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      {/* Helper when 2+ selected but compare not opened */}
+      {compareIds.length >= 2 && !showCompare && (
+        <div className="flex items-center justify-between px-4 py-3 rounded-2xl border" style={{ backgroundColor: '#F0FDF4', borderColor: '#86EFAC' }}>
+          <p className="text-sm font-medium" style={{ color: '#15803D' }}>
+            {compareIds.length} offertes geselecteerd
+          </p>
+          <button
+            onClick={() => setShowCompare(true)}
+            className="px-4 py-1.5 rounded-xl text-sm font-semibold text-white"
+            style={{ backgroundColor: '#288760' }}
+          >
+            Vergelijk nu →
+          </button>
         </div>
       )}
 
+      {/* Versus modal */}
+      {showCompare && compareQuotes.length >= 2 && (
+        <CompareModal
+          quotes={compareQuotes}
+          getContractorName={getContractorName}
+          onClose={() => setShowCompare(false)}
+        />
+      )}
+
       {showAddModal && (
-        <AddQuoteModal project={project} contractors={initialContractors} onClose={() => setShowAddModal(false)} onAdded={(q) => { setQuotes([q, ...quotes]); setShowAddModal(false); }} />
+        <AddQuoteModal
+          project={project}
+          contractors={initialContractors}
+          onClose={() => setShowAddModal(false)}
+          onAdded={(q) => { setQuotes([q, ...quotes]); setShowAddModal(false); }}
+        />
       )}
     </div>
   );

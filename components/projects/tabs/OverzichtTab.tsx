@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { Project, Room, Task, Expense, Contractor, Quote } from '@/types';
+import GanttChart from '@/components/GanttChart';
 
 interface Props {
   project: Project;
@@ -29,8 +30,9 @@ function localDateStr(d: Date = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export default function OverzichtTab({ project, rooms, tasks, expenses, contractors, quotes, onTabChange }: Props) {
+export default function OverzichtTab({ project, rooms: initialRooms, tasks, expenses, contractors, quotes, onTabChange }: Props) {
   const [openModal, setOpenModal] = useState<ModalType>(null);
+  const [rooms, setRooms] = useState<Room[]>(initialRooms);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -280,6 +282,25 @@ export default function OverzichtTab({ project, rooms, tasks, expenses, contract
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Gantt planning ── */}
+      {rooms.length > 0 && (
+        <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Planning (Gantt)</h3>
+              <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Klik het potlood-icoon per ruimte om datums in te stellen</p>
+            </div>
+          </div>
+          <GanttChart
+            rooms={rooms}
+            projectStart={project.start_date}
+            projectEnd={project.end_date}
+            compact={false}
+            onRoomsUpdated={setRooms}
+          />
         </div>
       )}
 

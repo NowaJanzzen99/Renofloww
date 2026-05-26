@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, timeAgo } from '@/lib/utils';
-import type { Profile, Project, Task, Expense } from '@/types';
+import type { Profile, Project, Task, Expense, Room } from '@/types';
+import GanttChart from '@/components/GanttChart';
 
 interface Props {
   greeting: string;
@@ -13,6 +14,7 @@ interface Props {
   todayTasks: Task[];
   allTasks: Task[];
   expenses: Expense[];
+  rooms: Room[];
   pendingQuotesCount: number;
   totalExpenses: number;
   budget: number;
@@ -247,6 +249,7 @@ export default function DashboardClient({
   todayTasks: initialTodayTasks,
   allTasks: initialAllTasks,
   expenses: initialExpenses,
+  rooms,
   pendingQuotesCount: initialPendingQuotesCount,
   budget,
   activeDays,
@@ -560,6 +563,31 @@ export default function DashboardClient({
             </ul>
           )}
         </div>
+
+        {/* Gantt planning (compact) */}
+        {activeProject && rooms.length > 0 && (
+          <div
+            className="rounded-2xl p-4 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+            style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold" style={{ color: '#1A1A1A' }}>Planning</h2>
+              <Link
+                href={`/projects/${activeProject.id}?tab=overzicht`}
+                className="text-xs font-medium"
+                style={{ color: '#288760' }}
+              >
+                Bewerk planning →
+              </Link>
+            </div>
+            <GanttChart
+              rooms={rooms}
+              projectStart={activeProject.start_date}
+              projectEnd={activeProject.end_date}
+              compact
+            />
+          </div>
+        )}
 
         {/* Recente activiteit */}
         <div className="rounded-2xl p-4 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
