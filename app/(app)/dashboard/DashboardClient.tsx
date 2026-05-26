@@ -456,6 +456,7 @@ export default function DashboardClient({
       </div>
 
       {/* ── Stat cards (drag & drop) ── */}
+      <p className="text-xs mb-2 hidden md:block" style={{ color: '#C4B5FD' }}>⠿ Sleep de kaarten om de volgorde aan te passen</p>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-4 sm:mb-7">
         {cardOrder.map(id => (
           <DraggableCard

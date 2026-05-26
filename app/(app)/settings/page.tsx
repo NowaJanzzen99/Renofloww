@@ -101,14 +101,23 @@ export default function SettingsPage() {
 
   const handleUpgrade = async (priceId: string) => {
     try {
+      setSaving(true);
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ priceId }),
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
-    } catch { showMessage('Kon betalingspagina niet openen.', true); }
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        showMessage(data.error || 'Kon betalingspagina niet openen.', true);
+      }
+    } catch {
+      showMessage('Kon betalingspagina niet openen. Probeer het opnieuw.', true);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -154,12 +163,12 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold mb-6" style={{ color: '#1A1A1A' }}>Instellingen</h1>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl mb-6" style={{ backgroundColor: '#F3F4F6' }}>
+      <div className="flex gap-1 p-1 rounded-xl mb-6 overflow-x-auto" style={{ backgroundColor: '#F3F4F6' }}>
         {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
+            className="py-2 px-3 rounded-lg text-sm font-medium transition-all whitespace-nowrap shrink-0"
             style={{
               backgroundColor: activeTab === tab ? '#FFFFFF' : 'transparent',
               color: activeTab === tab ? '#1A1A1A' : '#6B7280',
@@ -303,8 +312,8 @@ export default function SettingsPage() {
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || 'price_pro_monthly')} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#288760' }}>
-                  Upgrade naar Pro
+                <button onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || 'price_1Tb6pAHnmzUK6aJZDQPKmBRg')} disabled={saving} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity" style={{ backgroundColor: '#288760' }}>
+                  {saving ? 'Laden...' : 'Upgrade naar Pro'}
                 </button>
               </div>
               <div className="rounded-2xl border p-5 relative" style={{ borderColor: '#E5E7EB', backgroundColor: 'white' }}>
@@ -324,8 +333,8 @@ export default function SettingsPage() {
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY || 'price_pro_yearly')} className="w-full py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50" style={{ borderColor: '#288760', color: '#288760' }}>
-                  Jaarlijks starten
+                <button onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY || 'price_1Tb6pDHnmzUK6aJZYadqyaq9')} disabled={saving} className="w-full py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50 disabled:opacity-60" style={{ borderColor: '#288760', color: '#288760' }}>
+                  {saving ? 'Laden...' : 'Jaarlijks starten'}
                 </button>
               </div>
             </div>

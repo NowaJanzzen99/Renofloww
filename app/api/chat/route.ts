@@ -15,6 +15,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
     }
 
+    // Get profile to check trial and plan
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_pro, trial_ends_at')
+      .eq('id', user.id)
+      .single();
+
+    const isPro = profile?.is_pro ?? false;
+
+    if (!isPro) {
+      // Check trial expiry
+      if (!profile?.trial_ends_at || new Date(profile.trial_ends_at) <= new Date()) {
+        return NextResponse.json({ error: 'Proefperiode verlopen. Upgrade naar Pro om de AI assistent te gebruiken.' }, { status: 403 });
+      }
+      // Check chat limit (count user messages)
+      const { count } = await supabase
+        .from('ai_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('role', 'user');
+      if ((count ?? 0) >= 5) {
+        return NextResponse.json({ error: 'Je hebt je 5 gratis AI chats gebruikt. Upgrade naar Pro voor onbeperkt gebruik.' }, { status: 403 });
+      }
+    }
+
     const body = await request.json();
     const { messages, project_id } = body as {
       messages: { role: 'user' | 'assistant'; content: string }[];

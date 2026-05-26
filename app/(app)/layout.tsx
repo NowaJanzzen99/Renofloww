@@ -3,6 +3,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Navbar from '@/components/layout/Navbar';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import TrialBanner from '@/components/TrialBanner';
+import TrialExpiredGate from '@/components/TrialExpiredGate';
 import ChatSidebar from '@/components/ai/ChatSidebar';
 import type { Profile } from '@/types';
 
@@ -44,6 +45,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       {/* AI Chat Sidebar */}
       <ChatSidebar />
+
+      {/* Trial expired full-screen gate */}
+      <TrialExpiredGate />
     </div>
   );
 }

@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         .eq('id', user.id);
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://renofloww.vercel.app';
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
                 stripe_subscription_id: subscription.id,
                 stripe_customer_id: session.customer as string,
                 plan: 'pro',
+                is_pro: true,
                 trial_ends_at: null,
               })
               .eq('id', userId);
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest) {
             .update({
               stripe_subscription_id: subscription.id,
               plan: isActive ? 'pro' : 'free',
+              is_pro: isActive,
             })
             .eq('id', userId);
         }
@@ -103,6 +105,7 @@ export async function POST(req: NextRequest) {
             .update({
               stripe_subscription_id: null,
               plan: 'free',
+              is_pro: false,
             })
             .eq('id', userId);
 
@@ -128,7 +131,7 @@ export async function POST(req: NextRequest) {
           if (userId) {
             await supabase
               .from('profiles')
-              .update({ plan: 'pro' })
+              .update({ plan: 'pro', is_pro: true })
               .eq('id', userId);
           }
         }

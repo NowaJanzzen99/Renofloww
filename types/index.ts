@@ -4,6 +4,7 @@ export type Profile = {
   name: string | null;
   avatar_url: string | null;
   is_pro: boolean;
+  plan: 'free' | 'pro' | null;
   trial_ends_at: string | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
