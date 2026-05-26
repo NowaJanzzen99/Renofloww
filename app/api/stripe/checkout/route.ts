@@ -46,7 +46,11 @@ export async function POST(req: NextRequest) {
         .eq('id', user.id);
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://renofloww.vercel.app';
+    // Always derive baseUrl from the incoming request so cancel/success URLs
+    // work correctly on any deployment (production, preview, or localhost).
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      `${req.nextUrl.protocol}//${req.nextUrl.host}`;
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -59,7 +63,7 @@ export async function POST(req: NextRequest) {
       ],
       mode: 'subscription',
       success_url: `${baseUrl}/dashboard?upgraded=true`,
-      cancel_url: `${baseUrl}/settings?tab=abonnement&canceled=true`,
+      cancel_url: `${baseUrl}/settings#abonnement`,
       locale: 'nl',
       billing_address_collection: 'auto',
       allow_promotion_codes: true,
