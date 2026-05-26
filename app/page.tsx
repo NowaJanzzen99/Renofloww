@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import RenoflowwLogo from '@/components/RenoflowwLogo';
 
 export const metadata: Metadata = {
   title: 'Renofloww — Verbouw zonder stress',
@@ -155,12 +156,9 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#288760' }}>
-                R
-              </div>
-              <span className="font-bold text-lg" style={{ color: '#1A1A1A' }}>Renofloww</span>
-            </div>
+            <Link href="/">
+              <RenoflowwLogo size="md" variant="full" textColor="dark" />
+            </Link>
 
             {/* Desktop nav links */}
             <div className="hidden md:flex items-center gap-8">
@@ -676,12 +674,7 @@ export default function LandingPage() {
       <footer className="py-12" style={{ backgroundColor: '#1A5140' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm bg-white/20">
-                R
-              </div>
-              <span className="font-bold text-lg text-white">Renofloww</span>
-            </div>
+            <RenoflowwLogo size="md" variant="full" textColor="white" />
             <div className="flex items-center gap-6">
               <a href="#functies" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Functies</a>
               <a href="#ai" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>AI assistent</a>

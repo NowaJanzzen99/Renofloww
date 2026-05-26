@@ -368,21 +368,45 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
               Alle kosten →
             </button>
           </div>
-          <div className="divide-y" style={{ borderColor: '#F3F4F6' }}>
-            {localExpenses.slice(0, 5).map((expense) => (
-              <div key={expense.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: '#F3F4F6', color: '#6B7280' }}>
-                    {expense.category?.charAt(0).toUpperCase() || '€'}
+          <div>
+            {localExpenses.slice(0, 5).map((expense, idx) => {
+              const catColors: Record<string, { bg: string; text: string }> = {
+                materiaal:  { bg: '#EFF6FF', text: '#3B82F6' },
+                arbeid:     { bg: '#F0FDF4', text: '#16A34A' },
+                vergunning: { bg: '#FEF3C7', text: '#D97706' },
+                transport:  { bg: '#F5F3FF', text: '#7C3AED' },
+                overig:     { bg: '#F3F4F6', text: '#6B7280' },
+              };
+              const cat = catColors[expense.category || 'overig'] || catColors.overig;
+              return (
+                <div
+                  key={expense.id}
+                  className="flex items-center justify-between py-3"
+                  style={{ borderTop: idx > 0 ? '1px solid #F3F4F6' : 'none' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold"
+                      style={{ backgroundColor: cat.bg, color: cat.text }}
+                    >
+                      {(expense.category || 'O').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#1A1A1A' }}>{expense.description}</p>
+                      <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
+                        {expense.category
+                          ? expense.category.charAt(0).toUpperCase() + expense.category.slice(1)
+                          : 'Overig'}
+                        {expense.date ? ` · ${expense.date}` : ''}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: '#1A1A1A' }}>{expense.description}</p>
-                    <p className="text-xs" style={{ color: '#9CA3AF' }}>{expense.category} · {expense.date}</p>
-                  </div>
+                  <p className="text-sm font-bold tabular-nums" style={{ color: '#1A1A1A' }}>
+                    {formatCurrency(Number(expense.amount))}
+                  </p>
                 </div>
-                <p className="text-sm font-bold" style={{ color: '#1A1A1A' }}>{formatCurrency(Number(expense.amount))}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
