@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Renofloww — Verbouw zonder stress',
   description:
-    'Houd de controle over je verbouwing. Budget, aannemers, offertes en planning — alles op één plek.',
+    'Houd de controle over je verbouwing. Budget, aannemers, offertes, Gantt planning en AI assistent — alles op één plek.',
   openGraph: {
     title: 'Renofloww — Verbouw zonder stress',
     description: 'Houd de controle over je verbouwing.',
@@ -21,16 +21,16 @@ const features = [
       </svg>
     ),
     title: 'Budget tracker',
-    description: 'Altijd weten wat je nog over hebt. Voeg kosten toe per categorie en zie real-time je resterende budget.',
+    description: 'Voeg kosten toe per categorie en zie real-time je resterende budget. Nooit meer verrassingen aan het einde van de verbouwing.',
   },
   {
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     ),
-    title: 'Aannemers beheer',
-    description: 'Al je contacten op één plek. Sla namen, telefoonnummers en specialiteiten op per project.',
+    title: 'Gantt planning',
+    description: 'Visualiseer je hele verbouwing op een tijdlijn. Zie taken, deadlines en voortgang in één oogopslag — nooit meer een fase vergeten.',
   },
   {
     icon: (
@@ -39,16 +39,16 @@ const features = [
       </svg>
     ),
     title: 'Offerte vergelijker',
-    description: 'Vergelijk offertes naast elkaar. Zie direct wie de beste prijs biedt voor jouw verbouwing.',
+    description: 'Voeg offertes toe en vergelijk ze direct naast elkaar. Zie wie de beste prijs biedt en sla je keuze op per project.',
   },
   {
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
-    title: 'AI assistent',
-    description: 'Stel elke vraag over je verbouwing. Onze AI kent jouw project en geeft persoonlijk advies.',
+    title: 'Aannemers beheer',
+    description: 'Al je contacten op één plek. Sla namen, telefoonnummers en specialiteiten op per project — altijd snel de juiste aannemer bereiken.',
   },
   {
     icon: (
@@ -57,16 +57,16 @@ const features = [
       </svg>
     ),
     title: 'Foto dagboek',
-    description: "Documenteer elke fase van je verbouwing. Maak voor-, tijdens- en na-foto's per ruimte.",
+    description: "Documenteer elke fase van je verbouwing. Maak voor-, tijdens- en na-foto's per ruimte en volg de transformatie stap voor stap.",
   },
   {
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
       </svg>
     ),
-    title: 'Kalender',
-    description: 'Nooit een deadline missen. Plan taken en herinneringen en houd overzicht op je planning.',
+    title: 'Analytics & streak',
+    description: 'Diepgaande rapportages over je project. Budget vs. werkelijk, ruimte-voortgang en een dagelijkse streak om je gemotiveerd te houden.',
   },
 ];
 
@@ -74,17 +74,17 @@ const steps = [
   {
     number: '01',
     title: 'Maak je project aan',
-    description: 'Geef je verbouwing een naam, kies het type (keuken, badkamer, etc.) en stel je totaalbudget in.',
+    description: 'Geef je verbouwing een naam, kies het type (keuken, badkamer, uitbouw...) en stel je totaalbudget in.',
   },
   {
     number: '02',
-    title: 'Voeg aannemers, offertes en kosten toe',
-    description: 'Houd bij wie er aan het werk is, vergelijk offertes en registreer elke uitgave per categorie.',
+    title: 'Plan, voeg toe en vergelijk',
+    description: 'Maak een Gantt planning, voeg aannemers en offertes toe en registreer elke uitgave per categorie en ruimte.',
   },
   {
     number: '03',
-    title: 'Houd controle met realtime overzicht en AI',
-    description: 'Zie in één oogopslag hoe je project ervoor staat en stel vragen aan onze AI assistent.',
+    title: 'Houd controle met AI en analytics',
+    description: 'Stel vragen aan onze AI assistent die jouw project kent, en bekijk realtime rapportages over budget en voortgang.',
   },
 ];
 
@@ -100,14 +100,14 @@ const reviews = [
     name: 'Thomas Bakker',
     location: 'Rotterdam',
     project: 'Complete keukenrenovatie',
-    text: 'Het vergelijken van offertes is geweldig. Ik had drie aannemers en kon hun offertes direct naast elkaar zien. Scheelt enorm veel tijd en stress.',
+    text: 'Het vergelijken van offertes is geweldig. Ik had drie aannemers en kon hun offertes direct naast elkaar zien. De Gantt planning hielp me alle fases overzichtelijk te houden.',
     rating: 5,
   },
   {
     name: 'Sandra Hendriks',
     location: 'Utrecht',
     project: 'Woonkamer uitbreiding',
-    text: 'De AI assistent is ongelofelijk handig. Ik vroeg of ik een vergunning nodig had voor mijn dakkapel en kreeg direct een duidelijk antwoord.',
+    text: 'De AI assistent is ongelofelijk handig. Ik vroeg of ik een vergunning nodig had voor mijn dakkapel en kreeg direct een duidelijk antwoord op basis van mijn eigen project.',
     rating: 5,
   },
 ];
@@ -130,9 +130,21 @@ const faqs = [
     answer: 'Met het gratis abonnement heb je alleen-lezen toegang tot je gegevens. Je kunt geen nieuwe projecten aanmaken of gegevens bewerken, maar je data blijft bewaard.',
   },
   {
+    question: 'Wat kan de AI assistent allemaal?',
+    answer: 'De AI kent jouw project volledig — budget, taken, ruimtes, aannemers en offertes. Je kunt vragen stellen over vergunningen, materiaalkosten, tips voor aannemers of gewoon advies over de planning.',
+  },
+  {
     question: 'Kan ik meerdere verbouwingen tegelijk beheren?',
     answer: 'Met Pro kun je onbeperkt projecten aanmaken en beheren. Handig als je meerdere kamers tegelijk verbouwt of een aannemer bent die meerdere projecten beheert.',
   },
+];
+
+// AI conversation mock data
+const aiMessages = [
+  { role: 'user', text: 'Hoeveel heb ik dit weekend uitgegeven aan de keuken?' },
+  { role: 'ai', text: 'Dit weekend heb je €1.840 uitgegeven aan de keuken: €1.200 voor de nieuwe tegels bij Gamma en €640 voor het beglazingwerk van De Vries Glas.' },
+  { role: 'user', text: 'Heb ik nog budget over voor de keukenkasten?' },
+  { role: 'ai', text: 'Je keukenbudget is €12.000 en je hebt nu €7.340 uitgegeven — er is nog €4.660 beschikbaar. Dat is genoeg voor de kasten als je binnen dat bedrag blijft.' },
 ];
 
 export default function LandingPage() {
@@ -142,6 +154,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 bg-white border-b" style={{ borderColor: '#E5E7EB' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
+            {/* Logo */}
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#288760' }}>
                 R
@@ -149,21 +162,32 @@ export default function LandingPage() {
               <span className="font-bold text-lg" style={{ color: '#1A1A1A' }}>Renofloww</span>
             </div>
 
+            {/* Desktop nav links */}
             <div className="hidden md:flex items-center gap-8">
               <a href="#functies" className="text-sm font-medium hover:opacity-80 transition-opacity" style={{ color: '#6B7280' }}>Functies</a>
+              <a href="#ai" className="text-sm font-medium hover:opacity-80 transition-opacity" style={{ color: '#6B7280' }}>AI assistent</a>
               <a href="#prijzen" className="text-sm font-medium hover:opacity-80 transition-opacity" style={{ color: '#6B7280' }}>Prijzen</a>
-              <Link href="/login" className="text-sm font-medium hover:opacity-80 transition-opacity" style={{ color: '#6B7280' }}>Inloggen</Link>
             </div>
 
-            <Link
-              href="/register"
-              className="hidden md:inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#288760' }}
-            >
-              Gratis proberen
-            </Link>
+            {/* Desktop CTA buttons */}
+            <div className="hidden md:flex items-center gap-3">
+              <Link
+                href="/login"
+                className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
+                style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
+              >
+                Inloggen
+              </Link>
+              <Link
+                href="/register"
+                className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: '#288760' }}
+              >
+                Gratis proberen
+              </Link>
+            </div>
 
-            {/* Mobile: login + register */}
+            {/* Mobile buttons */}
             <div className="md:hidden flex items-center gap-2">
               <Link
                 href="/login"
@@ -186,7 +210,11 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden py-20 sm:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* subtle background pattern */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: 'radial-gradient(circle at 70% 30%, rgba(40,135,96,0.06) 0%, transparent 60%)',
+        }} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-6" style={{ backgroundColor: '#B7E5BA', color: '#1A5140' }}>
@@ -198,7 +226,7 @@ export default function LandingPage() {
                 <span style={{ color: '#288760' }}>zonder stress</span>
               </h1>
               <p className="text-xl mb-8 leading-relaxed" style={{ color: '#6B7280' }}>
-                Houd de controle over je verbouwing. Budget, aannemers, offertes en planning — alles op één plek.
+                Budget, aannemers, offertes, Gantt planning en een AI assistent die jouw project kent — alles op één plek.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
@@ -216,26 +244,28 @@ export default function LandingPage() {
                   className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl text-base font-semibold border transition-colors hover:bg-white"
                   style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
                 >
-                  Bekijk een voorbeeld
+                  Bekijk alle functies
                 </a>
               </div>
               <p className="mt-4 text-sm" style={{ color: '#6B7280' }}>
-                Geen creditcard vereist · Opzeggen wanneer je wilt
+                Geen creditcard vereist · Direct opzegbaar
               </p>
             </div>
 
             {/* Dashboard mockup */}
             <div className="relative">
               <div className="rounded-2xl overflow-hidden shadow-2xl border" style={{ borderColor: '#E5E7EB', boxShadow: '0 24px 64px rgba(0,0,0,0.12)' }}>
+                {/* browser chrome */}
                 <div className="px-4 py-3 flex items-center gap-2 border-b" style={{ backgroundColor: '#1A5140', borderColor: '#288760' }}>
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EF4444' }}></div>
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#F59E0B' }}></div>
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#10B981' }}></div>
                   <div className="ml-2 flex-1 bg-white/10 rounded text-xs text-white/60 px-2 py-0.5">renofloww.nl/dashboard</div>
                 </div>
+                {/* dashboard mockup */}
                 <div className="p-6" style={{ background: 'linear-gradient(135deg, #1A5140 0%, #288760 50%, #5CA87C 100%)' }}>
                   <div className="text-white mb-4">
-                    <p className="text-sm opacity-70">Goedemorgen, Marieke</p>
+                    <p className="text-sm opacity-70">Goedemiddag, Marieke</p>
                     <p className="text-xl font-bold">Badkamer renovatie</p>
                   </div>
                   <div className="grid grid-cols-3 gap-3 mb-4">
@@ -250,24 +280,44 @@ export default function LandingPage() {
                       </div>
                     ))}
                   </div>
+                  {/* mini gantt */}
                   <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
-                    <div className="flex justify-between text-white text-sm mb-2">
-                      <span>Budget</span>
-                      <span>€8.500 / €13.200</span>
-                    </div>
-                    <div className="w-full rounded-full h-2" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
-                      <div className="h-2 rounded-full" style={{ width: '64%', backgroundColor: '#B7E5BA' }}></div>
-                    </div>
+                    <p className="text-white text-xs font-medium mb-3 opacity-80">Gantt planning</p>
+                    {[
+                      { label: 'Sloop', pct: 100, done: true },
+                      { label: 'Tegels', pct: 65, done: false },
+                      { label: 'Sanitair', pct: 20, done: false },
+                    ].map((row) => (
+                      <div key={row.label} className="flex items-center gap-2 mb-2 last:mb-0">
+                        <span className="text-white/70 text-xs w-12">{row.label}</span>
+                        <div className="flex-1 rounded-full h-1.5" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+                          <div className="h-1.5 rounded-full" style={{ width: `${row.pct}%`, backgroundColor: row.done ? '#B7E5BA' : 'rgba(255,255,255,0.7)' }}></div>
+                        </div>
+                        <span className="text-white/60 text-xs">{row.pct}%</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
+              {/* floating AI chip */}
               <div className="absolute -bottom-4 -left-4 rounded-xl p-3 shadow-lg" style={{ backgroundColor: 'white', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ backgroundColor: '#B7E5BA' }}>💬</div>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ backgroundColor: '#B7E5BA' }}>✨</div>
                   <div>
                     <p className="text-xs font-medium" style={{ color: '#1A1A1A' }}>AI Assistent</p>
-                    <p className="text-xs" style={{ color: '#6B7280' }}>Vraag alles over je verbouwing</p>
+                    <p className="text-xs" style={{ color: '#6B7280' }}>Kent jouw project volledig</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* floating streak chip */}
+              <div className="absolute -top-3 -right-3 rounded-xl px-3 py-2 shadow-lg" style={{ backgroundColor: 'white', boxShadow: '0 8px 24px rgba(0,0,0,0.10)' }}>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base">🔥</span>
+                  <div>
+                    <p className="text-xs font-bold" style={{ color: '#1A1A1A' }}>12 dagen streak</p>
+                    <p className="text-xs" style={{ color: '#6B7280' }}>Blijf consistent!</p>
                   </div>
                 </div>
               </div>
@@ -281,13 +331,13 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4" style={{ color: '#1A1A1A' }}>Alles wat je nodig hebt</h2>
-            <p className="text-lg" style={{ color: '#6B7280' }}>Van budget tot foto dagboek — Renofloww heeft alle tools voor een succesvolle verbouwing.</p>
+            <p className="text-lg" style={{ color: '#6B7280' }}>Van Gantt planning tot AI assistent — Renofloww heeft alle tools voor een succesvolle verbouwing.</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="rounded-2xl p-6 border bg-white transition-shadow hover:shadow-md"
+                className="rounded-2xl p-6 border bg-white transition-all hover:shadow-lg hover:-translate-y-0.5"
                 style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
               >
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: '#B7E5BA', color: '#1A5140' }}>
@@ -297,6 +347,126 @@ export default function LandingPage() {
                 <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{feature.description}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* AI Spotlight */}
+      <section id="ai" className="py-24 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0F3323 0%, #1A5140 40%, #1E6048 100%)' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+
+            {/* Left: copy */}
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold mb-6" style={{ backgroundColor: 'rgba(183,229,186,0.15)', color: '#B7E5BA', border: '1px solid rgba(183,229,186,0.25)' }}>
+                <span className="text-base">✨</span>
+                AI assistent
+              </div>
+              <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
+                Een assistent die<br />
+                <span style={{ color: '#B7E5BA' }}>jouw project kent</span>
+              </h2>
+              <p className="text-lg mb-8 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                Onze AI is gekoppeld aan al je projectdata — budget, taken, offertes, aannemers en ruimtes. Stel elke vraag en krijg direct een antwoord dat klopt met jouw situatie.
+              </p>
+
+              <div className="space-y-4 mb-10">
+                {[
+                  { icon: '💬', title: 'Stel elke vraag', desc: 'Over vergunningen, materialen, kosten of planning — de AI weet het antwoord.' },
+                  { icon: '📊', title: 'Realtime inzicht', desc: 'Vraag je saldo op, welke taken er openstaan of hoe je budget er voorstaat.' },
+                  { icon: '🔍', title: 'Slim advies', desc: 'De AI vergelijkt je offertes, signaleert risico\'s en geeft praktisch advies.' },
+                ].map((item) => (
+                  <div key={item.title} className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-base" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{item.title}</p>
+                      <p className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Link
+                href="/register"
+                className="inline-flex items-center px-6 py-3.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
+                style={{ backgroundColor: '#288760', color: 'white' }}
+              >
+                Probeer de AI gratis
+                <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+            </div>
+
+            {/* Right: chat mockup */}
+            <div className="relative">
+              <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#0A2518', boxShadow: '0 24px 64px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                {/* chat header */}
+                <div className="px-4 py-3 flex items-center gap-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)', backgroundColor: '#0F3323' }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #288760, #5CA87C)' }}>
+                    <span className="text-white text-sm">✨</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Renofloww AI</p>
+                    <div className="flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#10B981' }}></div>
+                      <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Kent je project · Altijd beschikbaar</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* messages */}
+                <div className="p-5 space-y-4">
+                  {aiMessages.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      {msg.role === 'ai' && (
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 text-xs" style={{ background: 'linear-gradient(135deg, #288760, #5CA87C)' }}>
+                          ✨
+                        </div>
+                      )}
+                      <div
+                        className="px-4 py-3 rounded-2xl text-sm leading-relaxed max-w-xs"
+                        style={msg.role === 'user'
+                          ? { backgroundColor: '#288760', color: 'white', borderBottomRightRadius: 4 }
+                          : { backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.88)', borderBottomLeftRadius: 4 }
+                        }
+                      >
+                        {msg.text}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* typing indicator */}
+                  <div className="flex justify-start items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs" style={{ background: 'linear-gradient(135deg, #288760, #5CA87C)' }}>
+                      ✨
+                    </div>
+                    <div className="px-4 py-3 rounded-2xl flex items-center gap-1" style={{ backgroundColor: 'rgba(255,255,255,0.07)', borderBottomLeftRadius: 4 }}>
+                      <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: 'rgba(255,255,255,0.4)', animationDelay: '0ms' }}></div>
+                      <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: 'rgba(255,255,255,0.4)', animationDelay: '150ms' }}></div>
+                      <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: 'rgba(255,255,255,0.4)', animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* input bar */}
+                <div className="px-4 pb-4">
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <p className="flex-1 text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>Stel een vraag over je verbouwing...</p>
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#288760' }}>
+                      <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* glow effect */}
+              <div className="absolute -inset-4 -z-10 rounded-3xl opacity-30 blur-2xl" style={{ background: 'radial-gradient(ellipse, #288760 0%, transparent 70%)' }} />
+            </div>
           </div>
         </div>
       </section>
@@ -355,7 +525,7 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Pro */}
+            {/* Pro Monthly */}
             <div className="rounded-2xl p-6 border-2 relative" style={{ borderColor: '#288760', backgroundColor: '#F8FAF9', boxShadow: '0 8px 32px rgba(40,135,96,0.15)' }}>
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ backgroundColor: '#288760' }}>Meest gekozen</span>
@@ -369,7 +539,15 @@ export default function LandingPage() {
                 </div>
               </div>
               <ul className="space-y-3 mb-6">
-                {['Onbeperkt projecten', 'Budget tracker', 'Aannemers & offertes', 'AI assistent', 'Foto dagboek', 'Kalender & herinneringen', 'Analytics & rapportages'].map((item) => (
+                {[
+                  'Onbeperkt projecten',
+                  'Budget tracker & analytics',
+                  'Gantt planning',
+                  'Aannemers & offerte vergelijker',
+                  'AI assistent',
+                  'Foto dagboek per ruimte',
+                  'Streak & voortgangsrapportage',
+                ].map((item) => (
                   <li key={item} className="flex items-center gap-2 text-sm" style={{ color: '#1A1A1A' }}>
                     <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#288760' }}>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -467,16 +645,25 @@ export default function LandingPage() {
           <p className="text-lg mb-8" style={{ color: '#B7E5BA' }}>
             Probeer Renofloww 14 dagen gratis. Geen creditcard vereist.
           </p>
-          <Link
-            href="/register"
-            className="inline-flex items-center px-8 py-4 rounded-xl text-base font-semibold bg-white transition-opacity hover:opacity-90"
-            style={{ color: '#288760' }}
-          >
-            Gratis starten
-            <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-xl text-base font-semibold bg-white transition-opacity hover:opacity-90"
+              style={{ color: '#288760' }}
+            >
+              Gratis starten
+              <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-xl text-base font-semibold transition-opacity hover:opacity-80"
+              style={{ color: 'white', border: '1.5px solid rgba(255,255,255,0.4)' }}
+            >
+              Al een account? Inloggen
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -492,6 +679,7 @@ export default function LandingPage() {
             </div>
             <div className="flex items-center gap-6">
               <a href="#functies" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Functies</a>
+              <a href="#ai" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>AI assistent</a>
               <a href="#prijzen" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Prijzen</a>
               <Link href="/login" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Inloggen</Link>
               <Link href="/register" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Registreren</Link>
