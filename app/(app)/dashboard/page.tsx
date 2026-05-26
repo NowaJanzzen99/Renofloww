@@ -45,15 +45,29 @@ export default async function DashboardPage() {
     rooms = roomsRes.data || [];
   }
 
-  const todayTasks = tasks.filter((t) => t.due_date === new Date().toISOString().split('T')[0]);
+  // Local-date helper (server runs UTC; use wall-clock fields to avoid off-by-one)
+  const localToday = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+
+  const todayTasks = tasks.filter((t) => t.due_date === localToday);
   const pendingQuotes = quotes.filter((q) => q.status === 'in_behandeling' || q.status === 'pending');
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const budget = activeProject?.budget ? Number(activeProject.budget) : 0;
   const budgetPercentage = budget > 0 ? Math.min(Math.round((totalExpenses / budget) * 100), 100) : 0;
 
-  const activeDays = activeProject?.start_date
-    ? Math.floor((Date.now() - new Date(activeProject.start_date).getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
+  // Total unique dates on which the user did something (expenses or completed tasks).
+  // This is a count of real activity days — never negative, independent of start_date.
+  const activeDatesSet = new Set<string>();
+  expenses.forEach((e) => {
+    const d = e.date || (e.created_at ? e.created_at.split('T')[0] : null);
+    if (d) activeDatesSet.add(d);
+  });
+  tasks
+    .filter((t) => t.completed_at)
+    .forEach((t) => activeDatesSet.add(t.completed_at!.split('T')[0]));
+  const activeDays = activeDatesSet.size;
 
   return (
     <DashboardClient

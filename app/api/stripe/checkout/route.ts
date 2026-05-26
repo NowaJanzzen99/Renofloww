@@ -46,11 +46,9 @@ export async function POST(req: NextRequest) {
         .eq('id', user.id);
     }
 
-    // Always derive baseUrl from the incoming request so cancel/success URLs
-    // work correctly on any deployment (production, preview, or localhost).
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+    // Always derive baseUrl from the request itself — never rely on
+    // NEXT_PUBLIC_APP_URL which may point to an unresolved custom domain.
+    const baseUrl = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

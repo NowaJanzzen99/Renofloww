@@ -53,10 +53,12 @@ function ActiveDaysCard({
   activeDays,
   startDate,
   activeDates,
+  currentStreak,
 }: {
   activeDays: number;
   startDate?: string | null;
   activeDates: Set<string>;
+  currentStreak: number;
 }) {
   const today = localDateStr();
 
@@ -78,18 +80,6 @@ function ActiveDaysCard({
     });
   }, [today, activeDates]);
 
-  const currentStreak = useMemo(() => {
-    // Count consecutive active days going backwards from today
-    const [ty, tm, td] = today.split('-').map(Number);
-    let streak = 0;
-    let d = new Date(ty, tm - 1, td);
-    while (activeDates.has(localDateStr(d))) {
-      streak++;
-      d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
-    }
-    return streak;
-  }, [today, activeDates]);
-
   return (
     <div
       className="rounded-2xl p-4 sm:p-5 flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
@@ -100,24 +90,22 @@ function ActiveDaysCard({
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
-        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#C4B5FD' }}>Actieve dagen</p>
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#C4B5FD' }}>Huidige streak</p>
         <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(167,139,250,0.15)' }}>
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#C4B5FD' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" style={{ color: '#C4B5FD' }}>
+            <path d="M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 17.03 19.32C18.86 17.66 19.5 15 18.56 12.72L18.43 12.46C18.22 12 17.66 11.2 17.66 11.2Z" />
           </svg>
         </div>
       </div>
 
-      {/* Number */}
-      <div className="flex items-baseline gap-2 mb-3">
-        <span className="text-4xl font-black text-white">{activeDays}</span>
+      {/* Number — always shows the CURRENT STREAK (same as streak page) */}
+      <div className="flex items-baseline gap-2 mb-1">
+        <span className="text-4xl font-black text-white">{currentStreak}</span>
         <span className="text-2xl leading-none">🔥</span>
-        {currentStreak > 0 && (
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(167,139,250,0.2)', color: '#E9D5FF' }}>
-            {currentStreak}🔥 streak
-          </span>
-        )}
       </div>
+      <p className="text-xs mb-3" style={{ color: 'rgba(167,139,250,0.7)' }}>
+        {currentStreak === 1 ? 'dag op rij' : 'dagen op rij'} · {activeDays} totaal
+      </p>
 
       {/* Dot grid — always current week Mon–Sun, one clean row */}
       <div className="flex-1">
@@ -256,10 +244,29 @@ export default function DashboardClient({
 
   const activeDates = useMemo(() => {
     const s = new Set<string>();
-    expenses.forEach(e => { if (e.created_at) s.add(e.created_at.split('T')[0]); });
+    // Use expense.date (the actual date field) when available — avoids UTC offset issues
+    expenses.forEach(e => {
+      const d = (e as { date?: string }).date || (e.created_at ? e.created_at.split('T')[0] : null);
+      if (d) s.add(d);
+    });
     allTasks.filter(t => t.completed_at).forEach(t => s.add(t.completed_at!.split('T')[0]));
     return s;
   }, [expenses, allTasks]);
+
+  // Current consecutive streak — same algorithm as the streak page (with grace period for yesterday)
+  const currentStreak = useMemo(() => {
+    const todayStr = localDateStr();
+    const yesterday = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return localDateStr(d); })();
+    const startFrom = activeDates.has(todayStr) ? todayStr : activeDates.has(yesterday) ? yesterday : null;
+    if (!startFrom) return 0;
+    let streak = 0;
+    let d = new Date(startFrom.split('-').join('/'));
+    while (activeDates.has(localDateStr(d))) {
+      streak++;
+      d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+    }
+    return streak;
+  }, [activeDates]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -414,6 +421,7 @@ export default function DashboardClient({
         activeDays={activeDays}
         startDate={activeProject?.start_date}
         activeDates={activeDates}
+        currentStreak={currentStreak}
       />
     ),
   };
@@ -488,8 +496,8 @@ export default function DashboardClient({
                 </div>
                 <div className="w-px h-10" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
                 <div className="text-center">
-                  <p className="text-2xl sm:text-3xl font-black text-white">{activeDays}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>actief</p>
+                  <p className="text-2xl sm:text-3xl font-black text-white">{currentStreak}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>🔥 streak</p>
                 </div>
               </div>
             )}
