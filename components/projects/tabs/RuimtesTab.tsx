@@ -13,7 +13,7 @@ interface Props {
 export default function RuimtesTab({ project, initialRooms, initialTasks }: Props) {
   const [rooms, setRooms] = useState(initialRooms);
   const [tasks, setTasks] = useState(initialTasks);
-  const [expandedRoom, setExpandedRoom] = useState<string | null>(null);
+  const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -130,13 +130,19 @@ export default function RuimtesTab({ project, initialRooms, initialTasks }: Prop
           {rooms.map((room) => {
             const progress = getRoomProgress(room.id);
             const roomTasks = getTasksForRoom(room.id);
-            const isExpanded = expandedRoom === room.id;
+            const isExpanded = expandedRooms.has(room.id);
             const isQuickAdding = quickAddRoomId === room.id;
+            const toggleExpand = () => setExpandedRooms(prev => {
+              const next = new Set(prev);
+              if (next.has(room.id)) next.delete(room.id);
+              else next.add(room.id);
+              return next;
+            });
 
             return (
               <div key={room.id} className="rounded-2xl bg-white border overflow-hidden" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                 <button
-                  onClick={() => setExpandedRoom(isExpanded ? null : room.id)}
+                  onClick={toggleExpand}
                   className="w-full p-4 text-left"
                 >
                   <div className="flex items-center justify-between mb-3">

@@ -131,16 +131,35 @@ export default function Sidebar() {
 
           {/* Upgrade button (only for non-pro) */}
           {profile && !profile.is_pro && (
-            <Link
-              href="/settings#abonnement"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-              style={{ color: '#F59E0B' }}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
-              Upgrade naar Pro
-            </Link>
+            <>
+              <style>{`
+                @keyframes rf-shimmer {
+                  0% { transform: translateX(-100%) skewX(-15deg); }
+                  100% { transform: translateX(250%) skewX(-15deg); }
+                }
+                .rf-upgrade-btn .rf-shimmer { animation: rf-shimmer 2.2s ease-in-out infinite; }
+              `}</style>
+              <Link
+                href="/settings#abonnement"
+                className="rf-upgrade-btn group relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold overflow-hidden mt-1"
+                style={{
+                  background: 'linear-gradient(135deg, #D97706 0%, #F59E0B 50%, #FBBF24 100%)',
+                  color: 'white',
+                  boxShadow: '0 2px 10px rgba(245,158,11,0.4)',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 18px rgba(245,158,11,0.6)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(245,158,11,0.4)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+              >
+                {/* Shimmer overlay */}
+                <div className="rf-shimmer absolute inset-0 w-1/3 bg-white opacity-20 pointer-events-none" />
+                <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                <span>Upgrade naar Pro</span>
+                <svg className="w-3.5 h-3.5 ml-auto shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+              </Link>
+            </>
           )}
         </nav>
 

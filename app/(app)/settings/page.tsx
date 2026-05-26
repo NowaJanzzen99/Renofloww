@@ -256,88 +256,185 @@ export default function SettingsPage() {
 
       {/* Subscription tab */}
       {activeTab === 'Abonnement' && (
-        <div className="space-y-4">
-          {/* Current plan */}
-          <div className="rounded-2xl bg-white border p-6" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-            <h2 className="text-base font-semibold mb-4" style={{ color: '#1A1A1A' }}>Huidig abonnement</h2>
-            {profile?.is_pro ? (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="px-3 py-1 rounded-full text-sm font-bold text-white" style={{ backgroundColor: '#288760' }}>Pro</span>
-                  <span className="text-sm" style={{ color: '#6B7280' }}>Actief</span>
-                </div>
-                <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Je hebt toegang tot alle Pro functies.</p>
-                <button className="text-sm font-medium" style={{ color: '#EF4444' }}>Abonnement opzeggen</button>
+        <div className="space-y-5">
+          <style>{`
+            @keyframes rf-plan-shimmer {
+              0% { transform: translateX(-100%) skewX(-20deg); }
+              100% { transform: translateX(250%) skewX(-20deg); }
+            }
+            .rf-plan-btn { position: relative; overflow: hidden; transition: all 0.2s ease; }
+            .rf-plan-btn::after {
+              content: '';
+              position: absolute; inset: 0;
+              width: 33%;
+              background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+              animation: rf-plan-shimmer 2.5s ease-in-out infinite;
+              pointer-events: none;
+            }
+            .rf-plan-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(40,135,96,0.45) !important; }
+            .rf-plan-btn:disabled::after { display: none; }
+          `}</style>
+
+          {/* Current status banner */}
+          {profile?.is_pro ? (
+            <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #1a3a2a 100%)', boxShadow: '0 4px 20px rgba(13,31,26,0.25)' }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(40,135,96,0.3)' }}>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style={{ color: '#6EE7B7' }}>
+                  <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
               </div>
-            ) : trialActive ? (
               <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="px-3 py-1 rounded-full text-sm font-bold" style={{ backgroundColor: '#B7E5BA', color: '#1A5140' }}>Proefperiode</span>
-                  <span className="text-sm" style={{ color: '#6B7280' }}>{trialDaysLeft} dagen resterend</span>
-                </div>
-                <div className="w-full h-2 rounded-full mb-4" style={{ backgroundColor: '#E5E7EB' }}>
-                  <div
-                    className="h-2 rounded-full"
-                    style={{
-                      width: `${Math.max(0, (trialDaysLeft / 14) * 100)}%`,
-                      backgroundColor: trialDaysLeft > 7 ? '#288760' : trialDaysLeft > 3 ? '#F59E0B' : '#EF4444',
-                    }}
-                  />
-                </div>
-                <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Je proefperiode loopt af op {trialEndsAt ? formatDate(trialEndsAt.toISOString()) : '—'}.</p>
+                <p className="text-sm font-black text-white">Renofloww Pro — Actief</p>
+                <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>Je hebt volledige toegang tot alle functies.</p>
               </div>
-            ) : (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="px-3 py-1 rounded-full text-sm font-bold" style={{ backgroundColor: '#F3F4F6', color: '#6B7280' }}>Gratis</span>
+            </div>
+          ) : trialActive ? (
+            <div className="rounded-2xl p-5 border" style={{ borderColor: '#6EE7B7', backgroundColor: '#F0FDF4' }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: '#B7E5BA', color: '#1A5140' }}>Proefperiode actief</span>
+                  <span className="text-sm font-semibold" style={{ color: trialDaysLeft <= 3 ? '#EF4444' : '#1A5140' }}>nog {trialDaysLeft} {trialDaysLeft === 1 ? 'dag' : 'dagen'}</span>
                 </div>
-                <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Alleen-lezen toegang. Upgrade om te blijven verbouwen.</p>
               </div>
-            )}
-          </div>
+              <div className="w-full h-2.5 rounded-full mb-2 overflow-hidden" style={{ backgroundColor: '#D1FAE5' }}>
+                <div className="h-2.5 rounded-full transition-all" style={{ width: `${Math.max(5, (trialDaysLeft / 14) * 100)}%`, backgroundColor: trialDaysLeft > 7 ? '#288760' : trialDaysLeft > 3 ? '#F59E0B' : '#EF4444' }} />
+              </div>
+              <p className="text-xs" style={{ color: '#1A5140' }}>
+                Proefperiode eindigt op {trialEndsAt ? formatDate(trialEndsAt.toISOString()) : '—'} — upgrade nu om toegang te behouden.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-2xl p-5 border" style={{ borderColor: '#FECACA', backgroundColor: '#FEF2F2' }}>
+              <p className="text-sm font-semibold mb-0.5" style={{ color: '#EF4444' }}>Proefperiode verlopen</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Upgrade naar Pro om je verbouwing te blijven beheren.</p>
+            </div>
+          )}
+
+          {/* Features overview */}
+          {!profile?.is_pro && (
+            <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+              <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#9CA3AF' }}>Wat krijg je met Pro</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {[
+                  { icon: '🏗️', title: 'Onbeperkt projecten', desc: 'Beheer meerdere verbouwingen tegelijk' },
+                  { icon: '🤖', title: 'AI assistent',         desc: 'Plan taken, registreer kosten via chat' },
+                  { icon: '📊', title: 'Volledige analytics',  desc: 'Inzicht in voortgang en kosten' },
+                  { icon: '📅', title: 'Gantt planning',       desc: 'Visuele tijdlijn per ruimte' },
+                  { icon: '💶', title: 'Offertevergelijker',   desc: 'Vergelijk aannemers side-by-side' },
+                  { icon: '🔔', title: 'Slimme herinneringen', desc: 'Nooit meer een deadline vergeten' },
+                ].map((f) => (
+                  <div key={f.title} className="flex items-start gap-3">
+                    <span className="text-lg shrink-0">{f.icon}</span>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{f.title}</p>
+                      <p className="text-xs" style={{ color: '#6B7280' }}>{f.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Pricing cards */}
           {!profile?.is_pro && (
             <div className="grid sm:grid-cols-2 gap-4">
-              <div className="rounded-2xl border-2 p-5" style={{ borderColor: '#288760', backgroundColor: '#F8FAF9' }}>
-                <h3 className="text-base font-bold mb-1" style={{ color: '#1A1A1A' }}>Pro maandelijks</h3>
-                <p className="text-3xl font-bold mb-4" style={{ color: '#288760' }}>€9,99<span className="text-base font-normal" style={{ color: '#6B7280' }}>/maand</span></p>
-                <ul className="space-y-2 mb-5">
-                  {['Onbeperkt projecten', 'AI assistent', 'Alle functies'].map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm" style={{ color: '#1A1A1A' }}>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#288760' }}>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+              {/* Yearly — featured */}
+              <div
+                className="rounded-2xl p-6 relative flex flex-col"
+                style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #1a3a2a 45%, #1e4d36 100%)', boxShadow: '0 8px 32px rgba(13,31,26,0.3)', order: 0 }}
+              >
+                {/* Glow */}
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(40,135,96,0.3) 0%, transparent 70%)' }} />
+                {/* Badge */}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="px-3 py-1 rounded-full text-xs font-black whitespace-nowrap" style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)', color: '#1A1A1A', boxShadow: '0 2px 8px rgba(245,158,11,0.5)' }}>
+                    ⭐ Meest populair
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#6EE7B7' }}>Jaarlijks</p>
+                  <div className="flex items-baseline gap-1.5 mb-0.5">
+                    <span className="text-4xl font-black text-white">€79</span>
+                    <span className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>/jaar</span>
+                  </div>
+                  <p className="text-xs mb-1" style={{ color: '#6EE7B7' }}>€6,58/maand · <strong>Bespaar €40</strong></p>
+                  <p className="text-[11px] mb-5" style={{ color: 'rgba(255,255,255,0.4)' }}>= 2 maanden gratis</p>
+                </div>
+                <ul className="space-y-2.5 mb-6 flex-1">
+                  {[
+                    'Alles van Pro maandelijks',
+                    'Prioriteit klantenservice',
+                    'Vroege toegang tot nieuwe functies',
+                    'Onbeperkte projectarchivering',
+                  ].map((f) => (
+                    <li key={f} className="flex items-center gap-2.5 text-sm text-white">
+                      <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(110,231,183,0.2)' }}>
+                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#6EE7B7' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
                       {f}
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || 'price_1Tb6pAHnmzUK6aJZDQPKmBRg')} disabled={saving} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity" style={{ backgroundColor: '#288760' }}>
-                  {saving ? 'Laden...' : 'Upgrade naar Pro'}
+                <button
+                  onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY || 'price_1Tb6pDHnmzUK6aJZYadqyaq9')}
+                  disabled={saving}
+                  className="rf-plan-btn w-full py-3 rounded-xl text-sm font-black text-white disabled:opacity-60"
+                  style={{ backgroundColor: '#288760', boxShadow: '0 4px 16px rgba(40,135,96,0.4)' }}
+                >
+                  {saving ? 'Laden...' : 'Start jaarlijks — Bespaar €40 →'}
                 </button>
               </div>
-              <div className="rounded-2xl border p-5 relative" style={{ borderColor: '#E5E7EB', backgroundColor: 'white' }}>
-                <div className="absolute -top-3 left-4">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ backgroundColor: '#B7E5BA', color: '#1A5140' }}>2 maanden gratis</span>
+
+              {/* Monthly */}
+              <div
+                className="rounded-2xl p-6 bg-white border flex flex-col"
+                style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', order: 1 }}
+              >
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#9CA3AF' }}>Maandelijks</p>
+                  <div className="flex items-baseline gap-1.5 mb-5">
+                    <span className="text-4xl font-black" style={{ color: '#1A1A1A' }}>€9,99</span>
+                    <span className="text-sm" style={{ color: '#9CA3AF' }}>/maand</span>
+                  </div>
                 </div>
-                <h3 className="text-base font-bold mb-1" style={{ color: '#1A1A1A' }}>Jaarlijks</h3>
-                <p className="text-3xl font-bold mb-1" style={{ color: '#1A1A1A' }}>€79<span className="text-base font-normal" style={{ color: '#6B7280' }}>/jaar</span></p>
-                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>€6,58/maand · Bespaar €40</p>
-                <ul className="space-y-2 mb-5">
-                  {['Alles van Pro', 'Prioriteit support', 'Vroege toegang'].map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm" style={{ color: '#1A1A1A' }}>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#288760' }}>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                <ul className="space-y-2.5 mb-6 flex-1">
+                  {[
+                    'Onbeperkt projecten',
+                    'AI assistent (ChatGPT-stijl)',
+                    'Offertevergelijker',
+                    'Gantt-planning per ruimte',
+                    'Volledige analytics',
+                    'Streaks & prestaties',
+                  ].map((f) => (
+                    <li key={f} className="flex items-center gap-2.5 text-sm" style={{ color: '#1A1A1A' }}>
+                      <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#F0FDF4' }}>
+                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#288760' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
                       {f}
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY || 'price_1Tb6pDHnmzUK6aJZYadqyaq9')} disabled={saving} className="w-full py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50 disabled:opacity-60" style={{ borderColor: '#288760', color: '#288760' }}>
-                  {saving ? 'Laden...' : 'Jaarlijks starten'}
+                <button
+                  onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || 'price_1Tb6pAHnmzUK6aJZDQPKmBRg')}
+                  disabled={saving}
+                  className="rf-plan-btn w-full py-3 rounded-xl text-sm font-bold disabled:opacity-60"
+                  style={{ border: '2px solid #288760', color: '#288760', backgroundColor: 'transparent', boxShadow: '0 2px 8px rgba(40,135,96,0.15)' }}
+                >
+                  {saving ? 'Laden...' : 'Maandelijks starten →'}
                 </button>
               </div>
             </div>
+          )}
+
+          {/* Trust line */}
+          {!profile?.is_pro && (
+            <p className="text-center text-xs" style={{ color: '#9CA3AF' }}>
+              🔒 Veilig betalen via Stripe · Geen verborgen kosten · Direct opzegbaar
+            </p>
           )}
         </div>
       )}

@@ -467,7 +467,7 @@ export default function DashboardClient({
               <h1 className="text-2xl sm:text-3xl font-bold text-white">
                 {greeting}, {profile?.name?.split(' ')[0] || 'daar'}! 👋
               </h1>
-              <p className="text-sm mt-1" style={{ color: '#6B7280' }}>
+              <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
                 {activeProject
                   ? `${activeProject.type.charAt(0).toUpperCase() + activeProject.type.slice(1).replace('_', ' ')} · Gestart ${activeProject.start_date ? new Date(activeProject.start_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' }) : 'onbekend'}`
                   : 'Start je eerste verbouwingsproject om te beginnen.'}
@@ -479,17 +479,17 @@ export default function DashboardClient({
               <div className="flex items-center gap-5 sm:gap-7">
                 <div className="text-center">
                   <p className="text-2xl sm:text-3xl font-black text-white">{budgetPercentage}%</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>budget</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>budget</p>
                 </div>
                 <div className="w-px h-10" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
                 <div className="text-center">
                   <p className="text-2xl sm:text-3xl font-black text-white">{todayTasks.length}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>taken</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>taken</p>
                 </div>
                 <div className="w-px h-10" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
                 <div className="text-center">
                   <p className="text-2xl sm:text-3xl font-black text-white">{activeDays}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>actief</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>actief</p>
                 </div>
               </div>
             )}

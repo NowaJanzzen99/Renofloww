@@ -1,36 +1,92 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency } from '@/lib/utils';
 import type { Project, Task, Expense, Room } from '@/types';
 import {
-  RadialBarChart, RadialBar, ResponsiveContainer,
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine,
-  PieChart, Pie, Cell, Legend,
-  BarChart, Bar,
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  PieChart, Pie, Cell, Legend, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
+
+// ── Brand palette ─────────────────────────────────────────────────────────────
+const GREEN = '#288760';
+const GREEN_LIGHT = '#4ade80';
+const GREEN_PALE = '#B7E5BA';
 
 const CATEGORY_COLORS: Record<string, string> = {
   materiaal: '#288760',
-  arbeid: '#5CA87C',
-  vergunning: '#B7E5BA',
+  arbeid: '#3EAA7A',
+  vergunning: '#6EC99B',
   transport: '#1A5140',
   overig: '#9CA3AF',
 };
-
 const CATEGORY_LABELS: Record<string, string> = {
-  materiaal: '🧱 Materiaal',
-  arbeid: '👷 Arbeid',
-  vergunning: '📋 Vergunning',
-  transport: '🚚 Transport',
-  overig: '📦 Overig',
+  materiaal: 'Materiaal',
+  arbeid: 'Arbeid',
+  vergunning: 'Vergunning',
+  transport: 'Transport',
+  overig: 'Overig',
+};
+const CATEGORY_ICONS: Record<string, string> = {
+  materiaal: '🧱', arbeid: '👷', vergunning: '📋', transport: '🚚', overig: '📦',
 };
 
-function SkeletonChart({ height = 200 }: { height?: number }) {
+// ── Local date helper ─────────────────────────────────────────────────────────
+function localDateStr(d: Date = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// ── Smooth ring progress (SVG) ────────────────────────────────────────────────
+function RingProgress({ pct, color, size = 120, strokeWidth = 10 }: { pct: number; color: string; size?: number; strokeWidth?: number }) {
+  const r = (size - strokeWidth * 2) / 2;
+  const circ = 2 * Math.PI * r;
+  const filled = Math.min(pct / 100, 1) * circ;
   return (
-    <div className="animate-pulse rounded-xl" style={{ height, backgroundColor: '#F3F4F6' }} />
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E5E7EB" strokeWidth={strokeWidth} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeDasharray={`${filled} ${circ - filled}`}
+        style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(.4,0,.2,1)' }} />
+    </svg>
   );
+}
+
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-xl px-3 py-2.5 text-xs shadow-xl" style={{ backgroundColor: 'white', border: '1px solid #E5E7EB', minWidth: 140 }}>
+      {label && <p className="font-semibold mb-1.5" style={{ color: '#1A1A1A' }}>{label}</p>}
+      {payload.map((p) => (
+        <div key={p.name} className="flex items-center justify-between gap-4">
+          <span style={{ color: '#6B7280' }}>{p.name}</span>
+          <span className="font-semibold" style={{ color: p.color || '#1A1A1A' }}>
+            {typeof p.value === 'number' && p.name.toLowerCase().includes('euro') || p.name.toLowerCase().includes('kosten') || p.name.toLowerCase().includes('budget') || p.name.toLowerCase().includes('uitgegeven')
+              ? formatCurrency(p.value)
+              : p.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PieTooltip({ active, payload }: { active?: boolean; payload?: { name: string; value: number; payload: { category: string } }[] }) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0];
+  return (
+    <div className="rounded-xl px-3 py-2.5 text-xs shadow-xl" style={{ backgroundColor: 'white', border: '1px solid #E5E7EB' }}>
+      <p className="font-semibold" style={{ color: '#1A1A1A' }}>{p.name}</p>
+      <p style={{ color: '#6B7280' }}>{formatCurrency(p.value)}</p>
+    </div>
+  );
+}
+
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+function Skel({ h = 160, className = '' }: { h?: number; className?: string }) {
+  return <div className={`animate-pulse rounded-2xl ${className}`} style={{ height: h, backgroundColor: '#F3F4F6' }} />;
 }
 
 export default function AnalyticsPage() {
@@ -51,11 +107,8 @@ export default function AnalyticsPage() {
         const { data } = await supabase.from('projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
         setProjects(data || []);
         if (data && data.length > 0) setSelectedProjectId(data[0].id);
-      } catch {
-        setError('Kon projecten niet laden.');
-      } finally {
-        setLoading(false);
-      }
+      } catch { setError('Kon projecten niet laden.'); }
+      finally { setLoading(false); }
     };
     load();
   }, []);
@@ -74,235 +127,395 @@ export default function AnalyticsPage() {
         setTasks(tasksRes.data || []);
         setExpenses(expensesRes.data || []);
         setRooms(roomsRes.data || []);
-      } catch {
-        setError('Kon analysegegevens niet laden.');
-      } finally {
-        setLoading(false);
-      }
+      } catch { setError('Kon analysegegevens niet laden.'); }
+      finally { setLoading(false); }
     };
     load();
   }, [selectedProjectId]);
 
   const selectedProject = projects.find((p) => p.id === selectedProjectId);
   const budget = Number(selectedProject?.budget) || 0;
-  const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const completedTasks = tasks.filter((t) => t.status === 'voltooid' || t.status === 'done').length;
-  const taskProgress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
 
-  // Overall progress (average of budget + tasks)
-  const budgetProgress = budget > 0 ? Math.min(Math.round((totalExpenses / budget) * 100), 100) : 0;
-  const overallProgress = Math.round((taskProgress + (100 - budgetProgress)) / 2);
+  const totalExpenses = useMemo(() => expenses.reduce((s, e) => s + Number(e.amount), 0), [expenses]);
+  const completedTasks = useMemo(() => tasks.filter((t) => t.status === 'voltooid' || t.status === 'done').length, [tasks]);
+  const taskPct = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+  const budgetPct = budget > 0 ? Math.min(Math.round((totalExpenses / budget) * 100), 100) : 0;
+  const budgetColor = budgetPct >= 80 ? '#EF4444' : budgetPct >= 50 ? '#F59E0B' : GREEN;
 
-  // Radial bar data
-  const radialData = [{ name: 'Voortgang', value: taskProgress, fill: '#288760' }];
-
-  // Cumulative budget line chart
-  const budgetLineData = (() => {
-    let cumulative = 0;
+  // ── Budget area chart (cumulative) ─────────────────────────────────────────
+  const budgetChartData = useMemo(() => {
+    let cumul = 0;
     const grouped: Record<string, number> = {};
     expenses.forEach((e) => {
       const date = e.date || e.created_at.split('T')[0];
       grouped[date] = (grouped[date] || 0) + Number(e.amount);
     });
-    return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([date, amount]) => {
-      cumulative += amount;
-      return { date: date.slice(5), cumulative: Math.round(cumulative), budget };
+    const entries = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
+    // Prepend start point at 0
+    const result = [];
+    if (selectedProject?.start_date && entries.length > 0 && entries[0][0] > selectedProject.start_date) {
+      result.push({ date: selectedProject.start_date.slice(5), cumul: 0, budget });
+    }
+    entries.forEach(([date, amount]) => {
+      cumul += amount;
+      result.push({ date: date.slice(5), cumul: Math.round(cumul), budget });
     });
-  })();
+    return result;
+  }, [expenses, budget, selectedProject]);
 
-  // Category pie chart
-  const categoryData = Object.entries(
-    expenses.reduce((acc, e) => {
-      acc[e.category] = (acc[e.category] || 0) + Number(e.amount);
-      return acc;
-    }, {} as Record<string, number>)
-  ).map(([category, amount]) => ({ name: CATEGORY_LABELS[category] || category, value: Math.round(amount), category }));
+  // ── Category breakdown ──────────────────────────────────────────────────────
+  const categoryData = useMemo(() => {
+    const acc: Record<string, number> = {};
+    expenses.forEach((e) => { acc[e.category] = (acc[e.category] || 0) + Number(e.amount); });
+    return Object.entries(acc)
+      .map(([category, amount]) => ({
+        name: `${CATEGORY_ICONS[category] || ''} ${CATEGORY_LABELS[category] || category}`,
+        displayName: CATEGORY_LABELS[category] || category,
+        icon: CATEGORY_ICONS[category] || '📦',
+        category,
+        value: Math.round(amount),
+        pct: totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0,
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [expenses, totalExpenses]);
 
-  // Weekly tasks bar chart
-  const weeklyTaskData = (() => {
-    const weeks: Record<string, { completed: number; total: number }> = {};
-    tasks.forEach((t) => {
-      const date = t.due_date || t.created_at.split('T')[0];
-      const d = new Date(date);
-      const weekNum = Math.ceil(d.getDate() / 7);
-      const key = `Week ${weekNum}`;
-      if (!weeks[key]) weeks[key] = { completed: 0, total: 0 };
-      weeks[key].total++;
-      if (t.status === 'voltooid' || t.status === 'done') weeks[key].completed++;
+  // ── Last 14 days task activity ──────────────────────────────────────────────
+  const dailyTaskData = useMemo(() => {
+    const today = localDateStr();
+    return Array.from({ length: 14 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (13 - i));
+      const dateStr = localDateStr(d);
+      const dayLabel = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+      const completed = tasks.filter((t) => t.completed_at && t.completed_at.split('T')[0] === dateStr).length;
+      const created = tasks.filter((t) => t.created_at && t.created_at.split('T')[0] === dateStr).length;
+      return { date: dayLabel, Voltooid: completed, Aangemaakt: created, isToday: dateStr === today };
     });
-    return Object.entries(weeks).map(([week, data]) => ({ week, ...data }));
-  })();
+  }, [tasks]);
 
-  // Room progress
-  const roomProgress = rooms.map((room) => {
-    const roomTasks = tasks.filter((t) => t.room_id === room.id);
-    const done = roomTasks.filter((t) => t.status === 'voltooid' || t.status === 'done').length;
-    return { ...room, total: roomTasks.length, done, progress: roomTasks.length > 0 ? Math.round((done / roomTasks.length) * 100) : 0 };
-  });
+  // ── Room progress ───────────────────────────────────────────────────────────
+  const roomProgress = useMemo(() => rooms.map((room) => {
+    const rt = tasks.filter((t) => t.room_id === room.id);
+    const done = rt.filter((t) => t.status === 'voltooid' || t.status === 'done').length;
+    return { ...room, total: rt.length, done, pct: rt.length > 0 ? Math.round((done / rt.length) * 100) : 0 };
+  }).sort((a, b) => b.pct - a.pct), [rooms, tasks]);
 
   const isEmpty = tasks.length === 0 && expenses.length === 0;
 
-  const customTooltip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number }[]; label?: string }) => {
-    if (!active || !payload?.length) return null;
-    return (
-      <div className="rounded-xl px-3 py-2 text-xs shadow-lg" style={{ backgroundColor: 'white', border: '1px solid #E5E7EB' }}>
-        <p className="font-medium mb-1" style={{ color: '#1A1A1A' }}>{label}</p>
-        {payload.map((p) => (
-          <p key={p.name} style={{ color: '#6B7280' }}>{p.name}: {typeof p.value === 'number' ? formatCurrency(p.value) : p.value}</p>
-        ))}
-      </div>
-    );
-  };
+  // ── Project health score ────────────────────────────────────────────────────
+  const healthScore = useMemo(() => {
+    if (tasks.length === 0 && budget === 0) return null;
+    let score = 0;
+    let factors = 0;
+    if (tasks.length > 0) { score += taskPct; factors++; }
+    if (budget > 0) { score += Math.max(0, 100 - budgetPct); factors++; }
+    return factors > 0 ? Math.round(score / factors) : null;
+  }, [tasks.length, budget, taskPct, budgetPct]);
+
+  const healthLabel = healthScore === null ? null
+    : healthScore >= 80 ? { text: 'Uitstekend', color: GREEN }
+    : healthScore >= 60 ? { text: 'Goed', color: '#4ade80' }
+    : healthScore >= 40 ? { text: 'Redelijk', color: '#F59E0B' }
+    : { text: 'Aandacht nodig', color: '#EF4444' };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>Voortgang & Analyse</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Inzicht in je verbouwingsproject</p>
-        </div>
-        {projects.length > 1 && (
-          <select
-            value={selectedProjectId}
-            onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border text-sm outline-none"
-            style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
-          >
-            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        )}
-      </div>
-
-      {error && (
-        <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: '#FEF2F2', color: '#EF4444' }}>{error}</div>
-      )}
-
-      {!loading && isEmpty ? (
-        <div className="text-center py-16 rounded-2xl bg-white border" style={{ borderColor: '#E5E7EB' }}>
-          <p className="text-4xl mb-4">📊</p>
-          <h3 className="text-xl font-bold mb-2" style={{ color: '#1A1A1A' }}>Voeg kosten en taken toe om je analyse te zien</h3>
-          <p className="text-sm" style={{ color: '#6B7280' }}>Begin met het registreren van kosten en taken in je project.</p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* Top stats row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: 'Taak voortgang', value: `${taskProgress}%`, sub: `${completedTasks}/${tasks.length} voltooid` },
-              { label: 'Budget gebruikt', value: `${budgetProgress}%`, sub: budget > 0 ? `${formatCurrency(totalExpenses)} van ${formatCurrency(budget)}` : 'Geen budget' },
-              { label: 'Totale kosten', value: formatCurrency(totalExpenses), sub: `${expenses.length} uitgaven` },
-              { label: 'Ruimtes', value: rooms.length.toString(), sub: `${roomProgress.filter(r => r.progress === 100).length} voltooid` },
-            ].map((stat) => (
-              <div key={stat.label} className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                <p className="text-xs mb-1" style={{ color: '#6B7280' }}>{stat.label}</p>
-                <p className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>{loading ? '—' : stat.value}</p>
-                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{loading ? '' : stat.sub}</p>
-              </div>
-            ))}
+    <div className="min-h-full" style={{ background: '#F8FAFB' }}>
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 pt-4 sm:pt-6">
+        <div
+          className="rounded-2xl p-5 sm:p-7 relative overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #1a3a2a 45%, #1e4d36 100%)', boxShadow: '0 8px 32px rgba(13,31,26,0.3)' }}
+        >
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(40,135,96,0.22) 0%, transparent 70%)' }} />
+          <div className="relative flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-8">
+            <div className="flex-1">
+              <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#6EE7B7' }}>Voortgang & Analyse</p>
+              <h1 className="text-2xl sm:text-3xl font-black text-white">
+                {selectedProject?.name || 'Project'}
+              </h1>
+              {selectedProject?.start_date && (
+                <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  Gestart {new Date(selectedProject.start_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {selectedProject.end_date && ` · Einddatum ${new Date(selectedProject.end_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}`}
+                </p>
+              )}
+            </div>
+            {/* Project selector */}
+            {projects.length > 1 && (
+              <select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)}
+                className="px-3 py-2 rounded-xl text-sm outline-none self-start"
+                style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.15)' }}>
+                {projects.map((p) => <option key={p.id} value={p.id} style={{ color: '#1A1A1A', backgroundColor: 'white' }}>{p.name}</option>)}
+              </select>
+            )}
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Overall progress radial */}
-            <div className="rounded-2xl p-6 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-              <h3 className="text-sm font-semibold mb-4" style={{ color: '#1A1A1A' }}>Taak voortgang</h3>
-              {loading ? <SkeletonChart height={160} /> : (
-                <div className="relative">
-                  <ResponsiveContainer width="100%" height={160}>
-                    <RadialBarChart cx="50%" cy="50%" innerRadius="60%" outerRadius="100%" data={radialData} startAngle={90} endAngle={-270}>
-                      <RadialBar background={{ fill: '#E5E7EB' }} dataKey="value" cornerRadius={8} />
-                    </RadialBarChart>
-                  </ResponsiveContainer>
-                  <div className="absolute inset-0 flex items-center justify-center flex-col">
-                    <p className="text-3xl font-bold" style={{ color: '#288760' }}>{taskProgress}%</p>
-                    <p className="text-xs" style={{ color: '#6B7280' }}>Voltooid</p>
+          {/* Key numbers bar */}
+          {!loading && (
+            <div className="flex flex-wrap gap-5 mt-6 pt-5 border-t" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+              {[
+                { label: 'Taken voltooid', value: `${completedTasks}/${tasks.length}`, accent: GREEN_PALE },
+                { label: 'Budget gebruikt', value: budget > 0 ? `${budgetPct}%` : '—', accent: budgetPct >= 80 ? '#FCA5A5' : GREEN_PALE },
+                { label: 'Totale kosten', value: formatCurrency(totalExpenses), accent: GREEN_PALE },
+                { label: 'Ruimtes', value: `${rooms.length}`, accent: GREEN_PALE },
+                ...(healthScore !== null ? [{ label: 'Project score', value: `${healthScore}`, accent: healthLabel?.color || GREEN_PALE }] : []),
+              ].map((s) => (
+                <div key={s.label}>
+                  <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.label}</p>
+                  <p className="text-xl font-black" style={{ color: s.accent }}>{s.value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Main content ───────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 py-5 sm:py-6 max-w-7xl">
+
+        {error && <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: '#FEF2F2', color: '#EF4444' }}>{error}</div>}
+
+        {!loading && isEmpty ? (
+          <div className="text-center py-16 rounded-2xl bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+            <div className="text-5xl mb-4">📊</div>
+            <h3 className="text-xl font-bold mb-2" style={{ color: '#1A1A1A' }}>Nog geen data</h3>
+            <p className="text-sm" style={{ color: '#6B7280' }}>Voeg taken en kosten toe aan je project om hier statistieken te zien.</p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+
+            {/* ── Row 1: task ring + budget gauge ─────────────────────────── */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {/* Task ring */}
+              <div className="rounded-2xl bg-white border p-5 flex flex-col" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#9CA3AF' }}>Taakvoortgang</p>
+                {loading ? <Skel h={140} /> : (
+                  <div className="flex items-center gap-4">
+                    <div className="relative shrink-0">
+                      <RingProgress pct={taskPct} color={taskPct === 100 ? GREEN_LIGHT : GREEN} size={100} strokeWidth={9} />
+                      <div className="absolute inset-0 flex items-center justify-center flex-col">
+                        <span className="text-xl font-black" style={{ color: taskPct === 100 ? GREEN_LIGHT : GREEN }}>{taskPct}%</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-3xl font-black mb-1" style={{ color: '#1A1A1A' }}>{completedTasks}<span className="text-lg font-semibold" style={{ color: '#9CA3AF' }}>/{tasks.length}</span></p>
+                      <p className="text-xs" style={{ color: '#9CA3AF' }}>taken voltooid</p>
+                      <div className="mt-3 space-y-1">
+                        <div className="flex items-center gap-2 text-xs">
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: GREEN }} />
+                          <span style={{ color: '#6B7280' }}>Voltooid: {completedTasks}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: '#E5E7EB' }} />
+                          <span style={{ color: '#6B7280' }}>Open: {tasks.length - completedTasks}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                )}
+              </div>
+
+              {/* Budget gauge */}
+              <div className="rounded-2xl bg-white border p-5 flex flex-col" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#9CA3AF' }}>Budget</p>
+                {loading ? <Skel h={140} /> : budget === 0 ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className="text-sm text-center" style={{ color: '#9CA3AF' }}>Geen budget ingesteld</p>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <div className="relative shrink-0">
+                      <RingProgress pct={budgetPct} color={budgetColor} size={100} strokeWidth={9} />
+                      <div className="absolute inset-0 flex items-center justify-center flex-col">
+                        <span className="text-xl font-black" style={{ color: budgetColor }}>{budgetPct}%</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold" style={{ color: '#1A1A1A' }}>{formatCurrency(totalExpenses)}</p>
+                      <p className="text-xs" style={{ color: '#9CA3AF' }}>van {formatCurrency(budget)}</p>
+                      <div className="mt-3">
+                        <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: '#F3F4F6' }}>
+                          <div className="h-1.5 rounded-full transition-all" style={{ width: `${budgetPct}%`, backgroundColor: budgetColor }} />
+                        </div>
+                        <p className="text-xs mt-1.5 font-medium" style={{ color: GREEN }}>
+                          {formatCurrency(Math.max(budget - totalExpenses, 0))} resterend
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Project health */}
+              {healthScore !== null ? (
+                <div className="rounded-2xl p-5 flex flex-col" style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #1a3a2a 100%)', boxShadow: '0 4px 20px rgba(13,31,26,0.25)' }}>
+                  <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>Project score</p>
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="relative shrink-0">
+                      <RingProgress pct={healthScore} color={healthLabel?.color || GREEN} size={100} strokeWidth={9} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-xl font-black text-white">{healthScore}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-lg font-black" style={{ color: healthLabel?.color || GREEN_PALE }}>{healthLabel?.text}</p>
+                      <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>Gebaseerd op taken en budget</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-white border p-5 flex items-center justify-center" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+                  <p className="text-sm text-center" style={{ color: '#9CA3AF' }}>Voeg taken en budget toe voor een project score</p>
                 </div>
               )}
             </div>
 
-            {/* Cost breakdown pie */}
-            <div className="rounded-2xl p-6 bg-white border lg:col-span-2" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-              <h3 className="text-sm font-semibold mb-4" style={{ color: '#1A1A1A' }}>Kostenverdeling</h3>
-              {loading ? <SkeletonChart height={200} /> : categoryData.length === 0 ? (
-                <p className="text-sm text-center py-8" style={{ color: '#6B7280' }}>Nog geen kosten geregistreerd</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3} dataKey="value">
-                      {categoryData.map((entry) => (
-                        <Cell key={entry.category} fill={CATEGORY_COLORS[entry.category] || '#9CA3AF'} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                    <Legend iconType="circle" iconSize={8} formatter={(value) => <span style={{ fontSize: '11px', color: '#6B7280' }}>{value}</span>} />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-
-          {/* Budget line chart */}
-          {budget > 0 && (
-            <div className="rounded-2xl p-6 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-              <h3 className="text-sm font-semibold mb-4" style={{ color: '#1A1A1A' }}>Kosten over tijd</h3>
-              {loading ? <SkeletonChart height={200} /> : budgetLineData.length === 0 ? (
-                <p className="text-sm text-center py-8" style={{ color: '#6B7280' }}>Nog geen kosten geregistreerd</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={budgetLineData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} />
-                    <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip content={customTooltip as (props: unknown) => React.JSX.Element | null} />
-                    <ReferenceLine y={budget} stroke="#EF4444" strokeDasharray="4 4" label={{ value: 'Budget', position: 'right', fontSize: 10, fill: '#EF4444' }} />
-                    <Line type="monotone" dataKey="cumulative" stroke="#288760" strokeWidth={2} dot={{ fill: '#288760', r: 3 }} name="Totaal uitgegeven" />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          )}
-
-          {/* Tasks bar chart */}
-          {weeklyTaskData.length > 0 && (
-            <div className="rounded-2xl p-6 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-              <h3 className="text-sm font-semibold mb-4" style={{ color: '#1A1A1A' }}>Taken per week</h3>
-              {loading ? <SkeletonChart height={180} /> : (
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={weeklyTaskData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#9CA3AF' }} />
-                    <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} />
-                    <Tooltip />
-                    <Bar dataKey="total" name="Totaal" fill="#E5E7EB" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="completed" name="Voltooid" fill="#288760" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          )}
-
-          {/* Per-room progress */}
-          {roomProgress.length > 0 && (
-            <div className="rounded-2xl p-6 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-              <h3 className="text-sm font-semibold mb-4" style={{ color: '#1A1A1A' }}>Voortgang per ruimte</h3>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {roomProgress.map((room) => (
-                  <div key={room.id} className="rounded-xl border p-3" style={{ borderColor: '#E5E7EB' }}>
-                    <div className="flex justify-between mb-2">
-                      <p className="text-sm font-medium" style={{ color: '#1A1A1A' }}>{room.name}</p>
-                      <p className="text-sm font-semibold" style={{ color: '#288760' }}>{room.progress}%</p>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: '#E5E7EB' }}>
-                      <div className="h-1.5 rounded-full transition-all" style={{ width: `${room.progress}%`, backgroundColor: '#288760' }} />
-                    </div>
-                    <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>{room.done}/{room.total} taken</p>
+            {/* ── Row 2: budget timeline ───────────────────────────────────── */}
+            {(budget > 0 || budgetChartData.length > 0) && (
+              <div className="rounded-2xl bg-white border p-5 sm:p-6" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Budget ontwikkeling</p>
+                    <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Cumulatieve uitgaven in de tijd</p>
                   </div>
-                ))}
+                  {budget > 0 && (
+                    <div className="flex items-center gap-4 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-0.5" style={{ backgroundColor: GREEN }} />
+                        <span style={{ color: '#6B7280' }}>Uitgegeven</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-0.5 border-t-2 border-dashed" style={{ borderColor: '#EF4444' }} />
+                        <span style={{ color: '#6B7280' }}>Budget limiet</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {loading ? <Skel h={220} /> : budgetChartData.length === 0 ? (
+                  <div className="flex items-center justify-center h-40">
+                    <p className="text-sm" style={{ color: '#9CA3AF' }}>Nog geen kosten geregistreerd</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <AreaChart data={budgetChartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                      <defs>
+                        <linearGradient id="budgetGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={GREEN} stopOpacity={0.2} />
+                          <stop offset="95%" stopColor={GREEN} stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip content={<CustomTooltip />} />
+                      {budget > 0 && <ReferenceLine y={budget} stroke="#EF4444" strokeDasharray="5 4" strokeWidth={1.5} />}
+                      <Area type="monotone" dataKey="cumul" name="Uitgegeven" stroke={GREEN} strokeWidth={2.5} fill="url(#budgetGrad)" dot={budgetChartData.length === 1 ? { fill: GREEN, r: 5 } : false} activeDot={{ fill: GREEN, r: 5 }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            )}
+
+            {/* ── Row 3: cost breakdown + task activity ───────────────────── */}
+            <div className="grid lg:grid-cols-2 gap-5">
+
+              {/* Cost breakdown */}
+              <div className="rounded-2xl bg-white border p-5 sm:p-6" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-5" style={{ color: '#9CA3AF' }}>Kostenverdeling</p>
+                {loading ? <Skel h={180} /> : categoryData.length === 0 ? (
+                  <div className="flex items-center justify-center h-40">
+                    <p className="text-sm" style={{ color: '#9CA3AF' }}>Nog geen kosten geregistreerd</p>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-4">
+                    <div className="shrink-0">
+                      <ResponsiveContainer width={130} height={130}>
+                        <PieChart>
+                          <Pie data={categoryData} cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={3} dataKey="value" startAngle={90} endAngle={-270}>
+                            {categoryData.map((entry) => (
+                              <Cell key={entry.category} fill={CATEGORY_COLORS[entry.category] || '#9CA3AF'} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<PieTooltip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-2.5">
+                      {categoryData.map((c) => (
+                        <div key={c.category}>
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="font-medium" style={{ color: '#1A1A1A' }}>{c.icon} {c.displayName}</span>
+                            <span className="font-bold" style={{ color: CATEGORY_COLORS[c.category] || '#9CA3AF' }}>{c.pct}%</span>
+                          </div>
+                          <div className="w-full h-1 rounded-full" style={{ backgroundColor: '#F3F4F6' }}>
+                            <div className="h-1 rounded-full" style={{ width: `${c.pct}%`, backgroundColor: CATEGORY_COLORS[c.category] || '#9CA3AF' }} />
+                          </div>
+                          <p className="text-[10px] mt-0.5" style={{ color: '#9CA3AF' }}>{formatCurrency(c.value)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Daily task activity */}
+              <div className="rounded-2xl bg-white border p-5 sm:p-6" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+                <div className="flex items-center justify-between mb-5">
+                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Taken activiteit</p>
+                  <p className="text-xs" style={{ color: '#9CA3AF' }}>Afgelopen 14 dagen</p>
+                </div>
+                {loading ? <Skel h={180} /> : tasks.length === 0 ? (
+                  <div className="flex items-center justify-center h-40">
+                    <p className="text-sm" style={{ color: '#9CA3AF' }}>Nog geen taken aangemaakt</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={dailyTaskData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }} barSize={8}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#9CA3AF' }} tickLine={false} interval={2} />
+                      <YAxis tick={{ fontSize: 9, fill: '#9CA3AF' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar dataKey="Aangemaakt" fill="#E5E7EB" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="Voltooid" fill={GREEN} radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
-          )}
-        </div>
-      )}
+
+            {/* ── Row 4: room progress ─────────────────────────────────────── */}
+            {roomProgress.length > 0 && (
+              <div className="rounded-2xl bg-white border p-5 sm:p-6" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-5" style={{ color: '#9CA3AF' }}>Voortgang per ruimte</p>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {roomProgress.map((room) => (
+                    <div key={room.id} className="rounded-xl p-4 border" style={{ borderColor: '#F3F4F6', backgroundColor: '#FAFAFA' }}>
+                      <div className="flex items-start justify-between mb-2">
+                        <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{room.name}</p>
+                        <span
+                          className="text-xs font-black px-2 py-0.5 rounded-full"
+                          style={{
+                            backgroundColor: room.pct === 100 ? '#ECFDF5' : '#F0FDF4',
+                            color: room.pct === 100 ? '#065F46' : GREEN,
+                          }}
+                        >{room.pct}%</span>
+                      </div>
+                      <div className="w-full h-2 rounded-full overflow-hidden mb-1.5" style={{ backgroundColor: '#E5E7EB' }}>
+                        <div
+                          className="h-2 rounded-full transition-all duration-700"
+                          style={{ width: `${room.pct}%`, background: room.pct === 100 ? `linear-gradient(90deg, ${GREEN}, ${GREEN_LIGHT})` : GREEN }}
+                        />
+                      </div>
+                      <p className="text-xs" style={{ color: '#9CA3AF' }}>{room.done} van {room.total} {room.total === 1 ? 'taak' : 'taken'} klaar</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
+      </div>
     </div>
   );
 }
