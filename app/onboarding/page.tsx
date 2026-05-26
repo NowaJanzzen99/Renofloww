@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import RenoflowwLogo from '@/components/RenoflowwLogo';
 import type { ProjectType } from '@/types';
 
 const projectTypes: { type: ProjectType; label: string; emoji: string }[] = [
@@ -140,7 +139,12 @@ export default function OnboardingPage() {
       <header className="px-4 sm:px-6 py-3 sm:py-4 bg-white border-b" style={{ borderColor: '#E5E7EB' }}>
         {/* Row 1: logo + skip */}
         <div className="flex items-center justify-between">
-          <RenoflowwLogo size="sm" variant="full" textColor="green" />
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#288760' }}>
+              R
+            </div>
+            <span className="font-bold text-base" style={{ color: '#1A1A1A' }}>Renofloww</span>
+          </div>
           <button
             onClick={handleSkip}
             className="text-sm font-medium"

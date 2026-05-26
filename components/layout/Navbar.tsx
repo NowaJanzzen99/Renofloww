@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { Notification, Profile } from '@/types';
 import { timeAgo } from '@/lib/utils';
-import RenoflowwLogo from '@/components/RenoflowwLogo';
 
 interface SearchResult {
   id: string;
@@ -160,8 +159,11 @@ export default function Navbar() {
       style={{ borderColor: '#E5E7EB' }}
     >
       {/* Mobile logo */}
-      <Link href="/dashboard" className="md:hidden">
-        <RenoflowwLogo size="sm" variant="full" textColor="green" />
+      <Link href="/dashboard" className="md:hidden flex items-center gap-2">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs" style={{ backgroundColor: '#288760' }}>
+          R
+        </div>
+        <span className="font-bold text-sm" style={{ color: '#1A1A1A' }}>Renofloww</span>
       </Link>
 
       {/* Search bar — takes full available width on md+ */}
