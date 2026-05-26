@@ -137,7 +137,7 @@ export default function Sidebar() {
                   0% { transform: translateX(-100%) skewX(-15deg); }
                   100% { transform: translateX(250%) skewX(-15deg); }
                 }
-                .rf-upgrade-btn .rf-shimmer { animation: rf-shimmer 2.2s ease-in-out infinite; }
+                .rf-upgrade-btn .rf-shimmer { animation: rf-shimmer 4s ease-in-out infinite; }
               `}</style>
               <Link
                 href="/settings#abonnement"

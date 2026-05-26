@@ -178,36 +178,87 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
       )}
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl p-4 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <p className="text-xs mb-1" style={{ color: '#6B7280' }}>Budget gebruikt</p>
-          <p className="text-xl font-bold" style={{ color: '#1A1A1A' }}>
-            {budget > 0 ? `${Math.min(Math.round((totalExpenses / budget) * 100), 100)}%` : '—'}
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{formatCurrency(totalExpenses)} van {formatCurrency(budget)}</p>
-        </div>
-        <div className="rounded-2xl p-4 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <p className="text-xs mb-1" style={{ color: '#6B7280' }}>Taken</p>
-          <p className="text-xl font-bold" style={{ color: '#1A1A1A' }}>{completedTasks}/{taskCount}</p>
-          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Voltooid</p>
-        </div>
-        <div className="rounded-2xl p-4 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <p className="text-xs mb-1" style={{ color: '#6B7280' }}>Aannemers</p>
-          <p className="text-xl font-bold" style={{ color: '#1A1A1A' }}>{contractorCount}</p>
-          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Actief</p>
-        </div>
-        <div className="rounded-2xl p-4 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <p className="text-xs mb-1" style={{ color: '#6B7280' }}>Open offertes</p>
-          <p className="text-xl font-bold" style={{ color: '#1A1A1A' }}>{pendingQuotes}</p>
-          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>In behandeling</p>
-        </div>
-      </div>
+      {(() => {
+        const budgetPct = budget > 0 ? Math.min(Math.round((totalExpenses / budget) * 100), 100) : 0;
+        const budgetAccent = budgetPct >= 90 ? '#EF4444' : budgetPct >= 75 ? '#F59E0B' : '#288760';
+        const cards = [
+          {
+            label: 'Budget gebruikt',
+            value: budget > 0 ? `${budgetPct}%` : '—',
+            sub: `${formatCurrency(totalExpenses)} van ${formatCurrency(budget)}`,
+            accent: budgetAccent,
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Taken voltooid',
+            value: `${completedTasks}/${taskCount}`,
+            sub: taskCount > 0 ? `${Math.round((completedTasks / taskCount) * 100)}% klaar` : 'Nog geen taken',
+            accent: '#3B82F6',
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Aannemers',
+            value: `${contractorCount}`,
+            sub: contractorCount === 1 ? '1 actief' : `${contractorCount} actief`,
+            accent: '#8B5CF6',
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Open offertes',
+            value: `${pendingQuotes}`,
+            sub: pendingQuotes === 0 ? 'Geen openstaand' : `${pendingQuotes} in behandeling`,
+            accent: '#F59E0B',
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+            ),
+          },
+        ];
+        return (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {cards.map((card) => (
+              <div
+                key={card.label}
+                className="rounded-2xl p-4 bg-white border transition-all hover:shadow-md"
+                style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: `3px solid ${card.accent}` }}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <p className="text-xs font-medium" style={{ color: '#6B7280' }}>{card.label}</p>
+                  <span style={{ color: card.accent, opacity: 0.8 }}>{card.icon}</span>
+                </div>
+                <p className="text-2xl font-black mb-0.5" style={{ color: '#1A1A1A' }}>{card.value}</p>
+                <p className="text-xs" style={{ color: '#9CA3AF' }}>{card.sub}</p>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Project info + quick actions */}
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <h3 className="text-sm font-semibold mb-4" style={{ color: '#1A1A1A' }}>Project informatie</h3>
-          <dl className="space-y-3">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#B7E5BA' }}>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1A5140' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Project informatie</h3>
+          </div>
+          <dl className="space-y-3 divide-y" style={{ '--tw-divide-opacity': 1 } as React.CSSProperties}>
             {[
               { label: 'Type', value: project.type?.charAt(0).toUpperCase() + (project.type?.slice(1) || '') },
               { label: 'Status', value: project.status },
@@ -215,40 +266,51 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
               { label: 'Einddatum', value: formatDate(project.end_date) },
               { label: 'Ruimtes', value: rooms.length.toString() },
             ].map(({ label, value }) => (
-              <div key={label} className="flex justify-between">
+              <div key={label} className="flex justify-between pt-3 first:pt-0">
                 <dt className="text-sm" style={{ color: '#6B7280' }}>{label}</dt>
-                <dd className="text-sm font-medium" style={{ color: '#1A1A1A' }}>{value || '—'}</dd>
+                <dd className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{value || '—'}</dd>
               </div>
             ))}
           </dl>
         </div>
 
-        {/* Quick actions — open modals directly */}
+        {/* Quick actions */}
         <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <h3 className="text-sm font-semibold mb-4" style={{ color: '#1A1A1A' }}>Snelle acties</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#B7E5BA' }}>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1A5140' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Snelle acties</h3>
+          </div>
           <div className="space-y-2">
             {quickActions.map((action) => (
               <button
                 key={action.label}
                 onClick={action.onClick}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-colors hover:bg-gray-50 active:bg-gray-100"
-                style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all hover:shadow-sm active:scale-[0.99]"
+                style={{ backgroundColor: '#F8FAF9', color: '#1A1A1A', border: '1px solid #E5E7EB' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#B7E5BA30'; (e.currentTarget as HTMLElement).style.borderColor = '#288760'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#F8FAF9'; (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB'; }}
               >
                 <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#B7E5BA', color: '#1A5140' }}>
                   {action.icon}
                 </span>
                 {action.label}
-                <svg className="w-4 h-4 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#9CA3AF' }}>
+                <svg className="w-4 h-4 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#288760' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </button>
             ))}
             <button
               onClick={() => onTabChange('taken')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-colors hover:bg-gray-50 text-left"
-              style={{ borderColor: '#E5E7EB', color: '#6B7280' }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left"
+              style={{ backgroundColor: '#F3F4F6', color: '#6B7280', border: '1px solid #E5E7EB' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#E5E7EB'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#F3F4F6'; }}
             >
-              <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#F3F4F6' }}>
+              <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#E5E7EB' }}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#6B7280' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
@@ -266,19 +328,31 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
       {localExpenses.length > 0 && (
         <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Recente kosten</h3>
-            <button onClick={() => onTabChange('kosten')} className="text-xs font-medium" style={{ color: '#288760' }}>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#B7E5BA' }}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1A5140' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Recente kosten</h3>
+            </div>
+            <button onClick={() => onTabChange('kosten')} className="text-xs font-semibold transition-opacity hover:opacity-70" style={{ color: '#288760' }}>
               Alle kosten →
             </button>
           </div>
-          <div className="space-y-2">
+          <div className="divide-y" style={{ borderColor: '#F3F4F6' }}>
             {localExpenses.slice(0, 5).map((expense) => (
-              <div key={expense.id} className="flex items-center justify-between py-1.5">
-                <div>
-                  <p className="text-sm" style={{ color: '#1A1A1A' }}>{expense.description}</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>{expense.category} · {expense.date}</p>
+              <div key={expense.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: '#F3F4F6', color: '#6B7280' }}>
+                    {expense.category?.charAt(0).toUpperCase() || '€'}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: '#1A1A1A' }}>{expense.description}</p>
+                    <p className="text-xs" style={{ color: '#9CA3AF' }}>{expense.category} · {expense.date}</p>
+                  </div>
                 </div>
-                <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{formatCurrency(Number(expense.amount))}</p>
+                <p className="text-sm font-bold" style={{ color: '#1A1A1A' }}>{formatCurrency(Number(expense.amount))}</p>
               </div>
             ))}
           </div>

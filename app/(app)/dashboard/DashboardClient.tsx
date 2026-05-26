@@ -244,12 +244,16 @@ export default function DashboardClient({
 
   const activeDates = useMemo(() => {
     const s = new Set<string>();
-    // Use expense.date (the actual date field) when available — avoids UTC offset issues
+    // Expenses: use e.date (user-specified local YYYY-MM-DD); fall back to created_at as local date
     expenses.forEach(e => {
-      const d = (e as { date?: string }).date || (e.created_at ? e.created_at.split('T')[0] : null);
+      const d = (e as { date?: string }).date || (e.created_at ? localDateStr(new Date(e.created_at)) : null);
       if (d) s.add(d);
     });
-    allTasks.filter(t => t.completed_at).forEach(t => s.add(t.completed_at!.split('T')[0]));
+    // Tasks: count creation date AND completion date (convert UTC ISO → local date)
+    allTasks.forEach(t => {
+      if (t.created_at)   s.add(localDateStr(new Date(t.created_at)));
+      if (t.completed_at) s.add(localDateStr(new Date(t.completed_at)));
+    });
     return s;
   }, [expenses, allTasks]);
 

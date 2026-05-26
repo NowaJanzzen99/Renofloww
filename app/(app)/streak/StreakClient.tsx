@@ -54,14 +54,26 @@ export default function StreakClient({ profile, activeProject, tasks, expenses }
   const [toastQueue, setToastQueue] = useState<{ icon: string; label: string }[]>([]);
 
   // ── Activity dates ──────────────────────────────────────────────────────────
+  // Rules:
+  //  • Expenses: use e.date (user-specified YYYY-MM-DD, always local)
+  //  • Tasks: count both CREATION date and COMPLETION date as activity
+  //    → Always convert ISO UTC timestamps to LOCAL date strings to avoid
+  //      off-by-one for Dutch users (UTC+2, so midnight NL = 22:00 prev-day UTC)
   const activeDates = useMemo(() => {
     const s = new Set<string>();
-    // Use expense date (not created_at) for accurate date tracking
+
+    // Expenses — use the explicit date field (already a local YYYY-MM-DD string)
     expenses.forEach((e) => {
-      const d = e.date || (e.created_at ? e.created_at.split('T')[0] : null);
+      const d = e.date || (e.created_at ? localDateStr(new Date(e.created_at)) : null);
       if (d) s.add(d);
     });
-    tasks.filter((t) => t.completed_at).forEach((t) => s.add(t.completed_at!.split('T')[0]));
+
+    // Tasks — creating a task counts as project activity; completing it too
+    tasks.forEach((t) => {
+      if (t.created_at)   s.add(localDateStr(new Date(t.created_at)));
+      if (t.completed_at) s.add(localDateStr(new Date(t.completed_at)));
+    });
+
     return s;
   }, [expenses, tasks]);
 
@@ -126,7 +138,7 @@ export default function StreakClient({ profile, activeProject, tasks, expenses }
     { icon: '⚡', label: 'Op dreef',       desc: '3 dagen op rij actief',         unlocked: longestStreak >= 3 },
     { icon: '💪', label: 'Doorzetter',     desc: '7 dagen op rij actief',         unlocked: longestStreak >= 7 },
     { icon: '🏆', label: 'Kampioen',       desc: '14 dagen op rij actief',        unlocked: longestStreak >= 14 },
-    { icon: '💎', label: 'Legenda',        desc: '30 dagen op rij actief',        unlocked: longestStreak >= 30 },
+    { icon: '💎', label: 'Legende',         desc: '30 dagen op rij actief',        unlocked: longestStreak >= 30 },
     { icon: '📅', label: 'Actieve maand',  desc: '30 unieke actieve dagen',       unlocked: totalActiveDays >= 30 },
     { icon: '🚀', label: 'Quickstart',     desc: '5 taken voltooid',              unlocked: tasks.filter(t => t.status === 'voltooid' || t.status === 'done').length >= 5 },
     { icon: '💰', label: 'Boekhouder',     desc: '5 kostposten geregistreerd',    unlocked: expenses.length >= 5 },

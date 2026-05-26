@@ -91,86 +91,102 @@ export default function ProjectDetailClient({
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Project header */}
-      <div className="px-4 sm:px-6 pt-6 pb-0 bg-white border-b" style={{ borderColor: '#E5E7EB' }}>
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-start gap-4 mb-4">
-            <Link
-              href="/projects"
-              className="mt-1 text-sm flex items-center gap-1 transition-opacity hover:opacity-70"
-              style={{ color: '#6B7280' }}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Projecten
-            </Link>
-          </div>
+      {/* Project header — dark gradient hero */}
+      <div style={{ background: 'linear-gradient(135deg, #1A5140 0%, #288760 70%, #3D9970 100%)' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 pb-0">
 
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+          {/* Back link */}
+          <Link
+            href="/projects"
+            className="inline-flex items-center gap-1.5 text-xs mb-4 transition-colors"
+            style={{ color: 'rgba(255,255,255,0.6)' }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.9)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)')}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Projecten
+          </Link>
+
+          {/* Name + status */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div className="flex-1">
-              {/* Editable project name */}
               {editingName ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    autoFocus
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    onBlur={saveName}
-                    onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setEditingName(false); setNameInput(project.name); } }}
-                    className="text-2xl font-bold outline-none border-b-2 pb-1"
-                    style={{ borderColor: '#288760', color: '#1A1A1A' }}
-                  />
-                </div>
+                <input
+                  autoFocus
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  onBlur={saveName}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setEditingName(false); setNameInput(project.name); } }}
+                  className="text-2xl font-bold outline-none border-b-2 pb-1 bg-transparent w-full"
+                  style={{ borderColor: 'rgba(255,255,255,0.5)', color: 'white' }}
+                />
               ) : (
                 <button
                   onClick={() => setEditingName(true)}
                   className="flex items-center gap-2 group text-left"
                 >
-                  <h1 className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>{project.name}</h1>
-                  <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#9CA3AF' }}>
+                  <h1 className="text-2xl font-bold text-white">{project.name}</h1>
+                  <svg className="w-4 h-4 opacity-0 group-hover:opacity-60 transition-opacity text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </button>
               )}
+              <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                {project.type ? project.type.charAt(0).toUpperCase() + project.type.slice(1) : 'Project'}
+                {project.start_date && ` · ${new Date(project.start_date + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+              </p>
             </div>
 
             {/* Status selector */}
             <select
               value={project.status}
               onChange={(e) => updateStatus(e.target.value)}
-              className="px-3 py-1.5 rounded-xl border text-sm font-medium outline-none"
-              style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
+              className="px-3 py-1.5 rounded-xl text-sm font-semibold outline-none cursor-pointer self-start"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.25)',
+              }}
             >
               {statusOptions.map((s) => (
-                <option key={s} value={s}>{statusLabels[s]}</option>
+                <option key={s} value={s} style={{ backgroundColor: '#1A5140', color: 'white' }}>{statusLabels[s]}</option>
               ))}
             </select>
           </div>
 
           {/* Budget progress bar */}
           {budget > 0 && (
-            <div className="mb-4">
+            <div className="mb-5">
               <div className="flex justify-between text-xs mb-1.5">
-                <span style={{ color: '#6B7280' }}>Budget: {formatCurrency(totalExpenses)} / {formatCurrency(budget)}</span>
-                <span style={{ color: budgetColor }}>{budgetPercentage}%</span>
+                <span style={{ color: 'rgba(255,255,255,0.65)' }}>Budget: {formatCurrency(totalExpenses)} / {formatCurrency(budget)}</span>
+                <span style={{ color: budgetPercentage >= 90 ? '#FCA5A5' : budgetPercentage >= 75 ? '#FDE68A' : '#B7E5BA', fontWeight: 600 }}>{budgetPercentage}%</span>
               </div>
-              <div className="w-full h-2 rounded-full" style={{ backgroundColor: '#E5E7EB' }}>
-                <div className="h-2 rounded-full transition-all" style={{ width: `${budgetPercentage}%`, backgroundColor: budgetColor }} />
+              <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+                <div
+                  className="h-2 rounded-full transition-all"
+                  style={{
+                    width: `${budgetPercentage}%`,
+                    backgroundColor: budgetPercentage >= 90 ? '#FCA5A5' : budgetPercentage >= 75 ? '#FDE68A' : '#B7E5BA',
+                  }}
+                />
               </div>
             </div>
           )}
 
-          {/* Tabs */}
+          {/* Tabs — on the dark hero background */}
           <div className="flex gap-0 overflow-x-auto -mb-px">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className="px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
+                className="px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-all"
                 style={{
-                  borderColor: activeTab === tab.id ? '#288760' : 'transparent',
-                  color: activeTab === tab.id ? '#288760' : '#6B7280',
+                  borderColor: activeTab === tab.id ? 'white' : 'transparent',
+                  color: activeTab === tab.id ? 'white' : 'rgba(255,255,255,0.55)',
+                  backgroundColor: activeTab === tab.id ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  borderRadius: activeTab === tab.id ? '8px 8px 0 0' : undefined,
                 }}
               >
                 {tab.label}
