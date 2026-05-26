@@ -60,40 +60,35 @@ function ActiveDaysCard({
 }) {
   const today = localDateStr();
 
+  // Always show the current Mon–Sun week (7 dots, no padding cells needed)
   const days = useMemo(() => {
-    if (!startDate) return [];
-    const result: { date: string; hasActivity: boolean; isToday: boolean }[] = [];
-    const [sy, sm, sd] = startDate.split('-').map(Number);
     const [ty, tm, td] = today.split('-').map(Number);
-    const end = new Date(ty, tm - 1, td);
-    const start = new Date(sy, sm - 1, sd);
-    const diff = Math.floor((end.getTime() - start.getTime()) / 86400000);
-    const startOffset = Math.max(0, diff + 1 - 28);
-
-    for (let i = startOffset; i <= diff; i++) {
-      const d = new Date(sy, sm - 1, sd + i);
+    const todayDate = new Date(ty, tm - 1, td);
+    const dow = (todayDate.getDay() + 6) % 7; // 0=Mon … 6=Sun
+    const monday = new Date(ty, tm - 1, td - dow);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
       const dateStr = localDateStr(d);
-      result.push({ date: dateStr, hasActivity: activeDates.has(dateStr), isToday: dateStr === today });
-    }
-    return result;
-  }, [startDate, today, activeDates]);
+      return {
+        date: dateStr,
+        hasActivity: activeDates.has(dateStr),
+        isToday: dateStr === today,
+        isFuture: d > todayDate,
+      };
+    });
+  }, [today, activeDates]);
 
   const currentStreak = useMemo(() => {
-    const allDays = [...days].reverse();
+    // Count consecutive active days going backwards from today
+    const [ty, tm, td] = today.split('-').map(Number);
     let streak = 0;
-    for (const d of allDays) {
-      if (d.hasActivity) streak++;
-      else break;
+    let d = new Date(ty, tm - 1, td);
+    while (activeDates.has(localDateStr(d))) {
+      streak++;
+      d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
     }
     return streak;
-  }, [days]);
-
-  const firstDOW = days.length > 0
-    ? (() => {
-        const [fy, fm, fd] = days[0].date.split('-').map(Number);
-        return (new Date(fy, fm - 1, fd).getDay() + 6) % 7;
-      })()
-    : 0;
+  }, [today, activeDates]);
 
   return (
     <div
@@ -124,51 +119,42 @@ function ActiveDaysCard({
         )}
       </div>
 
-      {/* Dot grid */}
-      {days.length > 0 ? (
-        <div className="flex-1">
-          {/* Day labels */}
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            {['M','D','W','D','V','Z','Z'].map((d, i) => (
-              <div key={i} className="text-center" style={{ fontSize: '8px', color: '#7C3AED', fontWeight: 700 }}>{d}</div>
-            ))}
-          </div>
-          {/* Dots — pad cells include aspectRatio so grid rows align */}
-          <div className="grid grid-cols-7 gap-1">
-            {[
-              ...Array(firstDOW).fill(null).map((_, i) => (
-                <div key={`pad-${i}`} style={{ aspectRatio: '1' }} />
-              )),
-              ...days.map((day) => {
-                const [y, m, d] = day.date.split('-').map(Number);
-                const label = new Date(y, m - 1, d).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' });
-                return (
-                  <div
-                    key={day.date}
-                    title={label}
-                    className="rounded-sm transition-all duration-200"
-                    style={{
-                      aspectRatio: '1',
-                      backgroundColor: day.isToday
-                        ? '#A855F7'
-                        : day.hasActivity
-                        ? '#7C3AED'
-                        : 'rgba(167,139,250,0.2)',
-                      boxShadow: day.isToday ? '0 0 8px rgba(168,85,247,0.7)' : 'none',
-                      transform: day.isToday ? 'scale(1.15)' : 'scale(1)',
-                      opacity: day.hasActivity || day.isToday ? 1 : 0.4,
-                    }}
-                  />
-                );
-              }),
-            ]}
-          </div>
+      {/* Dot grid — always current week Mon–Sun, one clean row */}
+      <div className="flex-1">
+        {/* Day labels */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {['M','D','W','D','V','Z','Z'].map((d, i) => (
+            <div key={i} className="text-center" style={{ fontSize: '8px', color: '#A78BFA', fontWeight: 700 }}>{d}</div>
+          ))}
         </div>
-      ) : (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-xs text-center" style={{ color: '#7C3AED' }}>Stel een startdatum in om je streak bij te houden</p>
+        {/* 7 dots, one per day */}
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((day) => {
+            const [y, m, d] = day.date.split('-').map(Number);
+            const label = new Date(y, m - 1, d).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'short' });
+            return (
+              <div
+                key={day.date}
+                title={label}
+                className="rounded-sm transition-all duration-200"
+                style={{
+                  aspectRatio: '1',
+                  backgroundColor: day.isToday
+                    ? '#A855F7'
+                    : day.hasActivity
+                    ? '#7C3AED'
+                    : day.isFuture
+                    ? 'rgba(167,139,250,0.08)'
+                    : 'rgba(167,139,250,0.2)',
+                  boxShadow: day.isToday ? '0 0 8px rgba(168,85,247,0.7)' : 'none',
+                  transform: day.isToday ? 'scale(1.12)' : 'scale(1)',
+                  opacity: day.isFuture ? 0.25 : day.hasActivity || day.isToday ? 1 : 0.45,
+                }}
+              />
+            );
+          })}
         </div>
-      )}
+      </div>
 
       {/* Footer */}
       <div className="flex items-center justify-between mt-3 pt-3 border-t" style={{ borderColor: 'rgba(167,139,250,0.2)' }}>
@@ -434,10 +420,12 @@ export default function DashboardClient({
 
   return (
     <div className="min-h-full" style={{ background: 'linear-gradient(160deg, #F8FAF9 0%, #FAFAFA 100%)' }}>
+      {/* Single max-width wrapper so hero + cards are always the same width */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
 
       {/* Upgraded banner */}
       {upgradedBanner && (
-        <div className="mx-4 sm:mx-6 mt-4 sm:mt-6 px-4 py-3 rounded-2xl text-sm font-medium flex items-center justify-between"
+        <div className="mt-4 sm:mt-6 px-4 py-3 rounded-2xl text-sm font-medium flex items-center justify-between"
           style={{ background: 'linear-gradient(135deg, #B7E5BA, #D1FAE5)', color: '#1A5140', border: '1px solid #6EE7B7' }}>
           <span>Welkom bij Renofloww Pro! 🎉 Je hebt nu toegang tot alle functies.</span>
           <button onClick={() => setUpgradedBanner(false)} className="opacity-70 hover:opacity-100">
@@ -447,7 +435,7 @@ export default function DashboardClient({
       )}
 
       {/* ── Hero greeting ────────────────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0">
+      <div className="pt-4 sm:pt-6 pb-0">
         <div
           className="rounded-2xl p-5 sm:p-7 relative overflow-hidden"
           style={{
@@ -522,7 +510,7 @@ export default function DashboardClient({
       </div>
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+      <div className="pt-4 sm:pt-5 pb-4 sm:pb-6">
 
         {/* Drag hint */}
         <p className="text-xs mb-3 hidden md:block" style={{ color: '#C4B5FD' }}>⠿ Sleep de kaarten om de volgorde aan te passen</p>
@@ -699,6 +687,8 @@ export default function DashboardClient({
           </div>
         </div>
       </div>
+
+      </div>{/* end max-w-7xl wrapper */}
     </div>
   );
 }
