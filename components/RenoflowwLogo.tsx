@@ -1,80 +1,168 @@
 'use client';
 
+/**
+ * Renofloww logo component.
+ *
+ * variant="full"  → complete wordmark  (Renofloww with house in the ww)
+ * variant="icon"  → house-only icon    (for tablet icon-only sidebar)
+ *
+ * The wordmark is an inline SVG so it inherits the page font and renders
+ * identically everywhere. House roof-lines + chimney are overlaid on the
+ * "ww" portion via SVG paths.
+ *
+ * All positions are calibrated for Inter 700 at 60px; smaller sizes are
+ * produced by scaling the viewBox via the SVG width/height attributes.
+ */
+
 interface Props {
-  /** 'full' shows icon + wordmark, 'icon' shows only the square icon */
   variant?: 'full' | 'icon';
-  /** Controls the icon size and proportional text size */
+  /** Controls physical size of the rendered element. */
   size?: 'sm' | 'md' | 'lg';
   /**
-   * Color of the wordmark text.
-   * 'green'   → #288760  (sidebar / app header)
-   * 'dark'    → #1A1A1A  (homepage navbar on white)
-   * 'white'   → white    (footer on dark bg)
+   * 'green'  → #288760  (on white / light backgrounds)
+   * 'dark'   → #1A1A1A  (homepage navbar — keeps wordmark charcoal)
+   * 'white'  → white    (footer / dark backgrounds)
    */
   textColor?: 'green' | 'dark' | 'white';
 }
 
-const iconDims   = { sm: 28, md: 36, lg: 44 } as const;
-const fontSizes  = { sm: '15px', md: '20px', lg: '26px' } as const;
-const textColors = { green: '#288760', dark: '#1A1A1A', white: '#FFFFFF' } as const;
+// ─── Size table ────────────────────────────────────────────────────────────
+// All viewBox coordinates are designed at the "lg" reference size and the
+// SVG is then rendered smaller via width/height attrs.
+const VIEWBOX_W = 345;
+const VIEWBOX_H = 78;
 
+const physicalW = { sm: 207, md: 276, lg: 345 } as const;
+const physicalH = { sm: 47,  md: 62,  lg: 78  } as const;
+
+// ─── Colour map ────────────────────────────────────────────────────────────
+const colours = {
+  green: '#288760',
+  dark:  '#288760', // still green — the actual logo is always green
+  white: '#FFFFFF',
+} as const;
+
+// ─── House overlay coordinates (at 60 px / Inter 700 reference) ───────────
+//
+// "Renofloww" at font-size 60, weight 700, letter-spacing -1
+// Empirically: "Renoflo" ≈ 248 px, each "w" ≈ 45 px  → "ww" ≈ 90 px
+//
+// x-height of Inter Bold 60 px ≈ 31.5 px  → peaks sit at y = 68 - 31.5 = 36.5 ≈ 36
+//
+// Within each "w", the two interior peaks are at ≈ 24 % and 74 % of the
+// letter width (45 px):
+//   peak 1:  45 × 0.24 ≈ 11  →  248 + 11 = 259
+//   peak 2:  45 × 0.74 ≈ 33  →  248 + 33 = 281
+//   (right w, offset by 45 px)
+//   peak 3:  293 + 11  = 304
+//   peak 4:  293 + 33  = 326
+
+const PEAK_Y        = 36;     // y of the roofline (x-height of the "w" glyphs)
+const CHIMNEY_TOP   = 16;     // y of chimney top
+const STROKE_W      = 4.8;    // stroke width of roof lines (matches bold letter strokes)
+const CHIMNEY_W     = 8;
+const CHIMNEY_R     = 1.5;
+
+// Left "w"  (starts ≈ x=252)
+const LW_X0         = 252;
+const LW_PEAK1      = LW_X0 + 11;   // 263
+const LW_PEAK2      = LW_X0 + 33;   // 285
+// chimney is above LW_PEAK1, offset slightly left
+const CHIMNEY_X     = LW_PEAK1 - 4; // 259
+
+// Right "w" (starts ≈ x=293)
+const RW_X0         = LW_X0 + 44;   // 296
+const RW_PEAK1      = RW_X0 + 11;   // 307
+const RW_PEAK2      = RW_X0 + 33;   // 329
+
+// ─── Component ─────────────────────────────────────────────────────────────
 export default function RenoflowwLogo({
-  variant = 'full',
-  size = 'md',
+  variant   = 'full',
+  size      = 'md',
   textColor = 'green',
 }: Props) {
-  const dim    = iconDims[size];
-  const radius = Math.round(dim * 0.28);
-  const svgDim = Math.round(dim * 0.62);
-  const color  = textColors[textColor];
+  const fill = colours[textColor];
 
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: size === 'sm' ? 8 : 10, flexShrink: 0 }}>
-      {/* ── Branded icon ─────────────────────────────────────────────────── */}
+  // ── Icon-only variant (tablet sidebar) ───────────────────────────────────
+  if (variant === 'icon') {
+    const dim    = { sm: 28, md: 36, lg: 44 }[size];
+    const radius = Math.round(dim * 0.28);
+    const inner  = Math.round(dim * 0.60);
+    return (
       <div
         style={{
           width: dim,
           height: dim,
           borderRadius: radius,
           background: 'linear-gradient(135deg, #1a5140 0%, #288760 100%)',
-          boxShadow: textColor === 'white' ? 'none' : '0 2px 8px rgba(40,135,96,0.3)',
+          boxShadow: textColor === 'white' ? 'none' : '0 2px 8px rgba(40,135,96,0.28)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
         }}
       >
-        {/* House / roof silhouette — matches the "ww" double-peak concept */}
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          style={{ width: svgDim, height: svgDim }}
-        >
-          {/* Full house: roof + walls + door cutout */}
+        {/* Simplified house icon */}
+        <svg viewBox="0 0 24 24" fill="none" style={{ width: inner, height: inner }}>
           <path
-            d="M3 10.5 L12 3 L21 10.5 V20 C21 20.55 20.55 21 20 21 H15 V15 H9 V21 H4 C3.45 21 3 20.55 3 20 V10.5 Z"
+            d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V10.5Z"
             fill="white"
           />
         </svg>
       </div>
+    );
+  }
 
-      {/* ── Wordmark ─────────────────────────────────────────────────────── */}
-      {variant === 'full' && (
-        <span
-          style={{
-            fontSize: fontSizes[size],
-            fontWeight: 900,
-            letterSpacing: '-0.025em',
-            lineHeight: 1,
-            color,
-          }}
-        >
-          Reno
-          <span style={{ color: textColor === 'white' ? 'rgba(255,255,255,0.65)' : '#288760' }}>
-            floww
-          </span>
-        </span>
-      )}
-    </div>
+  // ── Full wordmark variant ─────────────────────────────────────────────────
+  return (
+    <svg
+      viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
+      width={physicalW[size]}
+      height={physicalH[size]}
+      style={{ display: 'block', flexShrink: 0 }}
+      role="img"
+      aria-label="Renofloww"
+    >
+      {/* ── Wordmark text ──────────────────────────────────────────────── */}
+      <text
+        x="3"
+        y="68"
+        fontFamily="Inter, Nunito, 'Segoe UI', system-ui, sans-serif"
+        fontWeight="700"
+        fontSize="60"
+        letterSpacing="-1"
+        fill={fill}
+      >
+        Renofloww
+      </text>
+
+      {/* ── House roof-line — left "w" ─────────────────────────────────── */}
+      <line
+        x1={LW_PEAK1} y1={PEAK_Y}
+        x2={LW_PEAK2} y2={PEAK_Y}
+        stroke={fill}
+        strokeWidth={STROKE_W}
+        strokeLinecap="round"
+      />
+
+      {/* ── Chimney above left peak ────────────────────────────────────── */}
+      <rect
+        x={CHIMNEY_X}
+        y={CHIMNEY_TOP}
+        width={CHIMNEY_W}
+        height={PEAK_Y - CHIMNEY_TOP + STROKE_W / 2}
+        rx={CHIMNEY_R}
+        fill={fill}
+      />
+
+      {/* ── House roof-line — right "w" ────────────────────────────────── */}
+      <line
+        x1={RW_PEAK1} y1={PEAK_Y}
+        x2={RW_PEAK2} y2={PEAK_Y}
+        stroke={fill}
+        strokeWidth={STROKE_W}
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

@@ -157,7 +157,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/">
-              <RenoflowwLogo size="md" variant="full" textColor="dark" />
+              <RenoflowwLogo size="md" variant="full" textColor="green" />
             </Link>
 
             {/* Desktop nav links */}

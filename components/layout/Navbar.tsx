@@ -161,7 +161,7 @@ export default function Navbar() {
     >
       {/* Mobile logo */}
       <Link href="/dashboard" className="md:hidden">
-        <RenoflowwLogo size="sm" variant="full" textColor="dark" />
+        <RenoflowwLogo size="sm" variant="full" textColor="green" />
       </Link>
 
       {/* Search bar — takes full available width on md+ */}

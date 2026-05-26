@@ -100,7 +100,7 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="px-5 py-4 border-b" style={{ borderColor: '#E5E7EB' }}>
           <Link href="/dashboard">
-            <RenoflowwLogo size="md" variant="full" textColor="dark" />
+            <RenoflowwLogo size="md" variant="full" textColor="green" />
           </Link>
         </div>
 
