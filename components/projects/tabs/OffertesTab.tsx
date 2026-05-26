@@ -20,42 +20,51 @@ const statusConfig = {
   rejected:       { label: 'Afgewezen',      color: '#EF4444', bg: '#FEF2F2' },
 };
 
-function AddQuoteModal({ project, contractors, onClose, onAdded }: {
+// Shared form fields for add/edit
+function QuoteForm({
+  project,
+  contractors,
+  initialContractorId,
+  initialDescription,
+  initialAmount,
+  initialStatus,
+  onClose,
+  onSave,
+  isEdit,
+}: {
   project: Project;
   contractors: Contractor[];
+  initialContractorId?: string;
+  initialDescription?: string;
+  initialAmount?: string;
+  initialStatus?: string;
   onClose: () => void;
-  onAdded: (q: Quote) => void;
+  onSave: (data: { contractorId: string; description: string; amount: string; status: string }) => Promise<void>;
+  isEdit: boolean;
 }) {
-  const [contractorId, setContractorId] = useState('');
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [status, setStatus] = useState('in_behandeling');
+  const [contractorId, setContractorId] = useState(initialContractorId || '');
+  const [description, setDescription] = useState(initialDescription || '');
+  const [amount, setAmount] = useState(initialAmount || '');
+  const [status, setStatus] = useState(initialStatus || 'in_behandeling');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('quotes')
-      .insert({
-        project_id: project.id,
-        contractor_id: contractorId || null,
-        description: description || null,
-        amount: parseFloat(amount.replace(/\./g, '').replace(',', '.')),
-        status,
-      })
-      .select()
-      .single();
-    if (data) onAdded(data);
+    await onSave({ contractorId, description, amount, status });
     setLoading(false);
   };
+
+  const inp = 'w-full px-3 py-2.5 rounded-xl border text-sm outline-none';
+  const inpStyle = { borderColor: '#E5E7EB', color: '#1A1A1A' };
+  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => (e.target.style.borderColor = '#288760');
+  const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => (e.target.style.borderColor = '#E5E7EB');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
       <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: '#E5E7EB' }}>
-          <h2 className="text-base font-semibold" style={{ color: '#1A1A1A' }}>Offerte toevoegen</h2>
+          <h2 className="text-base font-semibold" style={{ color: '#1A1A1A' }}>{isEdit ? 'Offerte bewerken' : 'Offerte toevoegen'}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center" style={{ color: '#6B7280' }}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -63,7 +72,7 @@ function AddQuoteModal({ project, contractors, onClose, onAdded }: {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Aannemer</label>
-            <select value={contractorId} onChange={(e) => setContractorId(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none" style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}>
+            <select value={contractorId} onChange={(e) => setContractorId(e.target.value)} className={inp} style={inpStyle} onFocus={focus} onBlur={blur}>
               <option value="">Geen specifieke aannemer</option>
               {contractors.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -72,16 +81,16 @@ function AddQuoteModal({ project, contractors, onClose, onAdded }: {
             <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Bedrag *</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#6B7280' }}>€</span>
-              <input required type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5.000" className="w-full pl-8 pr-4 py-2.5 rounded-xl border text-sm outline-none" style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }} onFocus={(e) => (e.target.style.borderColor = '#288760')} onBlur={(e) => (e.target.style.borderColor = '#E5E7EB')} />
+              <input required type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5000" className="w-full pl-8 pr-4 py-2.5 rounded-xl border text-sm outline-none" style={inpStyle} onFocus={focus} onBlur={blur} />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Omschrijving</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="Wat omvat de offerte?" className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none resize-none" style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }} />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="Wat omvat de offerte?" className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none resize-none" style={inpStyle} onFocus={focus} onBlur={blur} />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Status</label>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none" style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className={inp} style={inpStyle} onFocus={focus} onBlur={blur}>
               <option value="in_behandeling">In behandeling</option>
               <option value="geaccepteerd">Geaccepteerd</option>
               <option value="afgewezen">Afgewezen</option>
@@ -90,12 +99,79 @@ function AddQuoteModal({ project, contractors, onClose, onAdded }: {
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium border" style={{ borderColor: '#E5E7EB', color: '#6B7280' }}>Annuleren</button>
             <button type="submit" disabled={loading || !amount} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50" style={{ backgroundColor: '#288760' }}>
-              {loading ? 'Opslaan...' : 'Toevoegen'}
+              {loading ? 'Opslaan...' : isEdit ? 'Opslaan' : 'Toevoegen'}
             </button>
           </div>
         </form>
       </div>
     </div>
+  );
+}
+
+function AddQuoteModal({ project, contractors, onClose, onAdded }: {
+  project: Project;
+  contractors: Contractor[];
+  onClose: () => void;
+  onAdded: (q: Quote) => void;
+}) {
+  return (
+    <QuoteForm
+      project={project}
+      contractors={contractors}
+      onClose={onClose}
+      isEdit={false}
+      onSave={async ({ contractorId, description, amount, status }) => {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('quotes')
+          .insert({
+            project_id: project.id,
+            contractor_id: contractorId || null,
+            description: description || null,
+            amount: parseFloat(amount),
+            status,
+          })
+          .select()
+          .single();
+        if (data) onAdded(data);
+      }}
+    />
+  );
+}
+
+function EditQuoteModal({ quote, project, contractors, onClose, onUpdated }: {
+  quote: Quote & { contractors?: { name: string } | null };
+  project: Project;
+  contractors: Contractor[];
+  onClose: () => void;
+  onUpdated: (q: Quote) => void;
+}) {
+  return (
+    <QuoteForm
+      project={project}
+      contractors={contractors}
+      initialContractorId={quote.contractor_id || ''}
+      initialDescription={quote.description || ''}
+      initialAmount={String(quote.amount)}
+      initialStatus={quote.status}
+      onClose={onClose}
+      isEdit={true}
+      onSave={async ({ contractorId, description, amount, status }) => {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('quotes')
+          .update({
+            contractor_id: contractorId || null,
+            description: description || null,
+            amount: parseFloat(amount),
+            status,
+          })
+          .eq('id', quote.id)
+          .select()
+          .single();
+        if (data) onUpdated(data);
+      }}
+    />
   );
 }
 
@@ -365,6 +441,8 @@ function CompareModal({
 export default function OffertesTab({ project, initialQuotes, initialContractors }: Props) {
   const [quotes, setQuotes] = useState(initialQuotes);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingQuote, setEditingQuote] = useState<(Quote & { contractors?: { name: string } | null }) | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [showCompare, setShowCompare] = useState(false);
 
@@ -399,6 +477,14 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
     const supabase = createClient();
     await supabase.from('quotes').update({ status }).eq('id', id);
     setQuotes((prev) => prev.map((q) => q.id === id ? { ...q, status: status as Quote['status'] } : q));
+  };
+
+  const deleteQuote = async (id: string) => {
+    const supabase = createClient();
+    await supabase.from('quotes').delete().eq('id', id);
+    setQuotes((prev) => prev.filter((q) => q.id !== id));
+    setCompareIds((prev) => prev.filter((x) => x !== id));
+    setDeletingId(null);
   };
 
   const toggleCompare = (id: string) => {
@@ -518,7 +604,7 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <p className="text-base font-bold" style={{ color: '#1A1A1A' }}>
                     {formatCurrency(Number(quote.amount))}
                   </p>
@@ -532,6 +618,30 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
                     <option value="geaccepteerd">Geaccepteerd</option>
                     <option value="afgewezen">Afgewezen</option>
                   </select>
+                  {/* Edit button */}
+                  <button
+                    onClick={() => setEditingQuote(quote)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-100"
+                    title="Bewerken"
+                    style={{ color: '#6B7280' }}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  {/* Delete button */}
+                  <button
+                    onClick={() => setDeletingId(quote.id)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-red-50"
+                    title="Verwijderen"
+                    style={{ color: '#9CA3AF' }}
+                    onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#EF4444')}
+                    onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#9CA3AF')}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -571,6 +681,51 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
           onClose={() => setShowAddModal(false)}
           onAdded={(q) => { setQuotes([q, ...quotes]); setShowAddModal(false); }}
         />
+      )}
+
+      {/* Edit modal */}
+      {editingQuote && (
+        <EditQuoteModal
+          quote={editingQuote}
+          project={project}
+          contractors={initialContractors}
+          onClose={() => setEditingQuote(null)}
+          onUpdated={(updated) => {
+            setQuotes((prev) => prev.map((q) => q.id === updated.id ? { ...q, ...updated } : q));
+            setEditingQuote(null);
+          }}
+        />
+      )}
+
+      {/* Delete confirm dialog */}
+      {deletingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#FEF2F2' }}>
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#EF4444' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h3 className="text-base font-semibold text-center mb-2" style={{ color: '#1A1A1A' }}>Offerte verwijderen?</h3>
+            <p className="text-sm text-center mb-6" style={{ color: '#6B7280' }}>Dit kan niet ongedaan worden gemaakt.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeletingId(null)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium border"
+                style={{ borderColor: '#E5E7EB', color: '#6B7280' }}
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={() => deleteQuote(deletingId)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white"
+                style={{ backgroundColor: '#EF4444' }}
+              >
+                Verwijderen
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

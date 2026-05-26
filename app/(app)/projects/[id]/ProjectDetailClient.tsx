@@ -224,7 +224,7 @@ export default function ProjectDetailClient({
 
               <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
                 {project.type
-                  ? project.type.charAt(0).toUpperCase() + project.type.slice(1)
+                  ? ({ badkamer: 'Badkamer', keuken: 'Keuken', woonkamer: 'Woonkamer', slaapkamer: 'Slaapkamer', gehele_woning: 'Gehele woning', anders: 'Anders' }[project.type] || project.type.replace(/_/g, ' '))
                   : 'Project'}
                 {project.start_date && (
                   <>

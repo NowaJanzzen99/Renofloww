@@ -284,16 +284,21 @@ export default function LandingPage() {
                   <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
                     <p className="text-white text-xs font-medium mb-3 opacity-80">Gantt planning</p>
                     {[
-                      { label: 'Sloop', pct: 100, done: true },
-                      { label: 'Tegels', pct: 65, done: false },
-                      { label: 'Sanitair', pct: 20, done: false },
+                      { label: 'Sloop',   pct: 100, done: true,  start: '1 mei',  end: '10 mei' },
+                      { label: 'Tegels',  pct: 65,  done: false, start: '11 mei', end: '25 mei' },
+                      { label: 'Sanitair',pct: 20,  done: false, start: '20 mei', end: '5 jun'  },
                     ].map((row) => (
-                      <div key={row.label} className="flex items-center gap-2 mb-2 last:mb-0">
-                        <span className="text-white/70 text-xs w-12">{row.label}</span>
-                        <div className="flex-1 rounded-full h-1.5" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
-                          <div className="h-1.5 rounded-full" style={{ width: `${row.pct}%`, backgroundColor: row.done ? '#B7E5BA' : 'rgba(255,255,255,0.7)' }}></div>
+                      <div key={row.label} className="flex items-center gap-2 mb-2.5 last:mb-0">
+                        <span className="text-white/70 text-xs w-12 shrink-0">{row.label}</span>
+                        <div className="flex-1 rounded-full h-5 relative overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                          <div
+                            className="h-full rounded-full flex items-center justify-between px-2"
+                            style={{ width: `${row.pct}%`, backgroundColor: row.done ? '#5CA87C' : 'rgba(255,255,255,0.55)', minWidth: 80 }}
+                          >
+                            <span className="text-[9px] font-semibold leading-none" style={{ color: row.done ? 'white' : '#1A5140' }}>{row.start}</span>
+                            <span className="text-[9px] font-semibold leading-none" style={{ color: row.done ? 'white' : '#1A5140' }}>{row.end}</span>
+                          </div>
                         </div>
-                        <span className="text-white/60 text-xs">{row.pct}%</span>
                       </div>
                     ))}
                   </div>

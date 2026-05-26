@@ -258,20 +258,48 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
             </div>
             <h3 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Project informatie</h3>
           </div>
-          <dl className="space-y-3 divide-y" style={{ '--tw-divide-opacity': 1 } as React.CSSProperties}>
-            {[
-              { label: 'Type', value: project.type?.charAt(0).toUpperCase() + (project.type?.slice(1) || '') },
-              { label: 'Status', value: project.status },
-              { label: 'Startdatum', value: formatDate(project.start_date) },
-              { label: 'Einddatum', value: formatDate(project.end_date) },
-              { label: 'Ruimtes', value: rooms.length.toString() },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex justify-between pt-3 first:pt-0">
-                <dt className="text-sm" style={{ color: '#6B7280' }}>{label}</dt>
-                <dd className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{value || '—'}</dd>
-              </div>
-            ))}
-          </dl>
+          {(() => {
+            const typeLabels: Record<string, string> = {
+              badkamer: 'Badkamer', keuken: 'Keuken', woonkamer: 'Woonkamer',
+              slaapkamer: 'Slaapkamer', gehele_woning: 'Gehele woning', anders: 'Anders',
+            };
+            const statusLabels2: Record<string, string> = {
+              gepland: 'Gepland', lopend: 'Lopend', gepauzeerd: 'Gepauzeerd', afgerond: 'Afgerond',
+            };
+            const statusBadgeColors: Record<string, { color: string; bg: string }> = {
+              gepland: { color: '#3B82F6', bg: '#EFF6FF' },
+              lopend:  { color: '#10B981', bg: '#ECFDF5' },
+              gepauzeerd: { color: '#F59E0B', bg: '#FFFBEB' },
+              afgerond: { color: '#6B7280', bg: '#F3F4F6' },
+            };
+            const rows = [
+              { label: 'Type', value: typeLabels[project.type] || project.type?.replace(/_/g, ' ') || '—', badge: null },
+              { label: 'Status', value: statusLabels2[project.status] || project.status, badge: statusBadgeColors[project.status] },
+              { label: 'Startdatum', value: formatDate(project.start_date) || '—', badge: null },
+              { label: 'Einddatum', value: formatDate(project.end_date) || '—', badge: null },
+              { label: 'Ruimtes', value: rooms.length.toString(), badge: null },
+            ];
+            return (
+              <dl className="space-y-0">
+                {rows.map(({ label, value, badge }, i) => (
+                  <div
+                    key={label}
+                    className="flex justify-between items-center py-3"
+                    style={{ borderTop: i > 0 ? '1px solid #F3F4F6' : 'none' }}
+                  >
+                    <dt className="text-sm" style={{ color: '#9CA3AF' }}>{label}</dt>
+                    {badge ? (
+                      <dd className="text-sm font-semibold px-2.5 py-0.5 rounded-full" style={{ color: badge.color, backgroundColor: badge.bg }}>
+                        {value}
+                      </dd>
+                    ) : (
+                      <dd className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{value}</dd>
+                    )}
+                  </div>
+                ))}
+              </dl>
+            );
+          })()}
         </div>
 
         {/* Quick actions */}
