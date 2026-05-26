@@ -245,24 +245,35 @@ export default function GanttChart({ rooms: initialRooms, projectStart, projectE
 
   return (
     <div>
-      {/* Ticks row */}
-      <div className="flex" style={{ paddingLeft: `${labelWidth}px`, marginBottom: '4px', position: 'relative' }}>
-        {ticks.map((tick, i) => (
-          <div
-            key={i}
-            className="absolute text-center"
-            style={{
-              left: `calc(${labelWidth}px + ${tick.pct}%)`,
-              transform: tick.pct === 0 ? 'none' : tick.pct === 100 ? 'translateX(-100%)' : 'translateX(-50%)',
-              fontSize: compact ? '9px' : '10px',
-              color: '#9CA3AF',
-              fontWeight: 500,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {tick.label}
-          </div>
-        ))}
+      {/* Ticks row — positioned relative to track area only (after the label) */}
+      <div className="flex" style={{ marginBottom: '4px' }}>
+        {/* Label spacer */}
+        <div style={{ width: `${labelWidth}px`, flexShrink: 0 }} />
+        {/* Track area with relative positioning */}
+        <div className="flex-1 relative" style={{ height: compact ? '14px' : '16px' }}>
+          {ticks.map((tick, i) => (
+            <div
+              key={i}
+              className="absolute text-center"
+              style={{
+                left: `${tick.pct}%`,
+                top: 0,
+                transform:
+                  tick.pct === 0
+                    ? 'none'
+                    : tick.pct >= 95
+                    ? 'translateX(-100%)'
+                    : 'translateX(-50%)',
+                fontSize: compact ? '9px' : '10px',
+                color: '#9CA3AF',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {tick.label}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Chart rows */}
@@ -360,24 +371,24 @@ export default function GanttChart({ rooms: initialRooms, projectStart, projectE
         })}
       </div>
 
-      {/* Today label */}
+      {/* Today label — same track-relative positioning as ticks */}
       {todayPct !== null && !compact && (
-        <div
-          className="relative mt-1"
-          style={{ paddingLeft: `${labelWidth}px` }}
-        >
-          <div
-            className="absolute text-xs font-semibold px-1.5 py-0.5 rounded"
-            style={{
-              left: `calc(${labelWidth}px + ${todayPct}%)`,
-              transform: 'translateX(-50%)',
-              backgroundColor: '#FEF2F2',
-              color: '#EF4444',
-              fontSize: '9px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Vandaag
+        <div className="flex mt-1">
+          <div style={{ width: `${labelWidth}px`, flexShrink: 0 }} />
+          <div className="flex-1 relative" style={{ height: '16px' }}>
+            <div
+              className="absolute text-xs font-semibold px-1.5 py-0.5 rounded"
+              style={{
+                left: `${todayPct}%`,
+                transform: 'translateX(-50%)',
+                backgroundColor: '#FEF2F2',
+                color: '#EF4444',
+                fontSize: '9px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Vandaag
+            </div>
           </div>
         </div>
       )}
