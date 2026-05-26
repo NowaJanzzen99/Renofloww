@@ -138,17 +138,41 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
   };
 
   const compareQuotes = quotes.filter((q) => compareIds.includes(q.id));
-  const getContractorName = (q: Quote & { contractors?: { name: string } | null }) =>
-    q.contractors?.name || initialContractors.find((c) => c.id === q.contractor_id)?.name || 'Onbekend';
+  const getContractorName = (q: Quote & { contractors?: { name: string } | null }): string | null =>
+    q.contractors?.name || initialContractors.find((c) => c.id === q.contractor_id)?.name || null;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h2 className="text-lg font-semibold" style={{ color: '#1A1A1A' }}>Offertes ({quotes.length})</h2>
+        <div>
+          <h2 className="text-lg font-semibold" style={{ color: '#1A1A1A' }}>Offertes ({quotes.length})</h2>
+          {quotes.length >= 2 && (
+            <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
+              {compareIds.length === 0
+                ? 'Vink offertes aan om ze te vergelijken'
+                : compareIds.length === 1
+                ? '1 geselecteerd — selecteer nog minimaal 1'
+                : `${compareIds.length} geselecteerd`}
+            </p>
+          )}
+        </div>
         <div className="flex gap-2">
-          {compareIds.length >= 2 && (
-            <button onClick={() => setShowCompare(true)} className="px-3 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: '#288760', color: '#288760' }}>
-              Vergelijk ({compareIds.length})
+          {quotes.length >= 2 && (
+            <button
+              onClick={() => compareIds.length >= 2 ? setShowCompare(true) : undefined}
+              disabled={compareIds.length < 2}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-all"
+              style={{
+                borderColor: compareIds.length >= 2 ? '#288760' : '#E5E7EB',
+                color: compareIds.length >= 2 ? '#288760' : '#9CA3AF',
+                backgroundColor: compareIds.length >= 2 ? '#F0FDF4' : 'transparent',
+              }}
+              title={compareIds.length < 2 ? 'Selecteer 2 of meer offertes om te vergelijken' : undefined}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+              </svg>
+              Vergelijk offertes{compareIds.length >= 2 ? ` (${compareIds.length})` : ''}
             </button>
           )}
           <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-white" style={{ backgroundColor: '#288760' }}>
@@ -157,10 +181,6 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
           </button>
         </div>
       </div>
-
-      {compareIds.length > 0 && (
-        <p className="text-xs" style={{ color: '#6B7280' }}>Selecteer 2-3 offertes om te vergelijken</p>
-      )}
 
       <div className="space-y-3">
         {quotes.map((quote) => {
@@ -180,19 +200,27 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
               }}
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3 flex-1">
+                <div className="flex items-start gap-3 flex-1">
                   <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => toggleCompare(quote.id)}
-                    className="w-4 h-4 rounded"
+                    className="w-4 h-4 rounded mt-0.5 shrink-0"
                     style={{ accentColor: '#288760' }}
+                    title="Selecteer voor vergelijking"
+                    aria-label="Selecteer voor vergelijking"
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>
-                        {getContractorName(quote)}
-                      </p>
+                      {getContractorName(quote) ? (
+                        <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>
+                          {getContractorName(quote)}
+                        </p>
+                      ) : (
+                        <p className="text-sm italic" style={{ color: '#9CA3AF' }}>
+                          Geen aannemer gekoppeld
+                        </p>
+                      )}
                       {isMin && <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: '#DCFCE7', color: '#166534' }}>Laagste</span>}
                       {isMax && quotes.length > 1 && <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>Hoogste</span>}
                     </div>
@@ -234,7 +262,7 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
                   <tr>
                     <th className="text-left py-2 pr-4" style={{ color: '#6B7280' }}>Onderdeel</th>
                     {compareQuotes.map((q) => (
-                      <th key={q.id} className="text-left py-2 px-2" style={{ color: '#1A1A1A' }}>{getContractorName(q)}</th>
+                      <th key={q.id} className="text-left py-2 px-2" style={{ color: '#1A1A1A' }}>{getContractorName(q) ?? <em style={{ color: '#9CA3AF' }}>Geen aannemer</em>}</th>
                     ))}
                   </tr>
                 </thead>

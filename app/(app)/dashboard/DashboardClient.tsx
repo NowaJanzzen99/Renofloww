@@ -42,6 +42,11 @@ function DonutGauge({ percentage, color }: { percentage: number; color: string }
   );
 }
 
+// ─── Local date helper (avoids UTC offset issues with toISOString) ────────────
+function localDateStr(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // ─── Streak card ──────────────────────────────────────────────────────────────
 function ActiveDaysCard({
   activeDays,
@@ -52,22 +57,22 @@ function ActiveDaysCard({
   startDate?: string | null;
   activeDates: Set<string>;
 }) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
 
   // Build array of dates from startDate up to today (max 28 days shown)
   const days = useMemo(() => {
     if (!startDate) return [];
     const result: { date: string; hasActivity: boolean; isToday: boolean }[] = [];
-    const start = new Date(startDate);
-    const end = new Date(today);
+    const [sy, sm, sd] = startDate.split('-').map(Number);
+    const start = new Date(sy, sm - 1, sd);
+    const [ty, tm, td] = today.split('-').map(Number);
+    const end = new Date(ty, tm - 1, td);
     const diff = Math.floor((end.getTime() - start.getTime()) / 86400000);
-    const total = Math.min(diff + 1, 28); // show max 28 days
     const startOffset = Math.max(0, diff + 1 - 28); // skip old days if > 28
 
     for (let i = startOffset; i <= diff; i++) {
-      const d = new Date(start);
-      d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
+      const d = new Date(sy, sm - 1, sd + i);
+      const dateStr = localDateStr(d);
       result.push({
         date: dateStr,
         hasActivity: activeDates.has(dateStr),
@@ -114,7 +119,7 @@ function ActiveDaysCard({
         )}
       </div>
 
-      {/* Dot grid: 7 per row = week view */}
+      {/* Dot grid: 7 per row = week view, properly aligned Mon–Sun */}
       {days.length > 0 ? (
         <div className="flex-1">
           {/* Day labels Mon–Sun */}
@@ -123,29 +128,38 @@ function ActiveDaysCard({
               <div key={i} className="text-center" style={{ fontSize: '8px', color: '#C4B5FD', fontWeight: 600 }}>{d}</div>
             ))}
           </div>
-          {/* Dot grid */}
+          {/* Dot grid — pad start so first dot falls on its correct day column */}
           <div className="grid grid-cols-7 gap-1">
-            {days.map((day, i) => {
-              const label = new Date(day.date).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' });
-              return (
-                <div
-                  key={day.date}
-                  title={label}
-                  className="rounded-sm transition-all duration-200"
-                  style={{
-                    aspectRatio: '1',
-                    backgroundColor: day.isToday
-                      ? '#9333EA'
-                      : day.hasActivity
-                      ? '#A855F7'
-                      : '#EDE9FE',
-                    boxShadow: day.isToday ? '0 0 8px rgba(147,51,234,0.5)' : 'none',
-                    transform: day.isToday ? 'scale(1.1)' : 'scale(1)',
-                    opacity: day.hasActivity || day.isToday ? 1 : 0.5,
-                  }}
-                />
-              );
-            })}
+            {(() => {
+              // Leading empty cells so first day aligns with its day-of-week
+              const [fy, fm, fd] = days[0].date.split('-').map(Number);
+              const firstDOW = (new Date(fy, fm - 1, fd).getDay() + 6) % 7; // 0=Mon
+              return [
+                ...Array(firstDOW).fill(null).map((_, i) => <div key={`pad-${i}`} />),
+                ...days.map((day) => {
+                  const [y, m, d] = day.date.split('-').map(Number);
+                  const label = new Date(y, m - 1, d).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' });
+                  return (
+                    <div
+                      key={day.date}
+                      title={label}
+                      className="rounded-sm transition-all duration-200"
+                      style={{
+                        aspectRatio: '1',
+                        backgroundColor: day.isToday
+                          ? '#9333EA'
+                          : day.hasActivity
+                          ? '#A855F7'
+                          : '#EDE9FE',
+                        boxShadow: day.isToday ? '0 0 8px rgba(147,51,234,0.5)' : 'none',
+                        transform: day.isToday ? 'scale(1.1)' : 'scale(1)',
+                        opacity: day.hasActivity || day.isToday ? 1 : 0.5,
+                      }}
+                    />
+                  );
+                }),
+              ];
+            })()}
           </div>
         </div>
       ) : (

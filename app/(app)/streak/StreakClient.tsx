@@ -14,8 +14,13 @@ interface Props {
 const MONTH_NAMES = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
 const WEEK_LABELS = ['M','D','W','D','V','Z','Z'];
 
+// Local date helper – avoids UTC offset issues from toISOString()
+function localDateStr(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export default function StreakClient({ profile, activeProject, tasks, expenses }: Props) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
 
   // ── Activity dates set ──────────────────────────────────────────────────────
   const activeDates = useMemo(() => {
@@ -67,9 +72,8 @@ export default function StreakClient({ profile, activeProject, tasks, expenses }
     const dow = todayDate.getDay(); // 0=Sun
     const mondayOffset = dow === 0 ? -6 : 1 - dow;
     return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(todayDate);
-      d.setDate(todayDate.getDate() + mondayOffset + i);
-      const dateStr = d.toISOString().split('T')[0];
+      const d = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate() + mondayOffset + i);
+      const dateStr = localDateStr(d);
       return {
         label: WEEK_LABELS[i],
         dayNum: d.getDate(),
@@ -90,15 +94,22 @@ export default function StreakClient({ profile, activeProject, tasks, expenses }
       days: { date: string | null; hasActivity: boolean; isToday: boolean }[];
     }[] = [];
 
-    const start = startDate ? new Date(startDate) : new Date();
-    start.setDate(1);
-    const end = new Date(today);
-    end.setDate(1);
+    const [ty, tm] = today.split('-').map(Number);
 
-    const cursor = new Date(start);
-    while (cursor <= end) {
-      const year = cursor.getFullYear();
-      const month = cursor.getMonth();
+    let startYear: number, startMonth: number;
+    if (startDate) {
+      const [sy, sm] = startDate.split('-').map(Number);
+      startYear = sy; startMonth = sm - 1;
+    } else {
+      startYear = ty; startMonth = tm - 1;
+    }
+
+    let cursorYear = startYear;
+    let cursorMonth = startMonth;
+
+    while (cursorYear < ty || (cursorYear === ty && cursorMonth <= tm - 1)) {
+      const year = cursorYear;
+      const month = cursorMonth;
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
       const startDOW = firstDay.getDay();
@@ -107,11 +118,14 @@ export default function StreakClient({ profile, activeProject, tasks, expenses }
       const days: { date: string | null; hasActivity: boolean; isToday: boolean }[] = [];
       for (let i = 0; i < leadingEmpty; i++) days.push({ date: null, hasActivity: false, isToday: false });
       for (let d = 1; d <= lastDay.getDate(); d++) {
-        const dateStr = new Date(year, month, d).toISOString().split('T')[0];
+        // Use direct string formatting to avoid UTC offset issues
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         days.push({ date: dateStr, hasActivity: activeDates.has(dateStr), isToday: dateStr === today });
       }
       result.push({ year, month, days });
-      cursor.setMonth(cursor.getMonth() + 1);
+
+      cursorMonth++;
+      if (cursorMonth > 11) { cursorMonth = 0; cursorYear++; }
     }
     return result.reverse();
   }, [activeProject?.start_date, today, activeDates]);
@@ -266,7 +280,7 @@ export default function StreakClient({ profile, activeProject, tasks, expenses }
                     {days.map((day, i) => (
                       <div
                         key={i}
-                        title={day.date ? new Date(day.date).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' }) : ''}
+                        title={day.date ? (() => { const [y,m,d] = day.date.split('-').map(Number); return new Date(y, m-1, d).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' }); })() : ''}
                         className="rounded-sm transition-all duration-200"
                         style={{
                           aspectRatio: '1',

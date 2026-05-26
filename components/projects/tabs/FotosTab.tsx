@@ -20,7 +20,7 @@ export default function FotosTab({ project, initialRooms }: Props) {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [activePhase, setActivePhase] = useState<PhotoPhase>('voor');
-  const [selectedRoom, setSelectedRoom] = useState('');
+  const [selectedRoom, setSelectedRoom] = useState(initialRooms[0]?.id ?? '');
   const [note, setNote] = useState('');
   const [lightbox, setLightbox] = useState<Photo | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -171,16 +171,18 @@ export default function FotosTab({ project, initialRooms }: Props) {
         </p>
 
         {/* Room + note row */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-3">
-          <select
-            value={selectedRoom}
-            onChange={(e) => setSelectedRoom(e.target.value)}
-            className="px-3 py-2 rounded-xl border text-sm outline-none"
-            style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
-          >
-            <option value="">Geen ruimte</option>
-            {initialRooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
+        <div className="flex flex-col sm:flex-row gap-2 mb-1">
+          <div className="flex flex-col gap-0.5">
+            <select
+              value={selectedRoom}
+              onChange={(e) => setSelectedRoom(e.target.value)}
+              className="px-3 py-2 rounded-xl border text-sm outline-none"
+              style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
+            >
+              <option value="">Geen ruimte</option>
+              {initialRooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+          </div>
           <input
             type="text"
             value={note}
@@ -190,6 +192,9 @@ export default function FotosTab({ project, initialRooms }: Props) {
             style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
           />
         </div>
+        <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>
+          Kies de ruimte waar deze foto bij hoort
+        </p>
 
         {/* Drop zone */}
         <div
