@@ -16,14 +16,18 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const priceId: string =
-      body.priceId ||
-      process.env.STRIPE_PRICE_ID_MONTHLY ||
-      process.env.STRIPE_PRICE_PRO_MONTHLY ||
-      '';
+
+    // Resolve price ID from plan key (server-side only — never exposed to browser)
+    const plan: string = body.plan || 'monthly';
+    const priceId: string = plan === 'yearly'
+      ? (process.env.STRIPE_PRICE_ID_YEARLY || process.env.STRIPE_PRICE_PRO_YEARLY || '')
+      : (process.env.STRIPE_PRICE_ID_MONTHLY || process.env.STRIPE_PRICE_PRO_MONTHLY || '');
 
     if (!priceId) {
-      return NextResponse.json({ error: 'Prijs ID is niet geconfigureerd.' }, { status: 500 });
+      return NextResponse.json(
+        { error: `Prijs ID voor plan "${plan}" is niet geconfigureerd.` },
+        { status: 500 },
+      );
     }
 
     // Get or create Stripe customer

@@ -99,13 +99,13 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
-  const handleUpgrade = async (priceId: string) => {
+  const handleUpgrade = async (plan: 'monthly' | 'yearly') => {
     try {
       setSaving(true);
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ plan }),
       });
       const data = await res.json();
       if (data.url) {
@@ -378,7 +378,7 @@ export default function SettingsPage() {
                   ))}
                 </ul>
                 <button
-                  onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY || 'price_1Tb6pDHnmzUK6aJZYadqyaq9')}
+                  onClick={() => handleUpgrade('yearly')}
                   disabled={saving}
                   className="rf-plan-btn w-full py-3 rounded-xl text-sm font-black text-white disabled:opacity-60"
                   style={{ backgroundColor: '#288760', boxShadow: '0 4px 16px rgba(40,135,96,0.4)' }}
@@ -419,7 +419,7 @@ export default function SettingsPage() {
                   ))}
                 </ul>
                 <button
-                  onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || 'price_1Tb6pAHnmzUK6aJZDQPKmBRg')}
+                  onClick={() => handleUpgrade('monthly')}
                   disabled={saving}
                   className="rf-plan-btn w-full py-3 rounded-xl text-sm font-bold disabled:opacity-60"
                   style={{ border: '2px solid #288760', color: '#288760', backgroundColor: 'transparent', boxShadow: '0 2px 8px rgba(40,135,96,0.15)' }}
