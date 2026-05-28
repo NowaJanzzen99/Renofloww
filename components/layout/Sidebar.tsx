@@ -6,6 +6,18 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Profile } from '@/types';
 
+// ─── Storage key for the dropdown's open/closed state ───────────────────────
+const PROJECTS_OPEN_KEY = 'rf-sidebar-projects-open';
+
+// ─── Status dot colors ───────────────────────────────────────────────────────
+const statusDot: Record<string, string> = {
+  gepland:    '#3B82F6',
+  lopend:     '#10B981',
+  gepauzeerd: '#F59E0B',
+  afgerond:   '#6B7280',
+};
+
+// ─── Nav items (excluding "Mijn projecten" — rendered separately) ─────────────
 const navItems = [
   {
     label: 'Dashboard',
@@ -13,15 +25,6 @@ const navItems = [
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Mijn projecten',
-    href: '/projects',
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
       </svg>
     ),
   },
@@ -64,24 +67,48 @@ const navItems = [
   },
 ];
 
+// ─── Projects folder icon ─────────────────────────────────────────────────────
+const ProjectsIcon = () => (
+  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+  </svg>
+);
+
 export default function Sidebar() {
   const pathname = usePathname();
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile]   = useState<Profile | null>(null);
+  const [projects, setProjects] = useState<{ id: string; name: string; status: string }[]>([]);
+  const [projectsOpen, setProjectsOpen] = useState(false);
 
+  // ── Restore persisted dropdown state from localStorage ──────────────────
   useEffect(() => {
-    const fetchProfile = async () => {
+    try {
+      const stored = localStorage.getItem(PROJECTS_OPEN_KEY);
+      if (stored === 'true') setProjectsOpen(true);
+    } catch {}
+  }, []);
+
+  // ── Fetch profile + projects ─────────────────────────────────────────────
+  useEffect(() => {
+    const load = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        setProfile(data);
-      }
+      if (!user) return;
+
+      const [profileRes, projectsRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', user.id).single(),
+        supabase
+          .from('projects')
+          .select('id, name, status')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(12),
+      ]);
+
+      if (profileRes.data)  setProfile(profileRes.data);
+      if (projectsRes.data) setProjects(projectsRes.data);
     };
-    fetchProfile();
+    load();
   }, []);
 
   const isActive = (href: string) => {
@@ -89,9 +116,19 @@ export default function Sidebar() {
     return pathname.startsWith(href);
   };
 
+  const projectsActive = pathname.startsWith('/projects');
+
+  const toggleProjects = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = !projectsOpen;
+    setProjectsOpen(next);
+    try { localStorage.setItem(PROJECTS_OPEN_KEY, String(next)); } catch {}
+  };
+
   return (
     <>
-      {/* Desktop sidebar */}
+      {/* ── Desktop sidebar ──────────────────────────────────────────────── */}
       <aside
         className="hidden lg:flex flex-col w-60 border-r shrink-0"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }}
@@ -110,18 +147,127 @@ export default function Sidebar() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 p-3 space-y-1">
-          {navItems.map((item) => {
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+
+          {/* Dashboard */}
+          {navItems.slice(0, 1).map((item) => {
             const active = isActive(item.href);
             return (
-              <Link
-                key={item.href}
-                href={item.href}
+              <Link key={item.href} href={item.href}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: active ? '#B7E5BA' : 'transparent',
-                  color: active ? '#1A5140' : '#6B7280',
-                }}
+                style={{ backgroundColor: active ? '#B7E5BA' : 'transparent', color: active ? '#1A5140' : '#6B7280' }}
+              >
+                <span style={{ color: active ? '#288760' : '#9CA3AF' }}>{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
+
+          {/* ── Mijn projecten (with dropdown) ────────────────────────── */}
+          <div>
+            {/* Row: folder link + chevron toggle */}
+            <div
+              className="flex items-center rounded-xl transition-colors"
+              style={{ backgroundColor: projectsActive ? '#B7E5BA' : 'transparent' }}
+            >
+              {/* Clicking icon+label navigates to /projects */}
+              <Link
+                href="/projects"
+                className="flex items-center gap-3 px-3 py-2.5 flex-1 text-sm font-medium min-w-0"
+                style={{ color: projectsActive ? '#1A5140' : '#6B7280' }}
+              >
+                <span style={{ color: projectsActive ? '#288760' : '#9CA3AF' }}>
+                  <ProjectsIcon />
+                </span>
+                <span className="truncate">Mijn projecten</span>
+              </Link>
+
+              {/* Chevron — only toggles the dropdown */}
+              <button
+                onClick={toggleProjects}
+                className="w-8 h-8 flex items-center justify-center rounded-lg mr-1 transition-colors hover:bg-black/5"
+                title={projectsOpen ? 'Inklappen' : 'Uitklappen'}
+                aria-label={projectsOpen ? 'Projectenlijst inklappen' : 'Projectenlijst uitklappen'}
+              >
+                <svg
+                  className="w-3.5 h-3.5 transition-transform duration-200"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  style={{
+                    color: projectsActive ? '#288760' : '#9CA3AF',
+                    transform: projectsOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                  }}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* ── Project list dropdown ──────────────────────────────── */}
+            <div
+              style={{
+                maxHeight: projectsOpen ? `${Math.min(projects.length, 12) * 36 + 36}px` : '0px',
+                overflow: 'hidden',
+                transition: 'max-height 0.25s ease',
+              }}
+            >
+              <div className="pl-9 pr-2 pb-1 space-y-0.5">
+                {projects.length === 0 ? (
+                  <p className="text-xs px-2 py-2" style={{ color: '#9CA3AF' }}>Geen projecten</p>
+                ) : (
+                  projects.map((p) => {
+                    const isCurrentProject = pathname.startsWith(`/projects/${p.id}`);
+                    const dot = statusDot[p.status] || '#9CA3AF';
+                    return (
+                      <Link
+                        key={p.id}
+                        href={`/projects/${p.id}`}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors truncate"
+                        style={{
+                          backgroundColor: isCurrentProject ? '#DCFCE7' : 'transparent',
+                          color: isCurrentProject ? '#1A5140' : '#6B7280',
+                        }}
+                        onMouseEnter={e => {
+                          if (!isCurrentProject) (e.currentTarget as HTMLElement).style.backgroundColor = '#F3F4F6';
+                        }}
+                        onMouseLeave={e => {
+                          if (!isCurrentProject) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                        }}
+                      >
+                        {/* Status dot */}
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor: dot }}
+                        />
+                        <span className="truncate">{p.name}</span>
+                      </Link>
+                    );
+                  })
+                )}
+
+                {/* "Alle projecten" link at the bottom */}
+                <Link
+                  href="/projects"
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors mt-0.5"
+                  style={{ color: '#9CA3AF' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#288760'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#9CA3AF'; }}
+                >
+                  <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                  Alle projecten
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Remaining nav items (Kalender, Analytics, Streaks, Instellingen) */}
+          {navItems.slice(1).map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link key={item.href} href={item.href}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                style={{ backgroundColor: active ? '#B7E5BA' : 'transparent', color: active ? '#1A5140' : '#6B7280' }}
               >
                 <span style={{ color: active ? '#288760' : '#9CA3AF' }}>{item.icon}</span>
                 {item.label}
@@ -151,13 +297,14 @@ export default function Sidebar() {
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 18px rgba(245,158,11,0.6)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(245,158,11,0.4)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
               >
-                {/* Shimmer overlay */}
                 <div className="rf-shimmer absolute inset-0 w-1/3 bg-white opacity-20 pointer-events-none" />
                 <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
                 <span>Upgrade naar Pro</span>
-                <svg className="w-3.5 h-3.5 ml-auto shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                <svg className="w-3.5 h-3.5 ml-auto shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
               </Link>
             </>
           )}
@@ -166,10 +313,7 @@ export default function Sidebar() {
         {/* User info */}
         {profile && (
           <div className="p-3 border-t" style={{ borderColor: '#E5E7EB' }}>
-            <Link
-              href="/settings"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
-            >
+            <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0"
                 style={{ backgroundColor: '#288760' }}
@@ -177,19 +321,15 @@ export default function Sidebar() {
                 {profile.name ? profile.name[0].toUpperCase() : profile.email[0].toUpperCase()}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: '#1A1A1A' }}>
-                  {profile.name || 'Gebruiker'}
-                </p>
-                <p className="text-xs truncate" style={{ color: '#6B7280' }}>
-                  {profile.email}
-                </p>
+                <p className="text-sm font-medium truncate" style={{ color: '#1A1A1A' }}>{profile.name || 'Gebruiker'}</p>
+                <p className="text-xs truncate" style={{ color: '#6B7280' }}>{profile.email}</p>
               </div>
             </Link>
           </div>
         )}
       </aside>
 
-      {/* Tablet icon-only sidebar */}
+      {/* ── Tablet icon-only sidebar ─────────────────────────────────────── */}
       <aside
         className="hidden md:flex lg:hidden flex-col w-16 border-r shrink-0"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }}
@@ -201,18 +341,13 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex-1 p-2 space-y-1 flex flex-col items-center">
-          {navItems.map((item) => {
+          {/* Dashboard */}
+          {[...navItems.slice(0, 1), { label: 'Mijn projecten', href: '/projects', icon: <ProjectsIcon /> }, ...navItems.slice(1)].map((item) => {
             const active = isActive(item.href);
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={item.label}
+              <Link key={item.href} href={item.href} title={item.label}
                 className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-                style={{
-                  backgroundColor: active ? '#B7E5BA' : 'transparent',
-                  color: active ? '#288760' : '#9CA3AF',
-                }}
+                style={{ backgroundColor: active ? '#B7E5BA' : 'transparent', color: active ? '#288760' : '#9CA3AF' }}
               >
                 {item.icon}
               </Link>
