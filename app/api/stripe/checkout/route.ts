@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      payment_method_types: ['card', 'ideal'],
+      automatic_payment_methods: { enabled: true },
       line_items: [
         {
           price: priceId,
@@ -94,10 +94,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    console.error('Stripe checkout error:', errMsg);
+    console.error('Stripe checkout error:', error);
     return NextResponse.json(
-      { error: errMsg },
+      { error: 'Er is een fout opgetreden bij het aanmaken van de betaalsessie.' },
       { status: 500 }
     );
   }
