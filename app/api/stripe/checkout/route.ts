@@ -94,9 +94,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error('Stripe checkout error:', error);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('Stripe checkout error:', errMsg);
     return NextResponse.json(
-      { error: 'Er is een fout opgetreden bij het aanmaken van de betaalsessie.' },
+      { error: errMsg },
       { status: 500 }
     );
   }
