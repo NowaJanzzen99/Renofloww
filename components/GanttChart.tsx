@@ -241,7 +241,7 @@ export default function GanttChart({ rooms: initialRooms, projectStart, projectE
 
   const rowHeight = compact ? 20 : 28;
   const rowGap = compact ? 6 : 10;
-  const labelWidth = compact ? 80 : 120;
+  const labelWidth = compact ? 110 : 165;
 
   return (
     <div>

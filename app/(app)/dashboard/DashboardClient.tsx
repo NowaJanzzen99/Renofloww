@@ -208,7 +208,7 @@ export default function DashboardClient({
   const [pendingQuotesCount, setPendingQuotesCount] = useState(initialPendingQuotesCount);
   const [upgradedBanner, setUpgradedBanner] = useState(false);
 
-  const DEFAULT_ORDER = ['budget', 'taken', 'offertes', 'vandaag'];
+  const DEFAULT_ORDER = ['budget', 'deadline', 'offertes', 'vandaag'];
   const [cardOrder, setCardOrder] = useState<string[]>(DEFAULT_ORDER);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -240,7 +240,7 @@ export default function DashboardClient({
 
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const budgetPercentage = budget > 0 ? Math.min(Math.round((totalExpenses / budget) * 100), 100) : 0;
-  const budgetColor = budgetPercentage >= 80 ? '#EF4444' : budgetPercentage >= 50 ? '#F59E0B' : '#288760';
+  const budgetColor = budgetPercentage >= 80 ? '#EF4444' : budgetPercentage >= 50 ? '#b45309' : '#288760';
 
   const activeDates = useMemo(() => {
     const s = new Set<string>();
@@ -257,13 +257,18 @@ export default function DashboardClient({
     return s;
   }, [expenses, allTasks]);
 
-  // Nearest future room deadline for snapshot card
+  // Nearest future room deadline for stat card
   const nextDeadline = useMemo(() => {
     const today = localDateStr();
-    return rooms
+    const room = rooms
       .filter(r => r.end_date && r.end_date >= today)
       .sort((a, b) => (a.end_date ?? '').localeCompare(b.end_date ?? ''))
       .at(0) ?? null;
+    if (!room?.end_date) return null;
+    const [ey, em, ed] = room.end_date.split('-').map(Number);
+    const [ty, tm, td] = today.split('-').map(Number);
+    const daysUntil = Math.round((new Date(ey, em - 1, ed).getTime() - new Date(ty, tm - 1, td).getTime()) / 86400000);
+    return { ...room, daysUntil };
   }, [rooms]);
 
   // Current consecutive streak — same algorithm as the streak page (with grace period for yesterday)
@@ -378,32 +383,39 @@ export default function DashboardClient({
         )}
       </div>
     ),
-    taken: (
+    deadline: (
       <div
         className="rounded-2xl p-4 sm:p-5 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
       >
         <div className="flex items-start justify-between mb-4">
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Taken vandaag</p>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#EFF6FF' }}>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#3B82F6' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Volgende deadline</p>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#b45309' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
         </div>
         <div className="flex-1 flex flex-col justify-center">
-          <p className="text-4xl font-black mb-1" style={{ color: '#1A1A1A' }}>{todayTasks.length}</p>
-          {todayTasks.length > 0 && (
-            <div className="flex items-center gap-1.5 mb-2">
-              <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#EFF6FF' }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${todayTasks.length > 0 ? Math.round((completedTodayCount / todayTasks.length) * 100) : 0}%`, backgroundColor: '#3B82F6' }} />
-              </div>
-              <span className="text-xs" style={{ color: '#9CA3AF' }}>{completedTodayCount}/{todayTasks.length}</span>
-            </div>
+          {nextDeadline ? (
+            <>
+              <p className="text-4xl font-black mb-1" style={{ color: '#1A1A1A' }}>
+                {nextDeadline.daysUntil === 0 ? 'Vandaag' : `${nextDeadline.daysUntil}d`}
+              </p>
+              <p className="text-xs mb-2 truncate" style={{ color: '#9CA3AF' }}>{nextDeadline.name}</p>
+              <Link href={activeProject ? `/projects/${activeProject.id}?tab=ruimtes` : '/projects'} className="text-xs font-semibold" style={{ color: '#288760' }}>
+                Bekijk ruimtes →
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-2xl font-black mb-1" style={{ color: '#D1D5DB' }}>—</p>
+              <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Geen deadline gepland</p>
+              <Link href={activeProject ? `/projects/${activeProject.id}?tab=ruimtes` : '/projects'} className="text-xs font-semibold" style={{ color: '#288760' }}>
+                Voeg deadline toe →
+              </Link>
+            </>
           )}
-          <Link href={activeProject ? `/projects/${activeProject.id}?tab=taken` : '/projects'} className="text-xs font-semibold" style={{ color: '#3B82F6' }}>
-            Bekijk taken →
-          </Link>
         </div>
       </div>
     ),
@@ -423,7 +435,7 @@ export default function DashboardClient({
         <div className="flex-1 flex flex-col justify-center">
           <p className="text-4xl font-black mb-1" style={{ color: '#1A1A1A' }}>{pendingQuotesCount}</p>
           <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>In behandeling</p>
-          <Link href={activeProject ? `/projects/${activeProject.id}?tab=offertes` : '/projects'} className="text-xs font-semibold" style={{ color: '#F59E0B' }}>
+          <Link href={activeProject ? `/projects/${activeProject.id}?tab=offertes` : '/projects'} className="text-xs font-semibold" style={{ color: '#288760' }}>
             Bekijk offertes →
           </Link>
         </div>
@@ -461,11 +473,12 @@ export default function DashboardClient({
         value: `${budgetPercentage}% gebruikt`,
         icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
       });
-      if (budget > 0 && budgetPercentage < 75) rows.push({
+      const completedAllCount = allTasks.filter(t => t.status === 'voltooid' || t.status === ('done' as string)).length;
+      if (allTasks.length > 0) rows.push({
         accent: '#288760',
-        label: 'Budget resterend',
-        value: formatCurrency(Math.max(budget - totalExpenses, 0)),
-        icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+        label: 'Taken voortgang',
+        value: `${completedAllCount}/${allTasks.length} voltooid`,
+        icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
       });
       return (
         <div
@@ -557,9 +570,18 @@ export default function DashboardClient({
                 {greeting}, {profile?.name?.split(' ')[0] || 'daar'}! 👋
               </h1>
               <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                {activeProject
-                  ? `${activeProject.type.charAt(0).toUpperCase() + activeProject.type.slice(1).replace('_', ' ')} · Gestart ${activeProject.start_date ? new Date(activeProject.start_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' }) : 'onbekend'}`
-                  : 'Start je eerste verbouwingsproject om te beginnen.'}
+                {activeProject ? (
+                  <>
+                    {activeProject.type.charAt(0).toUpperCase() + activeProject.type.slice(1).replace('_', ' ')}
+                    {' · Gestart '}
+                    {activeProject.start_date
+                      ? new Date(activeProject.start_date + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })
+                      : 'onbekend'}
+                    {activeProject.end_date && (
+                      <> · Eindigt {new Date(activeProject.end_date + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}</>
+                    )}
+                  </>
+                ) : 'Start je eerste verbouwingsproject om te beginnen.'}
               </p>
             </div>
 
@@ -567,13 +589,15 @@ export default function DashboardClient({
             {activeProject && budget > 0 && (
               <div className="flex items-center gap-5 sm:gap-7">
                 <div className="text-center">
-                  <p className="text-2xl sm:text-3xl font-black text-white">{budgetPercentage}%</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>budget</p>
+                  <p className="text-xl sm:text-2xl font-black text-white">{formatCurrency(totalExpenses)}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    / {formatCurrency(budget)} · {budgetPercentage}% gebruikt
+                  </p>
                 </div>
                 <div className="w-px h-10" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
                 <div className="text-center">
                   <p className="text-2xl sm:text-3xl font-black text-white">{todayTasks.length}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>taken</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>taken vandaag</p>
                 </div>
                 <div className="w-px h-10" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
                 <div className="text-center">
@@ -779,7 +803,7 @@ export default function DashboardClient({
                 })}
               </div>
               <div className="ml-auto">
-                <Link href="/streak" className="text-xs font-semibold" style={{ color: '#9333EA' }}>Bekijk streak →</Link>
+                <Link href="/streak" className="text-xs font-semibold" style={{ color: '#C4B5FD' }}>Bekijk streak →</Link>
               </div>
             </div>
           )}
