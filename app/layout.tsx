@@ -1,9 +1,15 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   title: {
@@ -29,9 +35,9 @@ export const metadata: Metadata = {
     description: 'Houd de controle over je verbouwing.',
   },
   manifest: '/manifest.json',
-  other: {
-    'apple-mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-status-bar-style': 'default',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
   },
 };
 
