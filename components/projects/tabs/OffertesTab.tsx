@@ -437,6 +437,128 @@ function CompareModal({
   );
 }
 
+// ── Accepted → add to costs popup ─────────────────────────────────────────────
+const expenseCategories = [
+  { value: 'arbeid',     label: '👷 Arbeid' },
+  { value: 'materiaal',  label: '🧱 Materiaal' },
+  { value: 'vergunning', label: '📋 Vergunning' },
+  { value: 'transport',  label: '🚚 Transport' },
+  { value: 'overig',     label: '📦 Overig' },
+];
+
+function AddToCostsModal({
+  quote,
+  contractorName,
+  projectId,
+  onClose,
+  onAdded,
+}: {
+  quote: Quote & { contractors?: { name: string } | null };
+  contractorName: string | null;
+  projectId: string;
+  onClose: () => void;
+  onAdded: () => void;
+}) {
+  const defaultDesc = contractorName
+    ? `${contractorName}${quote.description ? ` – ${quote.description}` : ''}`
+    : quote.description || 'Offerte';
+
+  const [description, setDescription] = useState(defaultDesc);
+  const [category, setCategory]       = useState('arbeid');
+  const [loading, setLoading]         = useState(false);
+
+  const inp   = 'w-full px-3 py-2.5 rounded-xl border text-sm outline-none';
+  const style = { borderColor: '#E5E7EB', color: '#1A1A1A' };
+  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => (e.target.style.borderColor = '#288760');
+  const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => (e.target.style.borderColor = '#E5E7EB');
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    const supabase = createClient();
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    await supabase.from('expenses').insert({
+      project_id:  projectId,
+      description: description.trim() || defaultDesc,
+      amount:      Number(quote.amount),
+      category,
+      date:        dateStr,
+    });
+
+    setLoading(false);
+    onAdded();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}>
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
+        {/* Green header */}
+        <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg, #1a5140 0%, #288760 100%)' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl">🎉</div>
+            <div>
+              <h2 className="text-base font-bold text-white">Offerte geaccepteerd!</h2>
+              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.7)' }}>Wil je dit ook toevoegen aan je kosten?</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Amount preview */}
+          <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC' }}>
+            <span className="text-sm font-medium" style={{ color: '#15803D' }}>Bedrag</span>
+            <span className="text-lg font-black" style={{ color: '#15803D' }}>
+              {new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(Number(quote.amount))}
+            </span>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Omschrijving kosten</label>
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className={inp}
+              style={style}
+              onFocus={focus}
+              onBlur={blur}
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Categorie</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className={inp} style={style} onFocus={focus} onBlur={blur}>
+              {expenseCategories.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium border"
+              style={{ borderColor: '#E5E7EB', color: '#6B7280' }}
+            >
+              Nee, overslaan
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={loading}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60"
+              style={{ backgroundColor: '#288760' }}
+            >
+              {loading ? 'Toevoegen...' : '✓ Ja, voeg toe aan kosten'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main tab component ─────────────────────────────────────────────────────────
 export default function OffertesTab({ project, initialQuotes, initialContractors }: Props) {
   const [quotes, setQuotes] = useState(initialQuotes);
@@ -445,6 +567,8 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [showCompare, setShowCompare] = useState(false);
+  // Add-to-costs popup after accepting a quote
+  const [addToCostsQuote, setAddToCostsQuote] = useState<(Quote & { contractors?: { name: string } | null }) | null>(null);
 
   const getContractorName = (q: Quote & { contractors?: { name: string } | null }): string | null =>
     q.contractors?.name || initialContractors.find((c) => c.id === q.contractor_id)?.name || null;
@@ -477,6 +601,11 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
     const supabase = createClient();
     await supabase.from('quotes').update({ status }).eq('id', id);
     setQuotes((prev) => prev.map((q) => q.id === id ? { ...q, status: status as Quote['status'] } : q));
+    // When a quote is accepted, offer to add it to costs
+    if (status === 'geaccepteerd') {
+      const accepted = quotes.find((q) => q.id === id);
+      if (accepted) setAddToCostsQuote(accepted);
+    }
   };
 
   const deleteQuote = async (id: string) => {
@@ -694,6 +823,17 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
             setQuotes((prev) => prev.map((q) => q.id === updated.id ? { ...q, ...updated } : q));
             setEditingQuote(null);
           }}
+        />
+      )}
+
+      {/* Add-to-costs popup — shown when a quote is accepted */}
+      {addToCostsQuote && (
+        <AddToCostsModal
+          quote={addToCostsQuote}
+          contractorName={getContractorName(addToCostsQuote)}
+          projectId={project.id}
+          onClose={() => setAddToCostsQuote(null)}
+          onAdded={() => setAddToCostsQuote(null)}
         />
       )}
 
