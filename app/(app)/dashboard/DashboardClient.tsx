@@ -353,21 +353,18 @@ export default function DashboardClient({
         className="rounded-2xl p-4 sm:p-5 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
       >
-        <div className="flex items-start justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Budget</p>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${budgetColor}18` }}>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: budgetColor }}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 mb-3">
+        {/* Bare icon — no background */}
+        <svg className="w-5 h-5 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1a6b4a' }}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div className="flex items-center gap-3 mb-1">
           <DonutGauge percentage={budgetPercentage} color={budgetColor} />
           <div>
             <p className="text-lg font-black" style={{ color: '#1A1A1A' }}>{budget > 0 ? formatCurrency(totalExpenses) : '—'}</p>
             <p className="text-xs" style={{ color: '#9CA3AF' }}>{budget > 0 ? `van ${formatCurrency(budget)}` : 'Geen budget'}</p>
           </div>
         </div>
+        <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Budget</p>
         {budget > 0 && (
           <div className="mt-auto">
             <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
@@ -383,28 +380,22 @@ export default function DashboardClient({
         className="rounded-2xl p-4 sm:p-5 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
       >
-        <div className="flex items-start justify-between mb-4">
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Taken vandaag</p>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#EFF6FF' }}>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#3B82F6' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-          </div>
-        </div>
-        <div className="flex-1 flex flex-col justify-center">
-          <p className="text-4xl font-black mb-1" style={{ color: '#1A1A1A' }}>{todayTasks.length}</p>
-          {todayTasks.length > 0 && (
-            <div className="flex items-center gap-1.5 mb-2">
-              <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#EFF6FF' }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${todayTasks.length > 0 ? Math.round((completedTodayCount / todayTasks.length) * 100) : 0}%`, backgroundColor: '#3B82F6' }} />
-              </div>
-              <span className="text-xs" style={{ color: '#9CA3AF' }}>{completedTodayCount}/{todayTasks.length}</span>
+        <svg className="w-5 h-5 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1a6b4a' }}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+        <p className="text-4xl font-black mb-0.5" style={{ color: '#1A1A1A' }}>{todayTasks.length}</p>
+        <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Taken vandaag</p>
+        {todayTasks.length > 0 && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
+              <div className="h-full rounded-full transition-all" style={{ width: `${Math.round((completedTodayCount / todayTasks.length) * 100)}%`, backgroundColor: '#1a6b4a' }} />
             </div>
-          )}
-          <Link href={activeProject ? `/projects/${activeProject.id}?tab=taken` : '/projects'} className="text-xs font-semibold" style={{ color: '#3B82F6' }}>
-            Bekijk taken →
-          </Link>
-        </div>
+            <span className="text-xs" style={{ color: '#9CA3AF' }}>{completedTodayCount}/{todayTasks.length}</span>
+          </div>
+        )}
+        <Link href={activeProject ? `/projects/${activeProject.id}?tab=taken` : '/projects'} className="text-xs font-semibold mt-auto" style={{ color: '#288760' }}>
+          Bekijk taken →
+        </Link>
       </div>
     ),
     offertes: (
@@ -412,21 +403,15 @@ export default function DashboardClient({
         className="rounded-2xl p-4 sm:p-5 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
       >
-        <div className="flex items-start justify-between mb-4">
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Open offertes</p>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#FFFBEB' }}>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#F59E0B' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-        </div>
-        <div className="flex-1 flex flex-col justify-center">
-          <p className="text-4xl font-black mb-1" style={{ color: '#1A1A1A' }}>{pendingQuotesCount}</p>
-          <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>In behandeling</p>
-          <Link href={activeProject ? `/projects/${activeProject.id}?tab=offertes` : '/projects'} className="text-xs font-semibold" style={{ color: '#F59E0B' }}>
-            Bekijk offertes →
-          </Link>
-        </div>
+        <svg className="w-5 h-5 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1a6b4a' }}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <p className="text-4xl font-black mb-0.5" style={{ color: '#1A1A1A' }}>{pendingQuotesCount}</p>
+        <p className="text-xs font-medium mb-0.5" style={{ color: '#6B7280' }}>Open offertes</p>
+        <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>In behandeling</p>
+        <Link href={activeProject ? `/projects/${activeProject.id}?tab=offertes` : '/projects'} className="text-xs font-semibold mt-auto" style={{ color: '#288760' }}>
+          Bekijk offertes →
+        </Link>
       </div>
     ),
     vandaag: (() => {
@@ -491,7 +476,7 @@ export default function DashboardClient({
             <div className="flex-1 flex flex-col justify-center space-y-2.5">
               {rows.slice(0, 3).map((row, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: `${row.accent}18`, color: row.accent }}>
+                  <div className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: '#1a6b4a' }}>
                     {row.icon}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -720,7 +705,7 @@ export default function DashboardClient({
             >
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Planning</h2>
-                <Link href={`/projects/${activeProject.id}?tab=overzicht`} className="text-xs font-semibold" style={{ color: '#288760' }}>
+                <Link href={`/projects/${activeProject.id}?tab=overzicht#planning`} className="text-xs font-semibold" style={{ color: '#288760' }}>
                   Bewerk planning →
                 </Link>
               </div>

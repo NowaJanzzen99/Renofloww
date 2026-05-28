@@ -13,8 +13,16 @@ interface Props {
 }
 
 const ROOM_COLORS = [
-  '#288760', '#3B82F6', '#A855F7', '#F59E0B', '#EF4444',
-  '#06B6D4', '#EC4899', '#84CC16', '#F97316', '#6366F1',
+  '#288760', // primary green
+  '#0d9488', // teal
+  '#2563EB', // blue
+  '#7C3AED', // purple
+  '#1a6b4a', // dark forest green
+  '#059669', // emerald
+  '#0891B2', // cyan
+  '#4F46E5', // indigo
+  '#15803D', // deep green
+  '#0E7490', // dark teal
 ];
 
 function daysBetween(a: string, b: string): number {

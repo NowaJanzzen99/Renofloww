@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { Project, Room, Task, Expense, Contractor, Quote } from '@/types';
@@ -33,6 +33,15 @@ function localDateStr(d: Date = new Date()): string {
 export default function OverzichtTab({ project, rooms: initialRooms, tasks, expenses, contractors, quotes, onTabChange }: Props) {
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const [rooms, setRooms] = useState<Room[]>(initialRooms);
+
+  // Scroll to planning section when navigated from dashboard with #planning hash
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#planning') {
+      setTimeout(() => {
+        document.getElementById('planning')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    }
+  }, []);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -447,7 +456,7 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
 
       {/* ── Gantt planning ── */}
       {rooms.length > 0 && (
-        <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+        <div id="planning" className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', scrollMarginTop: '80px' }}>
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Planning (Gantt)</h3>
