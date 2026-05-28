@@ -205,12 +205,12 @@ export default function Sidebar() {
             {/* ── Project list dropdown ──────────────────────────────── */}
             <div
               style={{
-                maxHeight: projectsOpen ? `${Math.min(projects.length, 12) * 36 + 36}px` : '0px',
+                maxHeight: projectsOpen ? `${Math.min(projects.length, 12) * 36 + 60}px` : '0px',
                 overflow: 'hidden',
                 transition: 'max-height 0.25s ease',
               }}
             >
-              <div className="pl-9 pr-2 pb-1 space-y-0.5">
+              <div className="pl-9 pr-2 space-y-0.5" style={{ paddingBottom: '10px', paddingTop: '2px' }}>
                 {projects.length === 0 ? (
                   <p className="text-xs px-2 py-2" style={{ color: '#9CA3AF' }}>Geen projecten</p>
                 ) : (
@@ -262,7 +262,7 @@ export default function Sidebar() {
           </div>
 
           {/* Remaining nav items (Kalender, Analytics, Streaks, Instellingen) */}
-          <div className="pt-1 mt-1" style={{ borderTop: '1px solid #F3F4F6' }} />
+          <div style={{ borderTop: '1px solid #E5E7EB', margin: '6px 0' }} />
           {navItems.slice(1).map((item) => {
             const active = isActive(item.href);
             return (
