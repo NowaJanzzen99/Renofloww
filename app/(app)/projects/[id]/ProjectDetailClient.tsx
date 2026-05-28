@@ -272,6 +272,18 @@ export default function ProjectDetailClient({
                     backgroundColor: activeTab === tab.id ? '#F8FAF9' : 'transparent',
                     fontWeight: activeTab === tab.id ? 600 : 400,
                   }}
+                  onMouseEnter={e => {
+                    if (activeTab !== tab.id) {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = '#F3F4F6';
+                      (e.currentTarget as HTMLElement).style.color = '#374151';
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (activeTab !== tab.id) {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                      (e.currentTarget as HTMLElement).style.color = '#6B7280';
+                    }
+                  }}
                 >
                   {tab.label}
                 </button>

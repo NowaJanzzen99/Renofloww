@@ -262,6 +262,7 @@ export default function Sidebar() {
           </div>
 
           {/* Remaining nav items (Kalender, Analytics, Streaks, Instellingen) */}
+          <div className="pt-1 mt-1" style={{ borderTop: '1px solid #F3F4F6' }} />
           {navItems.slice(1).map((item) => {
             const active = isActive(item.href);
             return (
