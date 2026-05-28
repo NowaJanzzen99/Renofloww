@@ -208,7 +208,7 @@ export default function DashboardClient({
   const [pendingQuotesCount, setPendingQuotesCount] = useState(initialPendingQuotesCount);
   const [upgradedBanner, setUpgradedBanner] = useState(false);
 
-  const DEFAULT_ORDER = ['budget', 'taken', 'offertes', 'actieve'];
+  const DEFAULT_ORDER = ['budget', 'taken', 'offertes', 'vandaag'];
   const [cardOrder, setCardOrder] = useState<string[]>(DEFAULT_ORDER);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -256,6 +256,15 @@ export default function DashboardClient({
     });
     return s;
   }, [expenses, allTasks]);
+
+  // Nearest future room deadline for snapshot card
+  const nextDeadline = useMemo(() => {
+    const today = localDateStr();
+    return rooms
+      .filter(r => r.end_date && r.end_date >= today)
+      .sort((a, b) => (a.end_date ?? '').localeCompare(b.end_date ?? ''))
+      .at(0) ?? null;
+  }, [rooms]);
 
   // Current consecutive streak — same algorithm as the streak page (with grace period for yesterday)
   const currentStreak = useMemo(() => {
@@ -420,14 +429,82 @@ export default function DashboardClient({
         </div>
       </div>
     ),
-    actieve: (
-      <ActiveDaysCard
-        activeDays={activeDays}
-        startDate={activeProject?.start_date}
-        activeDates={activeDates}
-        currentStreak={currentStreak}
-      />
-    ),
+    vandaag: (() => {
+      // Build snapshot rows from available data — hide empty ones
+      const fmtDeadline = (d: string) => {
+        const [y, m, day] = d.split('-').map(Number);
+        return new Date(y, m - 1, day).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+      };
+      const rows: { icon: React.ReactNode; label: string; value: string; accent: string }[] = [];
+
+      if (nextDeadline?.end_date) rows.push({
+        accent: '#F59E0B',
+        label: 'Volgende deadline',
+        value: `${nextDeadline.name} · ${fmtDeadline(nextDeadline.end_date)}`,
+        icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+      });
+      if (pendingQuotesCount > 0) rows.push({
+        accent: '#F59E0B',
+        label: 'Openstaande offertes',
+        value: `${pendingQuotesCount} wacht${pendingQuotesCount === 1 ? '' : 'en'} op reactie`,
+        icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+      });
+      if (todayTasks.length > 0) rows.push({
+        accent: '#3B82F6',
+        label: 'Taken vandaag',
+        value: `${completedTodayCount}/${todayTasks.length} voltooid`,
+        icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
+      });
+      if (budget > 0 && budgetPercentage >= 75) rows.push({
+        accent: '#EF4444',
+        label: 'Budget bijna op',
+        value: `${budgetPercentage}% gebruikt`,
+        icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+      });
+      if (budget > 0 && budgetPercentage < 75) rows.push({
+        accent: '#288760',
+        label: 'Budget resterend',
+        value: formatCurrency(Math.max(budget - totalExpenses, 0)),
+        icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+      });
+      return (
+        <div
+          className="rounded-2xl p-4 sm:p-5 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
+          style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#F0FDF4' }}>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#288760' }} strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Vandaag</p>
+          </div>
+          {rows.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center">
+              <div className="text-2xl mb-1">✅</div>
+              <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Alles op orde</p>
+              <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Geen openstaande punten</p>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col justify-center space-y-2.5">
+              {rows.slice(0, 3).map((row, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: `${row.accent}18`, color: row.accent }}>
+                    {row.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs truncate" style={{ color: '#9CA3AF' }}>{row.label}</p>
+                    <p className="text-xs font-semibold truncate" style={{ color: '#1A1A1A' }}>{row.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    })(),
   };
 
   return (
@@ -656,6 +733,57 @@ export default function DashboardClient({
             </div>
           )}
 
+          {/* Compact streak banner */}
+          {activeProject && (
+            <div
+              className="rounded-2xl px-5 py-3.5 bg-white border lg:col-span-2 flex items-center gap-4"
+              style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #3b0764, #4c0d87)', boxShadow: '0 2px 8px rgba(109,40,217,0.2)' }}>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" style={{ color: '#C4B5FD' }}>
+                  <path d="M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 17.03 19.32C18.86 17.66 19.5 15 18.56 12.72L18.43 12.46C18.22 12 17.66 11.2 17.66 11.2Z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold" style={{ color: '#1A1A1A' }}>
+                  {currentStreak} {currentStreak === 1 ? 'dag' : 'dagen'} op rij 🔥
+                </p>
+                <p className="text-xs" style={{ color: '#9CA3AF' }}>{activeDays} actieve dag{activeDays === 1 ? '' : 'en'} totaal</p>
+              </div>
+              {/* Week dots */}
+              <div className="flex gap-1 ml-2">
+                {['M','D','W','D','V','Z','Z'].map((label, i) => {
+                  const today = localDateStr();
+                  const [ty, tm, td] = today.split('-').map(Number);
+                  const todayDate = new Date(ty, tm - 1, td);
+                  const dow = (todayDate.getDay() + 6) % 7;
+                  const monday = new Date(ty, tm - 1, td - dow);
+                  const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+                  const dateStr = localDateStr(d);
+                  const has = activeDates.has(dateStr);
+                  const isToday = dateStr === today;
+                  const isFuture = d > todayDate;
+                  return (
+                    <div key={i} className="flex flex-col items-center gap-0.5">
+                      <div
+                        className="w-4 h-4 rounded-sm"
+                        style={{
+                          backgroundColor: isToday ? '#A855F7' : has ? '#7C3AED' : isFuture ? 'rgba(167,139,250,0.1)' : '#E5E7EB',
+                          boxShadow: isToday ? '0 0 6px rgba(168,85,247,0.5)' : 'none',
+                          opacity: isFuture ? 0.3 : 1,
+                        }}
+                      />
+                      <span className="hidden sm:block" style={{ fontSize: '7px', color: '#C4B5FD', fontWeight: 700 }}>{label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="ml-auto">
+                <Link href="/streak" className="text-xs font-semibold" style={{ color: '#9333EA' }}>Bekijk streak →</Link>
+              </div>
+            </div>
+          )}
+
           {/* Recente activiteit */}
           <div
             className={`rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 ${(!activeProject || rooms.length === 0) ? 'lg:col-span-2' : 'lg:col-span-2'}`}
@@ -671,19 +799,54 @@ export default function DashboardClient({
               <ul className="space-y-1">
                 {recentActivity.map((activity, idx) => {
                   const isLast = idx === recentActivity.length - 1;
-                  const isExpense = activity.type === 'expense';
+                  const d = activity.description.toLowerCase();
+                  // Resolve icon + colors per activity type/description
+                  let bg = '#F3F4F6', color = '#6B7280';
+                  let icon: React.ReactNode = (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="4" /></svg>
+                  );
+                  if (activity.type === 'expense' || d.startsWith('kosten')) {
+                    bg = '#F0FDF4'; color = '#16A34A';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+                  } else if (d.includes('voltooid')) {
+                    bg = '#EFF6FF'; color = '#3B82F6';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>;
+                  } else if (d.includes('taak aangemaakt') || d.includes('taak')) {
+                    bg = '#F0FDF4'; color = '#288760';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M12 12v4m0 0h-2m2 0h2" /></svg>;
+                  } else if (d.includes('geaccepteerd')) {
+                    bg = '#ECFDF5'; color = '#059669';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+                  } else if (d.includes('offerte')) {
+                    bg = '#FFF7ED'; color = '#EA580C';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
+                  } else if (d.includes('aannemer')) {
+                    bg = '#FEF3C7'; color = '#D97706';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
+                  } else if (d.includes('meerwerk')) {
+                    bg = '#FFF1F2'; color = '#E11D48';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>;
+                  } else if (d.includes('foto')) {
+                    bg = '#F0F9FF'; color = '#0284C7';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
+                  } else if (d.includes('document')) {
+                    bg = '#F5F3FF'; color = '#7C3AED';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>;
+                  } else if (d.includes('deadline')) {
+                    bg = '#FFFBEB'; color = '#D97706';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+                  } else if (d.includes('budget')) {
+                    bg = '#FEF2F2'; color = '#DC2626';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
+                  } else if (d.includes('ruimte')) {
+                    bg = '#F0FDF4'; color = '#16A34A';
+                    icon = <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>;
+                  }
                   return (
                     <li key={activity.id} className="flex items-start gap-0">
                       <div className="flex flex-col items-center mr-3 shrink-0">
-                        <div
-                          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: isExpense ? '#F0FDF4' : '#EFF6FF', color: isExpense ? '#16A34A' : '#3B82F6' }}
-                        >
-                          {isExpense ? (
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          ) : (
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                          )}
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: bg, color }}>
+                          {icon}
                         </div>
                         {!isLast && <div className="w-px flex-1 my-1" style={{ backgroundColor: '#F3F4F6', minHeight: '16px' }} />}
                       </div>
