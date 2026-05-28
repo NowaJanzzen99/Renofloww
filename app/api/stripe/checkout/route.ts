@@ -15,10 +15,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Niet geautoriseerd' }, { status: 401 });
     }
 
-    const { priceId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const priceId: string =
+      body.priceId ||
+      process.env.STRIPE_PRICE_ID_MONTHLY ||
+      process.env.STRIPE_PRICE_PRO_MONTHLY ||
+      '';
 
     if (!priceId) {
-      return NextResponse.json({ error: 'Prijs ID is verplicht' }, { status: 400 });
+      return NextResponse.json({ error: 'Prijs ID is niet geconfigureerd.' }, { status: 500 });
     }
 
     // Get or create Stripe customer
