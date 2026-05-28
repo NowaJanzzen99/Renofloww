@@ -47,15 +47,6 @@ const navItems = [
     ),
   },
   {
-    label: 'Streaks',
-    href: '/streak',
-    icon: (
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 17.03 19.32C18.86 17.66 19.5 15 18.56 12.72L18.43 12.46C18.22 12 17.66 11.2 17.66 11.2Z" />
-      </svg>
-    ),
-  },
-  {
     label: 'Instellingen',
     href: '/settings',
     icon: (
@@ -261,14 +252,16 @@ export default function Sidebar() {
             </div>
           </div>
 
-          {/* Remaining nav items (Kalender, Analytics, Streaks, Instellingen) */}
+          {/* Main nav items: Kalender, Analytics */}
           <div style={{ borderTop: '1px solid #E5E7EB', margin: '6px 0' }} />
-          {navItems.slice(1).map((item) => {
+          {navItems.slice(1, 3).map((item) => {
             const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
                 style={{ backgroundColor: active ? '#B7E5BA' : 'transparent', color: active ? '#1A5140' : '#6B7280' }}
+                onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.backgroundColor = '#F9FAFB'; (e.currentTarget as HTMLElement).style.color = '#374151'; } }}
+                onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#6B7280'; } }}
               >
                 <span style={{ color: active ? '#288760' : '#9CA3AF' }}>{item.icon}</span>
                 {item.label}
@@ -276,38 +269,49 @@ export default function Sidebar() {
             );
           })}
 
-          {/* Upgrade button (only for non-pro) */}
-          {profile && !profile.is_pro && (
-            <>
-              <style>{`
-                @keyframes rf-shimmer {
-                  0% { transform: translateX(-100%) skewX(-15deg); }
-                  100% { transform: translateX(250%) skewX(-15deg); }
-                }
-                .rf-upgrade-btn .rf-shimmer { animation: rf-shimmer 4s ease-in-out infinite; }
-              `}</style>
-              <Link
-                href="/settings#abonnement"
-                className="rf-upgrade-btn group relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold overflow-hidden mt-1"
-                style={{
-                  background: 'linear-gradient(135deg, #D97706 0%, #F59E0B 50%, #FBBF24 100%)',
-                  color: 'white',
-                  boxShadow: '0 2px 10px rgba(245,158,11,0.4)',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 18px rgba(245,158,11,0.6)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(245,158,11,0.4)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+          {/* Beheer group — Instellingen */}
+          <div style={{ borderTop: '1px solid #E5E7EB', margin: '8px 0 4px 0' }} />
+          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Beheer</p>
+          {navItems.slice(3).map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link key={item.href} href={item.href}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                style={{ backgroundColor: active ? '#B7E5BA' : 'transparent', color: active ? '#1A5140' : '#6B7280' }}
+                onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.backgroundColor = '#F9FAFB'; (e.currentTarget as HTMLElement).style.color = '#374151'; } }}
+                onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#6B7280'; } }}
               >
-                <div className="rf-shimmer absolute inset-0 w-1/3 bg-white opacity-20 pointer-events-none" />
-                <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <span style={{ color: active ? '#288760' : '#9CA3AF' }}>{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
+
+          {/* Upgrade banner (only for non-pro) */}
+          {profile && !profile.is_pro && (
+            <Link
+              href="/settings#abonnement"
+              className="group flex items-center gap-2.5 px-3 py-3 rounded-xl mt-2 transition-all"
+              style={{
+                background: 'linear-gradient(135deg, #0d1f1a 0%, #1a3a2a 100%)',
+                border: '1px solid rgba(40,135,96,0.35)',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(40,135,96,0.6)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(40,135,96,0.35)'; }}
+            >
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(40,135,96,0.25)' }}>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" style={{ color: '#6EE7B7' }}>
                   <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
-                <span>Upgrade naar Pro</span>
-                <svg className="w-3.5 h-3.5 ml-auto shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate" style={{ color: '#6EE7B7' }}>Upgrade naar Pro</p>
+                <p className="text-xs truncate" style={{ color: 'rgba(110,231,183,0.55)' }}>Onbeperkte functies</p>
+              </div>
+              <svg className="w-3.5 h-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'rgba(110,231,183,0.5)' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           )}
         </nav>
 
@@ -343,7 +347,7 @@ export default function Sidebar() {
 
         <nav className="flex-1 p-2 space-y-1 flex flex-col items-center">
           {/* Dashboard */}
-          {[...navItems.slice(0, 1), { label: 'Mijn projecten', href: '/projects', icon: <ProjectsIcon /> }, ...navItems.slice(1)].map((item) => {
+          {[...navItems.slice(0, 1), { label: 'Mijn projecten', href: '/projects', icon: <ProjectsIcon /> }, ...navItems.slice(1, 3), ...navItems.slice(3)].map((item) => {
             const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href} title={item.label}

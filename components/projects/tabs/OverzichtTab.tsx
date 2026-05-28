@@ -233,13 +233,15 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
               <div
                 key={card.label}
                 className="rounded-2xl p-4 bg-white border transition-all hover:shadow-md"
-                style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: `3px solid ${card.accent}` }}
+                style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <p className="text-xs font-medium" style={{ color: '#6B7280' }}>{card.label}</p>
-                  <span style={{ color: card.accent, opacity: 0.8 }}>{card.icon}</span>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F0FDF4' }}>
+                    <span style={{ color: '#288760' }}>{card.icon}</span>
+                  </div>
                 </div>
-                <p className="text-2xl font-black mb-0.5" style={{ color: '#1A1A1A' }}>{card.value}</p>
+                <p className="text-2xl font-black mb-0.5" style={{ color: card.label === 'Budget gebruikt' ? card.accent : '#1A1A1A' }}>{card.value}</p>
+                <p className="text-xs font-medium mb-0.5" style={{ color: '#6B7280' }}>{card.label}</p>
                 <p className="text-xs" style={{ color: '#9CA3AF' }}>{card.sub}</p>
               </div>
             ))}
@@ -313,24 +315,40 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
             <h3 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Snelle acties</h3>
           </div>
           <div className="space-y-2">
-            {quickActions.map((action) => (
-              <button
-                key={action.label}
-                onClick={action.onClick}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all hover:shadow-sm active:scale-[0.99]"
-                style={{ backgroundColor: '#F8FAF9', color: '#1A1A1A', border: '1px solid #E5E7EB' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#B7E5BA30'; (e.currentTarget as HTMLElement).style.borderColor = '#288760'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#F8FAF9'; (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB'; }}
-              >
-                <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#B7E5BA', color: '#1A5140' }}>
-                  {action.icon}
-                </span>
-                {action.label}
-                <svg className="w-4 h-4 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#288760' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
-            ))}
+            {quickActions.map((action, idx) => {
+              const isPrimary = idx === 0;
+              return (
+                <button
+                  key={action.label}
+                  onClick={action.onClick}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all active:scale-[0.99]"
+                  style={isPrimary
+                    ? { backgroundColor: '#288760', color: 'white', border: '1px solid #288760', boxShadow: '0 2px 8px rgba(40,135,96,0.25)' }
+                    : { backgroundColor: 'white', color: '#374151', border: '1px solid #E5E7EB' }
+                  }
+                  onMouseEnter={e => {
+                    if (isPrimary) { (e.currentTarget as HTMLElement).style.backgroundColor = '#1a6649'; }
+                    else { (e.currentTarget as HTMLElement).style.backgroundColor = '#F9FAFB'; (e.currentTarget as HTMLElement).style.borderColor = '#D1D5DB'; }
+                  }}
+                  onMouseLeave={e => {
+                    if (isPrimary) { (e.currentTarget as HTMLElement).style.backgroundColor = '#288760'; }
+                    else { (e.currentTarget as HTMLElement).style.backgroundColor = 'white'; (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB'; }
+                  }}
+                >
+                  <span
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={isPrimary ? { backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' } : { backgroundColor: '#F3F4F6', color: '#6B7280' }}
+                  >
+                    {action.icon}
+                  </span>
+                  {action.label}
+                  <svg className="w-4 h-4 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    style={{ color: isPrimary ? 'rgba(255,255,255,0.7)' : '#9CA3AF' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              );
+            })}
             <button
               onClick={() => onTabChange('taken')}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left"
@@ -370,14 +388,30 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
           </div>
           <div>
             {localExpenses.slice(0, 5).map((expense, idx) => {
-              const catColors: Record<string, { bg: string; text: string }> = {
-                materiaal:  { bg: '#EFF6FF', text: '#3B82F6' },
-                arbeid:     { bg: '#F0FDF4', text: '#16A34A' },
-                vergunning: { bg: '#FEF3C7', text: '#D97706' },
-                transport:  { bg: '#F5F3FF', text: '#7C3AED' },
-                overig:     { bg: '#F3F4F6', text: '#6B7280' },
+              type CatEntry = { bg: string; text: string; icon: React.ReactNode };
+              const catData: Record<string, CatEntry> = {
+                materiaal: {
+                  bg: '#EFF6FF', text: '#3B82F6',
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" /></svg>,
+                },
+                arbeid: {
+                  bg: '#F0FDF4', text: '#16A34A',
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
+                },
+                vergunning: {
+                  bg: '#FEF3C7', text: '#D97706',
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+                },
+                transport: {
+                  bg: '#F5F3FF', text: '#7C3AED',
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2h2m6-2h-2m2 0l2-4h3l3 4" /></svg>,
+                },
+                overig: {
+                  bg: '#F3F4F6', text: '#6B7280',
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" /></svg>,
+                },
               };
-              const cat = catColors[expense.category || 'overig'] || catColors.overig;
+              const cat = catData[expense.category || 'overig'] || catData.overig;
               return (
                 <div
                   key={expense.id}
@@ -386,10 +420,10 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold"
+                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                       style={{ backgroundColor: cat.bg, color: cat.text }}
                     >
-                      {(expense.category || 'O').charAt(0).toUpperCase()}
+                      {cat.icon}
                     </div>
                     <div>
                       <p className="text-sm font-medium" style={{ color: '#1A1A1A' }}>{expense.description}</p>

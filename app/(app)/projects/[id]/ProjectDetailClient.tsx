@@ -144,6 +144,21 @@ export default function ProjectDetailClient({
               style={{ background: 'radial-gradient(circle, rgba(40,135,96,0.22) 0%, transparent 70%)' }}
             />
 
+            {/* Decorative house outline */}
+            <svg
+              className="absolute pointer-events-none hidden sm:block"
+              style={{ right: '24px', top: '50%', transform: 'translateY(-52%)', opacity: 0.055 }}
+              width="128" height="128" viewBox="0 0 100 100"
+              fill="none" stroke="white" strokeWidth="1.4" strokeLinejoin="round"
+            >
+              <rect x="14" y="48" width="72" height="46" rx="2" />
+              <polyline points="6,48 50,10 94,48" />
+              <rect x="38" y="66" width="24" height="28" rx="1" />
+              <rect x="18" y="58" width="18" height="18" rx="1" />
+              <rect x="64" y="58" width="18" height="18" rx="1" />
+              <rect x="62" y="8" width="13" height="26" rx="1" />
+            </svg>
+
             {/* Top row: back link + status */}
             <div className="relative flex items-center justify-between mb-4">
               <Link
