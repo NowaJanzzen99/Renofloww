@@ -511,7 +511,7 @@ export default function DashboardClient({
       {/* ── Hero greeting ────────────────────────────────────────────────────── */}
       <div className="pt-4 sm:pt-6 pb-0">
         <div
-          className="rounded-2xl p-5 sm:p-7 relative overflow-hidden"
+          className="rounded-2xl p-4 sm:p-7 relative overflow-hidden"
           style={{
             background: 'linear-gradient(135deg, #0d1f1a 0%, #1a3a2a 45%, #1e4d36 100%)',
             boxShadow: '0 8px 32px rgba(13,31,26,0.35)',
@@ -550,7 +550,7 @@ export default function DashboardClient({
 
             {/* Right: key stats */}
             {activeProject && budget > 0 && (
-              <div className="flex items-center gap-5 sm:gap-7">
+              <div className="hidden sm:flex items-center gap-5 sm:gap-7">
                 <div className="text-center">
                   <p className="text-2xl sm:text-3xl font-black text-white">{budgetPercentage}%</p>
                   <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>budget</p>
