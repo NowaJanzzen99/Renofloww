@@ -272,10 +272,10 @@ export default function ProjectDetailClient({
 
           {/* ── Tab bar ────────────────────────────────────────────────────── */}
           <div
-            className="bg-white rounded-2xl mb-5 overflow-hidden"
+            className="bg-white rounded-2xl mb-5 overflow-hidden relative"
             style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB' }}
           >
-            <div className="flex overflow-x-auto">
+            <div className="flex overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -303,6 +303,15 @@ export default function ProjectDetailClient({
                   {tab.label}
                 </button>
               ))}
+            </div>
+            {/* Scroll hint: fade + chevron, only on mobile */}
+            <div
+              className="absolute right-0 top-0 bottom-0 flex items-center pr-1.5 pointer-events-none md:hidden"
+              style={{ background: 'linear-gradient(to right, transparent 0%, white 55%)' , width: '40px' }}
+            >
+              <svg className="w-4 h-4 ml-auto opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#6B7280' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </div>
           </div>
 

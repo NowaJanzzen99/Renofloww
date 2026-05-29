@@ -52,7 +52,7 @@ export default function MeerwerkTab({ project, initialExtraWork, initialContract
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div>
           <h2 className="text-lg font-semibold" style={{ color: '#1A1A1A' }}>Meerwerk ({extraWork.length})</h2>
           <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Goedgekeurd: <strong style={{ color: '#288760' }}>{formatCurrency(totalApproved)}</strong></p>

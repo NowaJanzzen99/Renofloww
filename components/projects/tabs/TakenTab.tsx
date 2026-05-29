@@ -177,8 +177,8 @@ export default function TakenTab({ project, initialTasks, initialRooms }: Props)
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex gap-2 overflow-x-auto">
+      <div className="flex items-center gap-3">
+        <div className="flex gap-2 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
           {(['alle', 'openstaand', 'voltooid', 'verlopen'] as Filter[]).map((f) => (
             <button
               key={f}
