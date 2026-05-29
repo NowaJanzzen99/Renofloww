@@ -29,7 +29,7 @@ export default function TrialExpiredGate() {
 
       if (!profile || profile.is_pro) return;
 
-      if (!profile.trial_ends_at || new Date(profile.trial_ends_at) <= new Date()) {
+      if (profile.trial_ends_at && new Date(profile.trial_ends_at) <= new Date()) {
         setShow(true);
       } else {
         setShow(false);

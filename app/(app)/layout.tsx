@@ -19,6 +19,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .eq('id', user.id)
       .single();
     profile = data;
+
+    // Auto-start 14-day trial the first time a user enters the app
+    // (covers users who skip/bypass onboarding, or were created without trial_ends_at)
+    if (profile && !profile.is_pro && !profile.trial_ends_at) {
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+      const { data: updated } = await supabase
+        .from('profiles')
+        .update({ trial_ends_at: trialEndsAt.toISOString() })
+        .eq('id', user.id)
+        .select('*')
+        .single();
+      if (updated) profile = updated;
+    }
   }
 
   return (
