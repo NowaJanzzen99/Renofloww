@@ -14,7 +14,8 @@ export default async function WoningwaardePage() {
     .eq('id', user.id)
     .single();
 
-  const isPro = !!(profile?.is_pro || profile?.plan === 'pro');
+  const trialActive = !!(profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date());
+  const isPro = !!(profile?.is_pro || profile?.plan === 'pro' || trialActive);
 
   // Fetch house
   const { data: house } = await supabase
