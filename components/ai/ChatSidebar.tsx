@@ -159,11 +159,8 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
       if (profile) {
         setIsPro(!!profile.is_pro);
         if (!profile.is_pro) {
-          if (profile.trial_ends_at) {
-            setTrialExpired(new Date(profile.trial_ends_at) <= new Date());
-          } else {
-            setTrialExpired(true);
-          }
+          // Only mark expired if trial_ends_at IS set AND in the past (null = not started = not expired)
+          setTrialExpired(!!profile.trial_ends_at && new Date(profile.trial_ends_at) <= new Date());
           const { count } = await supabase
             .from('ai_messages')
             .select('*', { count: 'exact', head: true })
@@ -347,7 +344,7 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }} onClick={() => setOpen(false)} />
 
-          <div className="relative w-full max-w-sm flex flex-col shadow-2xl" style={{ backgroundColor: '#FFFFFF', boxShadow: '-8px 0 32px rgba(0,0,0,0.15)' }}>
+          <div className="relative w-full max-w-sm flex flex-col shadow-2xl" style={{ backgroundColor: '#FFFFFF', boxShadow: '-8px 0 32px rgba(0,0,0,0.15)', height: '100%', maxHeight: '100dvh', overflowY: 'auto' }}>
 
             {/* Header */}
             <div className="flex items-center gap-2 px-4 py-4 border-b" style={{ borderColor: '#E5E7EB' }}>
@@ -573,8 +570,8 @@ export default function ChatSidebar({ projectId }: ChatSidebarProps) {
                       }}
                       onKeyDown={handleKeyDown}
                       placeholder={placeholder}
-                      className="flex-1 resize-none text-sm outline-none bg-transparent"
-                      style={{ color: '#1A1A1A', maxHeight: '120px' }}
+                      className="flex-1 resize-none outline-none bg-transparent"
+                      style={{ color: '#1A1A1A', maxHeight: '120px', fontSize: '16px', lineHeight: '1.4' }}
                       disabled={loading}
                     />
                     <button

@@ -47,6 +47,24 @@ const navItems = [
     ),
   },
   {
+    label: 'Woningkosten',
+    href: '/woningkosten',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Woningwaarde',
+    href: '/woningwaarde',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    ),
+  },
+  {
     label: 'Instellingen',
     href: '/settings',
     icon: (
@@ -252,9 +270,9 @@ export default function Sidebar() {
             </div>
           </div>
 
-          {/* Main nav items: Kalender, Analytics */}
+          {/* Main nav items: Kalender, Analytics, Woningkosten, Woningwaarde */}
           <div style={{ borderTop: '1px solid #E5E7EB', margin: '6px 0' }} />
-          {navItems.slice(1, 3).map((item) => {
+          {navItems.slice(1, 5).map((item) => {
             const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href}
@@ -272,7 +290,7 @@ export default function Sidebar() {
           {/* Beheer group — Instellingen */}
           <div style={{ borderTop: '1px solid #E5E7EB', margin: '8px 0 4px 0' }} />
           <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Beheer</p>
-          {navItems.slice(3).map((item) => {
+          {navItems.slice(5).map((item) => {
             const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href}
@@ -355,7 +373,7 @@ export default function Sidebar() {
 
         <nav className="flex-1 p-2 space-y-1 flex flex-col items-center">
           {/* Dashboard */}
-          {[...navItems.slice(0, 1), { label: 'Mijn projecten', href: '/projects', icon: <ProjectsIcon /> }, ...navItems.slice(1, 3), ...navItems.slice(3)].map((item) => {
+          {[...navItems.slice(0, 1), { label: 'Mijn projecten', href: '/projects', icon: <ProjectsIcon /> }, ...navItems.slice(1, 5), ...navItems.slice(5)].map((item) => {
             const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href} title={item.label}

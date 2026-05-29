@@ -177,3 +177,44 @@ export type AiMessage = {
   content: string;
   created_at: string;
 };
+
+export type WoningType =
+  | 'appartement'
+  | 'tussenwoning'
+  | 'hoekwoning'
+  | 'twee_onder_een_kap'
+  | 'vrijstaand';
+
+export type House = {
+  id: string;
+  user_id: string;
+  address: string | null;
+  postcode: string | null;
+  woningtype: WoningType | null;
+  surface_m2: number | null;
+  purchase_price: number | null;
+  purchase_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OnderhoudCategorie =
+  | 'onderhoud'
+  | 'reparatie'
+  | 'tuin'
+  | 'verzekering'
+  | 'energie'
+  | 'belasting'
+  | 'overig';
+
+export type OnderhoudKost = {
+  id: string;
+  house_id: string;
+  user_id: string;
+  date: string;
+  amount: number;
+  category: OnderhoudCategorie;
+  description: string;
+  project_id: string | null;
+  created_at: string;
+};
