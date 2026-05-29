@@ -33,7 +33,7 @@ function DonutGauge({ percentage, color }: { percentage: number; color: string }
   const circ = 2 * Math.PI * r;
   const filled = (percentage / 100) * circ;
   return (
-    <svg className="w-16 h-16" viewBox="0 0 80 80">
+    <svg className="w-11 h-11 sm:w-14 sm:h-14 shrink-0" viewBox="0 0 80 80">
       <circle cx="40" cy="40" r={r} fill="none" stroke="#E5E7EB" strokeWidth="8" />
       <circle
         cx="40" cy="40" r={r} fill="none"
@@ -360,7 +360,7 @@ export default function DashboardClient({
         <div className="flex items-center gap-3 mb-1">
           <DonutGauge percentage={budgetPercentage} color={budgetColor} />
           <div>
-            <p className="text-lg font-black" style={{ color: '#1A1A1A' }}>{budget > 0 ? formatCurrency(totalExpenses) : '—'}</p>
+            <p className="text-sm sm:text-lg font-black leading-tight" style={{ color: '#1A1A1A' }}>{budget > 0 ? formatCurrency(totalExpenses) : '—'}</p>
             <p className="text-xs" style={{ color: '#9CA3AF' }}>{budget > 0 ? `van ${formatCurrency(budget)}` : 'Geen budget'}</p>
           </div>
         </div>
@@ -697,10 +697,10 @@ export default function DashboardClient({
             )}
           </div>
 
-          {/* Planning (Gantt compact) — hidden on mobile, too small to use */}
+          {/* Planning (Gantt compact) */}
           {activeProject && rooms.length > 0 && (
             <div
-              className="hidden sm:block rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5"
+              className="rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5"
               style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
             >
               <div className="flex items-center justify-between mb-5">
