@@ -14,8 +14,10 @@ export default async function WoningwaardePage() {
     .eq('id', user.id)
     .single();
 
-  const trialActive = !!(profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date());
-  const isPro = !!(profile?.is_pro || profile?.plan === 'pro' || trialActive);
+  // Only block when trial is explicitly set AND already in the past.
+  // null = trial not started yet → still has access (layout.tsx will set it on next navigation).
+  const trialExpired = !!(profile?.trial_ends_at && new Date(profile.trial_ends_at) <= new Date());
+  const isPro = !!(profile?.is_pro || profile?.plan === 'pro' || !trialExpired);
 
   // Fetch house
   const { data: house } = await supabase
