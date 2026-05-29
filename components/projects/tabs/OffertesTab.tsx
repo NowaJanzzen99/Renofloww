@@ -627,7 +627,7 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div>
           <h2 className="text-lg font-semibold" style={{ color: '#1A1A1A' }}>Offertes ({quotes.length})</h2>
           {quotes.length >= 2 && (
@@ -689,65 +689,51 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
                 backgroundColor: isMin ? '#F0FDF4' : 'white',
               }}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1 min-w-0">
-                  {/* Checkbox */}
-                  <button
-                    onClick={() => toggleCompare(quote.id)}
-                    className="mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
-                    style={{
-                      borderColor: isSelected ? '#288760' : '#D1D5DB',
-                      backgroundColor: isSelected ? '#288760' : 'white',
-                    }}
-                    title="Selecteer voor vergelijking"
-                    aria-label="Selecteer voor vergelijking"
-                  >
-                    {isSelected && (
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
+              {/* Row 1: checkbox + naam + badges + actie-knoppen */}
+              <div className="flex items-start gap-3">
+                {/* Checkbox */}
+                <button
+                  onClick={() => toggleCompare(quote.id)}
+                  className="mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+                  style={{
+                    borderColor: isSelected ? '#288760' : '#D1D5DB',
+                    backgroundColor: isSelected ? '#288760' : 'white',
+                  }}
+                  title="Selecteer voor vergelijking"
+                  aria-label="Selecteer voor vergelijking"
+                >
+                  {isSelected && (
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {contractorName ? (
-                        <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{contractorName}</p>
-                      ) : (
-                        <p className="text-sm italic" style={{ color: '#9CA3AF' }}>Geen aannemer gekoppeld</p>
-                      )}
-                      {isMin && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: '#DCFCE7', color: '#15803D' }}>
-                          🏆 Laagste
-                        </span>
-                      )}
-                      {isMax && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>
-                          Hoogste
-                        </span>
-                      )}
-                    </div>
-                    {quote.description && (
-                      <p className="text-xs mt-0.5 truncate" style={{ color: '#6B7280' }}>{quote.description}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {contractorName ? (
+                      <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{contractorName}</p>
+                    ) : (
+                      <p className="text-sm italic" style={{ color: '#9CA3AF' }}>Geen aannemer gekoppeld</p>
+                    )}
+                    {isMin && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: '#DCFCE7', color: '#15803D' }}>
+                        🏆 Laagste
+                      </span>
+                    )}
+                    {isMax && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>
+                        Hoogste
+                      </span>
                     )}
                   </div>
+                  {quote.description && (
+                    <p className="text-xs mt-0.5 truncate" style={{ color: '#6B7280' }}>{quote.description}</p>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <p className="text-base font-bold" style={{ color: '#1A1A1A' }}>
-                    {formatCurrency(Number(quote.amount))}
-                  </p>
-                  <select
-                    value={quote.status}
-                    onChange={(e) => updateStatus(quote.id, e.target.value)}
-                    className="px-2 py-1 rounded-xl text-xs font-medium border outline-none"
-                    style={{ borderColor: statusInfo.color, color: statusInfo.color, backgroundColor: statusInfo.bg }}
-                  >
-                    <option value="in_behandeling">In behandeling</option>
-                    <option value="geaccepteerd">Geaccepteerd</option>
-                    <option value="afgewezen">Afgewezen</option>
-                  </select>
-                  {/* Edit button */}
+                {/* Actie-knoppen altijd rechts van de naam */}
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => setEditingQuote(quote)}
                     className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-100"
@@ -758,7 +744,6 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
-                  {/* Delete button */}
                   <button
                     onClick={() => setDeletingId(quote.id)}
                     className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-red-50"
@@ -772,6 +757,23 @@ export default function OffertesTab({ project, initialQuotes, initialContractors
                     </svg>
                   </button>
                 </div>
+              </div>
+
+              {/* Row 2: prijs + status-dropdown */}
+              <div className="flex items-center gap-3 mt-2.5 pl-8">
+                <p className="text-sm font-bold shrink-0" style={{ color: '#1A1A1A' }}>
+                  {formatCurrency(Number(quote.amount))}
+                </p>
+                <select
+                  value={quote.status}
+                  onChange={(e) => updateStatus(quote.id, e.target.value)}
+                  className="flex-1 px-2 py-1 rounded-xl text-xs font-medium border outline-none"
+                  style={{ borderColor: statusInfo.color, color: statusInfo.color, backgroundColor: statusInfo.bg, maxWidth: '160px' }}
+                >
+                  <option value="in_behandeling">In behandeling</option>
+                  <option value="geaccepteerd">Geaccepteerd</option>
+                  <option value="afgewezen">Afgewezen</option>
+                </select>
               </div>
             </div>
           );

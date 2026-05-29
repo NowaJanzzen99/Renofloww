@@ -33,7 +33,7 @@ function DonutGauge({ percentage, color }: { percentage: number; color: string }
   const circ = 2 * Math.PI * r;
   const filled = (percentage / 100) * circ;
   return (
-    <svg className="w-11 h-11 sm:w-14 sm:h-14 shrink-0" viewBox="0 0 80 80">
+    <svg className="w-14 h-14 sm:w-16 sm:h-16 shrink-0" viewBox="0 0 80 80">
       <circle cx="40" cy="40" r={r} fill="none" stroke="#E5E7EB" strokeWidth="8" />
       <circle
         cx="40" cy="40" r={r} fill="none"

@@ -535,7 +535,7 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
                         style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Categorie</label>
                       <select value={expCategory} onChange={(e) => setExpCategory(e.target.value)}

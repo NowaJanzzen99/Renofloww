@@ -228,7 +228,7 @@ export default function GanttChart({ rooms: initialRooms, projectStart, projectE
   const ticks: { label: string; pct: number }[] = [];
   if (!compact) {
     // Add a tick every ~7 days
-    const tickCount = Math.min(8, Math.floor(totalDays / 7) + 1);
+    const tickCount = Math.min(4, Math.floor(totalDays / 7) + 1);
     for (let i = 0; i <= tickCount; i++) {
       const d = Math.round((i / tickCount) * totalDays);
       const dateStr = addDays(timelineStart, d);
