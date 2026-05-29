@@ -367,7 +367,7 @@ export default function DashboardClient({
         <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Budget</p>
         {budget > 0 && (
           <div className="mt-auto">
-            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
+            <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
               <div className="h-full rounded-full transition-all duration-500" style={{ width: `${budgetPercentage}%`, backgroundColor: budgetColor }} />
             </div>
             <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>{formatCurrency(Math.max(budget - totalExpenses, 0))} resterend</p>
@@ -628,8 +628,8 @@ export default function DashboardClient({
                   </div>
                 ))}
               </div>
-              <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
-                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${budgetPercentage}%`, background: `linear-gradient(90deg, ${budgetColor}bb, ${budgetColor})` }} />
+              <div className="w-full rounded-full h-3 overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
+                <div className="h-3 rounded-full transition-all duration-500" style={{ width: `${budgetPercentage}%`, background: `linear-gradient(90deg, ${budgetColor}bb, ${budgetColor})` }} />
               </div>
               <div className="flex justify-between mt-2">
                 <span className="text-xs" style={{ color: '#9CA3AF' }}>0%</span>
@@ -697,10 +697,10 @@ export default function DashboardClient({
             )}
           </div>
 
-          {/* Planning (Gantt compact) */}
+          {/* Planning (Gantt compact) — hidden on mobile, too small to use */}
           {activeProject && rooms.length > 0 && (
             <div
-              className="rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5"
+              className="hidden sm:block rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5"
               style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
             >
               <div className="flex items-center justify-between mb-5">

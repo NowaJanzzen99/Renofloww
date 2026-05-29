@@ -205,10 +205,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Geen berichten opgegeven' }, { status: 400 });
     }
 
+    // Resolve project — use provided project_id or fall back to user's active project
+    let resolvedProjectId = project_id;
+    if (!resolvedProjectId) {
+      const { data: activeProjects } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('user_id', user.id)
+        .in('status', ['lopend', 'actief', 'active'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (activeProjects && activeProjects.length > 0) {
+        resolvedProjectId = activeProjects[0].id;
+      } else {
+        // Fallback: any project, most recent
+        const { data: anyProject } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (anyProject && anyProject.length > 0) resolvedProjectId = anyProject[0].id;
+      }
+    }
+
     // ── Build project context ──
     let projectContext = '';
     let projectName = '';
-    if (project_id) {
+    if (resolvedProjectId) {
+      const project_id = resolvedProjectId;
       try {
         const [projectRes, contractorsRes, quotesRes, expensesRes, tasksRes, roomsRes] = await Promise.all([
           supabase.from('projects').select('*').eq('id', project_id).single(),
@@ -276,7 +301,7 @@ Spreek altijd Nederlands. Wees praktisch, vriendelijk en concreet. Gebruik af en
     // Save user message to DB
     await supabase.from('ai_messages').insert({
       user_id: user.id,
-      project_id: project_id || null,
+      project_id: resolvedProjectId || null,
       role: 'user',
       content: lastUserMessage.content,
     });
@@ -316,7 +341,7 @@ Spreek altijd Nederlands. Wees praktisch, vriendelijk en concreet. Gebruik af en
           toolBlock.input as Record<string, unknown>,
           supabase,
           user.id,
-          project_id,
+          resolvedProjectId,
         );
         toolResults.push({
           type: 'tool_result',
@@ -355,7 +380,7 @@ Spreek altijd Nederlands. Wees praktisch, vriendelijk en concreet. Gebruik af en
             }
             await supabase.from('ai_messages').insert({
               user_id: user.id,
-              project_id: project_id || null,
+              project_id: resolvedProjectId || null,
               role: 'assistant',
               content: finalText,
             });
@@ -384,7 +409,7 @@ Spreek altijd Nederlands. Wees praktisch, vriendelijk en concreet. Gebruik af en
       // Save to DB
       await supabase.from('ai_messages').insert({
         user_id: user.id,
-        project_id: project_id || null,
+        project_id: resolvedProjectId || null,
         role: 'assistant',
         content: responseText,
       });
