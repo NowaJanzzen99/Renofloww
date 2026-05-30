@@ -739,11 +739,9 @@ export default function DashboardClient({
 
             {/* Vandaag section */}
             {todayTasks.length === 0 ? (
-              <div className="text-center py-6">
-                <div className="text-3xl mb-2">🎉</div>
-                <p className="text-sm font-medium mb-0.5" style={{ color: '#1A1A1A' }}>Vrije dag!</p>
-                <p className="text-xs" style={{ color: '#9CA3AF' }}>Geen taken gepland voor vandaag.</p>
-              </div>
+              <p className="text-sm py-1 px-1" style={{ color: 'rgba(156,163,175,0.55)' }}>
+                Geen taken vandaag
+              </p>
             ) : (
               <ul className="space-y-1">
                 {todayTasks.map(task => {
@@ -751,7 +749,7 @@ export default function DashboardClient({
                   return (
                     <li
                       key={task.id}
-                      className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+                      className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
                       onClick={() => toggleTask(task)}
                     >
                       <div
@@ -772,31 +770,41 @@ export default function DashboardClient({
             )}
 
             {/* Binnenkort section */}
-            {upcomingTasks.length > 0 ? (
-              <div className="mt-4 pt-4 border-t" style={{ borderColor: '#F3F4F6' }}>
-                <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Binnenkort</p>
-                <ul className="space-y-1">
-                  {upcomingTasks.map(task => {
+            <div className="mt-4 rounded-xl overflow-hidden" style={{ backgroundColor: '#F8FAF9' }}>
+              <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: '#288760' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#288760' }}>Binnenkort</p>
+              </div>
+              {upcomingTasks.length > 0 ? (
+                <ul className="pb-2">
+                  {upcomingTasks.map((task, i) => {
                     const [y, m, d] = (task.due_date ?? '').split('-').map(Number);
                     const label = task.due_date
                       ? new Date(y, m - 1, d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
                       : '';
                     return (
-                      <li key={task.id} className="flex items-center gap-3 py-2 px-3 rounded-xl">
-                        <div className="w-4 h-4 rounded-full border-2 shrink-0" style={{ borderColor: '#D1D5DB' }} />
-                        <span className="text-sm flex-1 truncate" style={{ color: '#374151' }}>{task.title}</span>
-                        {label && <span className="text-xs shrink-0 font-medium" style={{ color: '#9CA3AF' }}>{label}</span>}
+                      <li
+                        key={task.id}
+                        className="flex items-center gap-2.5 px-3 py-2"
+                        style={{ borderTop: i > 0 ? '1px solid rgba(0,0,0,0.04)' : 'none' }}
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: '#288760', opacity: 0.4 }} />
+                        <span className="text-xs flex-1 truncate font-medium" style={{ color: '#374151' }}>{task.title}</span>
+                        {label && (
+                          <span className="text-[10px] shrink-0 font-semibold px-1.5 py-0.5 rounded-md" style={{ color: '#288760', backgroundColor: 'rgba(40,135,96,0.1)' }}>
+                            {label}
+                          </span>
+                        )}
                       </li>
                     );
                   })}
                 </ul>
-              </div>
-            ) : (
-              <div className="mt-4 pt-4 border-t" style={{ borderColor: '#F3F4F6' }}>
-                <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: '#9CA3AF' }}>Binnenkort</p>
-                <p className="text-xs" style={{ color: '#D1D5DB' }}>Geen geplande taken</p>
-              </div>
-            )}
+              ) : (
+                <p className="text-xs px-3 pb-3" style={{ color: 'rgba(156,163,175,0.5)' }}>Geen geplande taken</p>
+              )}
+            </div>
           </div>
 
           {/* Planning (Gantt compact) */}

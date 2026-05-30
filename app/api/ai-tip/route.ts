@@ -22,9 +22,9 @@ export async function POST(req: NextRequest) {
 
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 120,
+      max_tokens: 60,
       system:
-        'Je bent een slimme renovatieassistent voor Renofloww. Geef één korte, praktische tip of observatie in maximaal 2 zinnen op basis van de projectdata. Wees specifiek en behulpzaam, niet generiek. Reageer alleen in het Nederlands.',
+        'Je bent een renovatieassistent voor Renofloww. Geef precies 1 korte zin (max 15 woorden) als praktische tip op basis van de projectdata. Geen inleiding, geen uitleg, alleen de tip. Alleen Nederlands.',
       messages: [{ role: 'user', content: userMessage }],
     });
 
