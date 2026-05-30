@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -17,16 +17,16 @@ import FotosTab from '@/components/projects/tabs/FotosTab';
 import InstellingenTab from '@/components/projects/tabs/InstellingenTab';
 
 const tabs = [
-  { id: 'overzicht',    label: 'Overzicht' },
-  { id: 'ruimtes',      label: 'Ruimtes' },
-  { id: 'taken',        label: 'Taken' },
-  { id: 'aannemers',    label: 'Aannemers' },
-  { id: 'offertes',     label: 'Offertes' },
-  { id: 'kosten',       label: 'Kosten' },
-  { id: 'meerwerk',     label: 'Meerwerk' },
-  { id: 'documenten',   label: 'Documenten' },
-  { id: 'fotos',        label: "Foto's" },
-  { id: 'instellingen', label: '⚙️ Instellingen' },
+  { id: 'overzicht',    label: 'Overzicht',    icon: '📋' },
+  { id: 'ruimtes',      label: 'Ruimtes',      icon: '🏠' },
+  { id: 'taken',        label: 'Taken',        icon: '✅' },
+  { id: 'aannemers',    label: 'Aannemers',    icon: '👷' },
+  { id: 'offertes',     label: 'Offertes',     icon: '💰' },
+  { id: 'kosten',       label: 'Kosten',       icon: '💸' },
+  { id: 'meerwerk',     label: 'Meerwerk',     icon: '🔧' },
+  { id: 'documenten',   label: 'Documenten',   icon: '📄' },
+  { id: 'fotos',        label: "Foto's",       icon: '📸' },
+  { id: 'instellingen', label: 'Instellingen', icon: '⚙️' },
 ];
 
 const statusOptions = ['gepland', 'lopend', 'gepauzeerd', 'afgerond'];
@@ -62,6 +62,23 @@ export default function ProjectDetailClient({
   const [activeTab, setActiveTab] = useState(initialTab);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(project.name);
+  const tabScrollRef = useRef<HTMLDivElement>(null);
+  const activeTabRef = useRef<HTMLButtonElement>(null);
+
+  // Auto-scroll active tab into view when switching
+  useEffect(() => {
+    if (activeTabRef.current && tabScrollRef.current) {
+      const container = tabScrollRef.current;
+      const btn = activeTabRef.current;
+      const btnLeft = btn.offsetLeft;
+      const btnWidth = btn.offsetWidth;
+      const containerWidth = container.offsetWidth;
+      const scrollLeft = container.scrollLeft;
+      // Center the active tab
+      const targetScroll = btnLeft - containerWidth / 2 + btnWidth / 2;
+      container.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' });
+    }
+  }, [activeTab]);
 
   const totalExpenses = initialExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const budget = Number(project.budget) || 0;
@@ -272,45 +289,50 @@ export default function ProjectDetailClient({
 
           {/* ── Tab bar ────────────────────────────────────────────────────── */}
           <div
-            className="bg-white rounded-2xl mb-5 overflow-hidden relative"
+            className="bg-white rounded-2xl mb-5 relative"
             style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB' }}
           >
-            <div className="flex overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className="px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-all"
-                  style={{
-                    borderColor: activeTab === tab.id ? '#288760' : 'transparent',
-                    color: activeTab === tab.id ? '#288760' : '#6B7280',
-                    backgroundColor: activeTab === tab.id ? '#F8FAF9' : 'transparent',
-                    fontWeight: activeTab === tab.id ? 600 : 400,
-                  }}
-                  onMouseEnter={e => {
-                    if (activeTab !== tab.id) {
-                      (e.currentTarget as HTMLElement).style.backgroundColor = '#F3F4F6';
-                      (e.currentTarget as HTMLElement).style.color = '#374151';
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (activeTab !== tab.id) {
-                      (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-                      (e.currentTarget as HTMLElement).style.color = '#6B7280';
-                    }
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            {/* Scroll hint: fade + chevron, only on mobile */}
             <div
-              className="absolute right-0 top-0 bottom-0 flex items-center pr-1.5 pointer-events-none md:hidden"
-              style={{ background: 'linear-gradient(to right, transparent 0%, white 55%)' , width: '40px' }}
+              ref={tabScrollRef}
+              className="flex gap-1 overflow-x-auto p-2"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              <svg className="w-4 h-4 ml-auto opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#6B7280' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              {tabs.map((tab) => {
+                const active = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    ref={active ? activeTabRef : undefined}
+                    onClick={() => setActiveTab(tab.id)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm whitespace-nowrap transition-all shrink-0"
+                    style={{
+                      backgroundColor: active ? '#288760' : '#F3F4F6',
+                      color: active ? '#FFFFFF' : '#6B7280',
+                      fontWeight: active ? 600 : 500,
+                      boxShadow: active ? '0 2px 8px rgba(40,135,96,0.25)' : 'none',
+                    }}
+                  >
+                    <span className="text-sm leading-none">{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Scroll fade + animated chevron — mobile only */}
+            <style>{`
+              @keyframes tab-nudge {
+                0%, 100% { transform: translateX(0); opacity: 0.5; }
+                50%       { transform: translateX(3px); opacity: 0.9; }
+              }
+              .tab-chevron { animation: tab-nudge 1.6s ease-in-out 0.8s 3; }
+            `}</style>
+            <div
+              className="absolute right-0 top-0 bottom-0 flex items-center pr-2 pointer-events-none md:hidden rounded-r-2xl"
+              style={{ background: 'linear-gradient(to right, transparent 0%, rgba(255,255,255,0.7) 40%, white 75%)', width: '52px' }}
+            >
+              <svg className="tab-chevron w-5 h-5 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#288760' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
               </svg>
             </div>
           </div>
