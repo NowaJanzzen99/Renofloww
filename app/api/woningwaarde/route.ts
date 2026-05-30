@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// In-memory cache for 24 hours
-let cache: {
-  indices: { period: string; index: number }[];
-  fetchedAt: number;
-} | null = null;
-
-// Fallback indices (CBS 2015=100 baseline, approximate values)
-// Updated to include 2025 annual average; used when CBS API is unreachable
+// Fallback indices (CBS 2015=100 baseline) — only used when both CBS endpoints are unreachable
 const FALLBACK_INDICES = [
   { period: '2019JJ00', index: 120.7 },
   { period: '2020JJ00', index: 130.4 },
@@ -32,43 +25,55 @@ function periodToDate(period: string): Date {
   return new Date(year, 6, 1); // JJ00 = mid-year
 }
 
-async function fetchCBSIndices(): Promise<{ period: string; index: number }[]> {
-  const now = Date.now();
-  if (cache && now - cache.fetchedAt < 24 * 60 * 60 * 1000) {
-    return cache.indices;
-  }
-
-  try {
-    const url =
-      'https://opendata.cbs.nl/ODataApi/odata/83625NED/TypedDataSet' +
+async function getIndices(): Promise<{
+  indices: { period: string; index: number }[];
+  isFallback: boolean;
+}> {
+  // Try two CBS endpoints in order. next: { revalidate } uses Next.js Data Cache
+  // so the actual HTTP request to CBS happens at most once per 24h across all
+  // Vercel instances — no per-instance memory cache needed.
+  const endpoints = [
+    // OData4 (newer, works better with Vercel's edge network)
+    'https://odata4.cbs.nl/CBS/83625NED/Observations' +
+      '?$select=Perioden,PrijsindexBestaandeKoopwoningen_1' +
+      '&$filter=PrijsindexBestaandeKoopwoningen_1 ne null' +
+      '&$orderby=Perioden desc&$top=40',
+    // OData3 (original)
+    'https://opendata.cbs.nl/ODataApi/odata/83625NED/TypedDataSet' +
       '?$select=Perioden,PrijsindexBestaandeKoopwoningen_1' +
       '&$filter=PrijsindexBestaandeKoopwoningen_1%20ne%20null' +
-      '&$orderby=Perioden%20desc&$top=40';
+      '&$orderby=Perioden%20desc&$top=40',
+  ];
 
-    const res = await fetch(url, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(6000),
-    });
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        next: { revalidate: 86400 }, // 24h CDN cache — shared across all Vercel instances
+        signal: AbortSignal.timeout(10000),
+      });
 
-    if (!res.ok) throw new Error(`CBS status ${res.status}`);
+      if (!res.ok) continue;
 
-    const json = await res.json();
-    const indices: { period: string; index: number }[] = (json.value ?? [])
-      .filter((d: Record<string, unknown>) => d.PrijsindexBestaandeKoopwoningen_1 != null)
-      .map((d: Record<string, unknown>) => ({
-        period: String(d.Perioden).trim(),
-        index: parseFloat(String(d.PrijsindexBestaandeKoopwoningen_1)),
-      }));
+      const json = await res.json();
+      const raw: Record<string, unknown>[] = json.value ?? [];
 
-    if (indices.length > 0) {
-      cache = { indices, fetchedAt: now };
-      return indices;
+      const indices = raw
+        .filter((d) => d.PrijsindexBestaandeKoopwoningen_1 != null)
+        .map((d) => ({
+          period: String(d.Perioden).trim(),
+          index: parseFloat(String(d.PrijsindexBestaandeKoopwoningen_1)),
+        }))
+        .filter((d) => !isNaN(d.index));
+
+      if (indices.length > 0) return { indices, isFallback: false };
+    } catch {
+      // try next endpoint
     }
-    throw new Error('Empty CBS response');
-  } catch {
-    // Use fallback data — don't cache so we retry on next request
-    return [...FALLBACK_INDICES].reverse(); // desc order
   }
+
+  // Both endpoints failed — use hardcoded fallback
+  return { indices: [...FALLBACK_INDICES].reverse(), isFallback: true };
 }
 
 export async function GET(req: NextRequest) {
@@ -76,13 +81,13 @@ export async function GET(req: NextRequest) {
   const purchaseDateStr = searchParams.get('purchase_date');
   const purchasePriceStr = searchParams.get('purchase_price');
 
-  const indices = await fetchCBSIndices();
+  const { indices, isFallback } = await getIndices();
 
   if (indices.length === 0) {
     return NextResponse.json({ error: 'Geen marktdata beschikbaar' }, { status: 503 });
   }
 
-  // Latest index (indices sorted desc)
+  // indices is sorted desc — most recent first
   const latest = indices[0];
   let estimate: number | null = null;
   let low: number | null = null;
@@ -94,7 +99,6 @@ export async function GET(req: NextRequest) {
     const purchasePrice = parseFloat(purchasePriceStr);
 
     if (!isNaN(purchasePrice) && !isNaN(purchaseDate.getTime())) {
-      // Find the index closest to purchase_date
       const best = [...indices]
         .map((idx) => ({
           ...idx,
@@ -112,17 +116,15 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Build yearly chart data (last 6 years of annual records)
+  // 6 most recent annual records, ascending for the chart
   const yearlyData = [...indices]
-    .reverse() // asc
+    .reverse()
     .filter((idx) => idx.period.includes('JJ'))
     .slice(-6)
     .map((idx) => ({
       year: parseInt(idx.period.substring(0, 4)),
       index: idx.index,
     }));
-
-  const usedFallback = cache === null;
 
   return NextResponse.json({
     estimate,
@@ -133,7 +135,7 @@ export async function GET(req: NextRequest) {
     purchaseIndex: purchaseIndexValue,
     yearlyData,
     source: 'CBS StatLine – Prijsindex bestaande koopwoningen (83625NED)',
-    isFallback: usedFallback,
-    fetchedAt: cache ? new Date(cache.fetchedAt).toISOString() : new Date().toISOString(),
+    isFallback,
+    fetchedAt: new Date().toISOString(),
   });
 }
