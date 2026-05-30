@@ -17,16 +17,16 @@ import FotosTab from '@/components/projects/tabs/FotosTab';
 import InstellingenTab from '@/components/projects/tabs/InstellingenTab';
 
 const tabs = [
-  { id: 'overzicht',    label: 'Overzicht',    icon: '📋' },
-  { id: 'ruimtes',      label: 'Ruimtes',      icon: '🏠' },
-  { id: 'taken',        label: 'Taken',        icon: '✅' },
-  { id: 'aannemers',    label: 'Aannemers',    icon: '👷' },
-  { id: 'offertes',     label: 'Offertes',     icon: '💰' },
-  { id: 'kosten',       label: 'Kosten',       icon: '💸' },
-  { id: 'meerwerk',     label: 'Meerwerk',     icon: '🔧' },
-  { id: 'documenten',   label: 'Documenten',   icon: '📄' },
-  { id: 'fotos',        label: "Foto's",       icon: '📸' },
-  { id: 'instellingen', label: 'Instellingen', icon: '⚙️' },
+  { id: 'overzicht',    label: 'Overzicht' },
+  { id: 'ruimtes',      label: 'Ruimtes' },
+  { id: 'taken',        label: 'Taken' },
+  { id: 'aannemers',    label: 'Aannemers' },
+  { id: 'offertes',     label: 'Offertes' },
+  { id: 'kosten',       label: 'Kosten' },
+  { id: 'meerwerk',     label: 'Meerwerk' },
+  { id: 'documenten',   label: 'Documenten' },
+  { id: 'fotos',        label: "Foto's" },
+  { id: 'instellingen', label: 'Instellingen' },
 ];
 
 const statusOptions = ['gepland', 'lopend', 'gepauzeerd', 'afgerond'];
@@ -294,8 +294,8 @@ export default function ProjectDetailClient({
           >
             <div
               ref={tabScrollRef}
-              className="flex gap-1 overflow-x-auto p-2"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              className="flex overflow-x-auto px-2 py-2"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', gap: '2px' }}
             >
               {tabs.map((tab) => {
                 const active = activeTab === tab.id;
@@ -304,16 +304,16 @@ export default function ProjectDetailClient({
                     key={tab.id}
                     ref={active ? activeTabRef : undefined}
                     onClick={() => setActiveTab(tab.id)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm whitespace-nowrap transition-all shrink-0"
+                    className="px-4 py-2 rounded-full whitespace-nowrap transition-all shrink-0"
                     style={{
-                      backgroundColor: active ? '#288760' : '#F3F4F6',
-                      color: active ? '#FFFFFF' : '#6B7280',
+                      backgroundColor: active ? '#1a3a2a' : 'transparent',
+                      color: active ? '#FFFFFF' : '#94A3B8',
+                      fontSize: '13px',
                       fontWeight: active ? 600 : 500,
-                      boxShadow: active ? '0 2px 8px rgba(40,135,96,0.25)' : 'none',
+                      letterSpacing: '0.01em',
                     }}
                   >
-                    <span className="text-sm leading-none">{tab.icon}</span>
-                    <span>{tab.label}</span>
+                    {tab.label}
                   </button>
                 );
               })}
@@ -322,17 +322,17 @@ export default function ProjectDetailClient({
             {/* Scroll fade + animated chevron — mobile only */}
             <style>{`
               @keyframes tab-nudge {
-                0%, 100% { transform: translateX(0); opacity: 0.5; }
-                50%       { transform: translateX(3px); opacity: 0.9; }
+                0%, 100% { transform: translateX(0); opacity: 0.4; }
+                50%       { transform: translateX(4px); opacity: 0.85; }
               }
-              .tab-chevron { animation: tab-nudge 1.6s ease-in-out 0.8s 3; }
+              .tab-chevron { animation: tab-nudge 1.8s ease-in-out 1s 3; }
             `}</style>
             <div
-              className="absolute right-0 top-0 bottom-0 flex items-center pr-2 pointer-events-none md:hidden rounded-r-2xl"
-              style={{ background: 'linear-gradient(to right, transparent 0%, rgba(255,255,255,0.7) 40%, white 75%)', width: '52px' }}
+              className="absolute right-0 top-0 bottom-0 flex items-center pr-2.5 pointer-events-none md:hidden rounded-r-2xl"
+              style={{ background: 'linear-gradient(to right, transparent 0%, rgba(255,255,255,0.65) 35%, white 70%)', width: '48px' }}
             >
-              <svg className="tab-chevron w-5 h-5 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#288760' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              <svg className="tab-chevron w-4 h-4 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#94A3B8' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </div>
           </div>
