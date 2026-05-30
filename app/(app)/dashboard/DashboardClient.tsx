@@ -284,10 +284,11 @@ export default function DashboardClient({
   }, [activeDates]);
 
   // Upcoming tasks (due after today, not completed, sorted by due_date)
+  // Note: inline the completion check here — isTaskCompleted is defined later in the component
   const upcomingTasks = useMemo(() => {
     const today = localDateStr();
     return allTasks
-      .filter(t => t.due_date && t.due_date > today && !isTaskCompleted(t))
+      .filter(t => t.due_date && t.due_date > today && t.status !== 'voltooid' && t.status !== 'done')
       .sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? ''))
       .slice(0, 3);
   }, [allTasks]);
