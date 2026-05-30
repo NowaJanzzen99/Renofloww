@@ -7,15 +7,16 @@ let cache: {
 } | null = null;
 
 // Fallback indices (CBS 2015=100 baseline, approximate values)
+// Updated to include 2025 annual average; used when CBS API is unreachable
 const FALLBACK_INDICES = [
-  { period: '2018JJ00', index: 112.9 },
   { period: '2019JJ00', index: 120.7 },
   { period: '2020JJ00', index: 130.4 },
   { period: '2021JJ00', index: 157.0 },
   { period: '2022JJ00', index: 173.2 },
   { period: '2023JJ00', index: 167.8 },
   { period: '2024JJ00', index: 182.4 },
-  { period: '2025KW01', index: 188.0 },
+  { period: '2025JJ00', index: 196.1 },
+  { period: '2026KW01', index: 202.3 },
 ];
 
 function periodToDate(period: string): Date {
