@@ -4,8 +4,19 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, timeAgo } from '@/lib/utils';
-import type { Profile, Project, Task, Expense, Room } from '@/types';
+import type { Profile, Project, Task, Expense, Room, House } from '@/types';
 import GanttChart from '@/components/GanttChart';
+
+interface WoningData {
+  estimate: number | null;
+  low: number | null;
+  high: number | null;
+  latestPeriod: string;
+  latestIndex: number;
+  purchaseIndex: number | null;
+  mortgageRate: { rate: number; period: string; label: string } | null;
+  isFallback: boolean;
+}
 
 interface Props {
   greeting: string;
@@ -20,6 +31,7 @@ interface Props {
   budget: number;
   budgetPercentage: number;
   activeDays: number;
+  house: House | null;
 }
 
 // ─── Local date helper ────────────────────────────────────────────────────────
@@ -191,6 +203,142 @@ function DraggableCard({
   );
 }
 
+// ─── Woningwaarde card ────────────────────────────────────────────────────────
+function WoningwaardeCard({ house, data, loading }: { house: House | null; data: WoningData | null; loading: boolean }) {
+  const formatPeriod = (p: string) => {
+    if (!p) return '';
+    if (p.includes('-Q')) { const [y, q] = p.split('-Q'); return `Q${q} ${y}`; }
+    if (p.includes('JJ')) return p.slice(0, 4);
+    return p;
+  };
+
+  // No house profile set up yet
+  if (!house) {
+    return (
+      <div className="rounded-2xl bg-white border flex flex-col items-center justify-center text-center p-6 h-full"
+        style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', minHeight: 220 }}>
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ backgroundColor: '#F0FDF4' }}>
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: '#288760' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+        </div>
+        <p className="text-sm font-semibold mb-1" style={{ color: '#1A1A1A' }}>Woningprofiel ontbreekt</p>
+        <p className="text-xs mb-4" style={{ color: '#9CA3AF' }}>Stel je woning in om de marktwaarde te zien.</p>
+        <Link href="/woningkosten" className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#F0FDF4', color: '#288760' }}>
+          Woning instellen →
+        </Link>
+      </div>
+    );
+  }
+
+  const estimate = data?.estimate ?? null;
+  const purchasePrice = house.purchase_price ? Number(house.purchase_price) : null;
+  const overwaarde = estimate && purchasePrice ? estimate - purchasePrice : null;
+  const growthPct = estimate && purchasePrice && purchasePrice > 0
+    ? ((estimate - purchasePrice) / purchasePrice * 100)
+    : null;
+  const isUp = (overwaarde ?? 0) >= 0;
+
+  return (
+    <div className="rounded-2xl bg-white border overflow-hidden flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
+      style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+
+      {/* Dark header strip */}
+      <div className="px-5 pt-4 pb-3" style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #1a3a2a 100%)' }}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: '#6EE7B7' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#6EE7B7' }}>Woningwaarde</span>
+          </div>
+          {data && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: data.isFallback ? '#F59E0B' : '#10B981' }} />
+              <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                {formatPeriod(data.latestPeriod)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="flex gap-1 mt-2 mb-1">
+            {[0,1,2].map(i => (
+              <div key={i} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#6EE7B7', opacity: 0.6, animationDelay: `${i*0.15}s` }} />
+            ))}
+          </div>
+        ) : estimate ? (
+          <div className="flex items-end justify-between gap-2">
+            <div>
+              <p className="text-2xl font-black text-white">{formatCurrency(estimate)}</p>
+              {growthPct !== null && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: isUp ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: isUp ? '#10B981' : '#F87171' }}>
+                    {isUp ? '+' : ''}{growthPct.toFixed(1)}%
+                  </span>
+                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>t.o.v. aankoop</span>
+                </div>
+              )}
+            </div>
+            {overwaarde !== null && (
+              <div className="text-right shrink-0">
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>overwaarde</p>
+                <p className="text-sm font-black" style={{ color: isUp ? '#6EE7B7' : '#F87171' }}>
+                  {isUp ? '+' : ''}{formatCurrency(overwaarde)}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            {house.purchase_price ? 'Laden...' : 'Voeg aankoopprijs toe voor schatting'}
+          </p>
+        )}
+      </div>
+
+      {/* Stats body */}
+      <div className="flex-1 px-5 py-4 space-y-3">
+        {purchasePrice && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs" style={{ color: '#9CA3AF' }}>Aankoopprijs</span>
+            <span className="text-xs font-semibold" style={{ color: '#374151' }}>{formatCurrency(purchasePrice)}</span>
+          </div>
+        )}
+        {data?.mortgageRate && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs" style={{ color: '#9CA3AF' }}>Hypotheekrente NL</span>
+            <span className="text-xs font-semibold" style={{ color: '#374151' }}>{data.mortgageRate.rate}% · {data.mortgageRate.label}</span>
+          </div>
+        )}
+        {data?.latestIndex && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs" style={{ color: '#9CA3AF' }}>Prijsindex (2015=100)</span>
+            <span className="text-xs font-semibold" style={{ color: '#374151' }}>{data.latestIndex.toFixed(1)}</span>
+          </div>
+        )}
+        {house.address && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs" style={{ color: '#9CA3AF' }}>Adres</span>
+            <span className="text-xs font-semibold truncate max-w-[60%] text-right" style={{ color: '#374151' }}>{house.address}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Footer link */}
+      <div className="px-5 pb-4 pt-0">
+        <Link href="/woningwaarde" className="inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#288760' }}>
+          Bekijk alle details
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function DashboardClient({
   greeting, profile, activeProject,
@@ -201,6 +349,7 @@ export default function DashboardClient({
   pendingQuotesCount: initialPendingQuotesCount,
   budget,
   activeDays,
+  house,
 }: Props) {
   const [todayTasks, setTodayTasks] = useState<Task[]>(initialTodayTasks);
   const [allTasks, setAllTasks] = useState<Task[]>(initialAllTasks);
@@ -209,6 +358,8 @@ export default function DashboardClient({
   const [upgradedBanner, setUpgradedBanner] = useState(false);
   const [aiTip, setAiTip] = useState<string | null>(null);
   const [aiTipLoading, setAiTipLoading] = useState(false);
+  const [woningData, setWoningData] = useState<WoningData | null>(null);
+  const [woningLoading, setWoningLoading] = useState(false);
 
   const DEFAULT_ORDER = ['budget', 'aitip', 'offertes'];
   const [cardOrder, setCardOrder] = useState<string[]>(DEFAULT_ORDER);
@@ -333,6 +484,20 @@ export default function DashboardClient({
 
   // Load AI tip on mount
   useEffect(() => { fetchAiTip(); }, [fetchAiTip]);
+
+  // Load woningwaarde on mount
+  useEffect(() => {
+    if (!house) return;
+    setWoningLoading(true);
+    const params = new URLSearchParams();
+    if (house.purchase_price) params.set('purchase_price', String(house.purchase_price));
+    if (house.purchase_date)  params.set('purchase_date',  house.purchase_date);
+    fetch(`/api/woningwaarde?${params}`)
+      .then(r => r.json())
+      .then(setWoningData)
+      .catch(() => {})
+      .finally(() => setWoningLoading(false));
+  }, [house]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -764,8 +929,11 @@ export default function DashboardClient({
             </div>
           </div>
 
+          {/* Woningwaarde card — right column */}
+          <WoningwaardeCard house={house} data={woningData} loading={woningLoading} />
+
           {!activeProject && (
-            <div className="rounded-2xl p-5 sm:p-6 bg-white border text-center" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+            <div className="rounded-2xl p-5 sm:p-6 bg-white border text-center lg:col-span-2" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
               <div className="text-4xl mb-3">🏗️</div>
               <h3 className="text-base font-semibold mb-2" style={{ color: '#1A1A1A' }}>Geen actief project</h3>
               <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Maak je eerste verbouwingsproject aan om te beginnen.</p>

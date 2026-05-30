@@ -15,13 +15,15 @@ export default async function DashboardPage() {
 
   const greeting = getGreeting();
 
-  const [profileRes, projectsRes] = await Promise.all([
+  const [profileRes, projectsRes, houseRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase.from('projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    supabase.from('houses').select('*').eq('user_id', user.id).single(),
   ]);
 
   const profile: Profile | null = profileRes.data;
   const projects: Project[] = projectsRes.data || [];
+  const house = houseRes.data || null;
 
   // Get first active project data
   const activeProject = projects.find((p) => p.status === 'lopend') || projects[0];
@@ -83,6 +85,7 @@ export default async function DashboardPage() {
       budget={budget}
       budgetPercentage={budgetPercentage}
       activeDays={activeDays}
+      house={house}
     />
   );
 }
