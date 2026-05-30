@@ -210,7 +210,7 @@ export default function DashboardClient({
   const [aiTip, setAiTip] = useState<string | null>(null);
   const [aiTipLoading, setAiTipLoading] = useState(false);
 
-  const DEFAULT_ORDER = ['budget', 'aitip', 'vandaag'];
+  const DEFAULT_ORDER = ['budget', 'aitip', 'offertes'];
   const [cardOrder, setCardOrder] = useState<string[]>(DEFAULT_ORDER);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -419,7 +419,7 @@ export default function DashboardClient({
             {budget > 0 ? `van ${formatCurrency(budget)}` : 'Geen budget'}
           </p>
         </div>
-        <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Budget</p>
+        <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Budget gebruikt</p>
         {budget > 0 && (
           <div className="mt-auto">
             <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
@@ -626,7 +626,7 @@ export default function DashboardClient({
               <div className="hidden sm:flex items-center gap-5 sm:gap-7">
                 <div className="text-center">
                   <p className="text-2xl sm:text-3xl font-black text-white">{budgetPercentage}%</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>budget</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>gebruikt</p>
                 </div>
                 <div className="w-px h-10" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
                 <div className="text-center">
@@ -763,78 +763,6 @@ export default function DashboardClient({
               )}
             </div>
           </div>
-
-          {/* ── Offertes card — second ── */}
-          <div
-            className="rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 flex flex-col"
-            style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#FFF7ED' }}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#F59E0B' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Open offertes</h2>
-            </div>
-            <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-5xl font-black" style={{ color: pendingQuotesCount > 0 ? '#1A1A1A' : '#D1D5DB' }}>{pendingQuotesCount}</span>
-              <span className="text-sm" style={{ color: '#9CA3AF' }}>in behandeling</span>
-            </div>
-            <p className="text-xs mb-6" style={{ color: '#9CA3AF' }}>
-              {pendingQuotesCount === 0
-                ? 'Geen openstaande offertes.'
-                : `${pendingQuotesCount === 1 ? 'Er wacht' : 'Er wachten'} ${pendingQuotesCount} offerte${pendingQuotesCount === 1 ? '' : 's'} op een reactie.`}
-            </p>
-            {activeProject && (
-              <Link
-                href={`/projects/${activeProject.id}?tab=offertes`}
-                className="mt-auto inline-flex items-center gap-1.5 text-sm font-semibold"
-                style={{ color: '#288760' }}
-              >
-                Bekijk offertes
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
-            )}
-          </div>
-
-          {/* Budget details */}
-          {activeProject && budget > 0 && (
-            <div
-              className="rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5"
-              style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
-            >
-              <h2 className="text-sm font-bold mb-5 uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Budget overzicht</h2>
-              <div className="grid grid-cols-3 gap-4 mb-5">
-                {[
-                  { label: 'Budget', value: formatCurrency(budget), color: '#1A1A1A' },
-                  { label: 'Uitgegeven', value: formatCurrency(totalExpenses), color: budgetColor },
-                  { label: 'Resterend', value: formatCurrency(Math.max(budget - totalExpenses, 0)), color: '#288760' },
-                ].map(({ label, value, color }) => (
-                  <div key={label}>
-                    <p className="text-xs mb-1" style={{ color: '#9CA3AF' }}>{label}</p>
-                    <p className="text-base font-bold" style={{ color }}>{value}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="w-full rounded-full h-3 overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
-                <div className="h-3 rounded-full transition-all duration-500" style={{ width: `${budgetPercentage}%`, background: `linear-gradient(90deg, ${budgetColor}bb, ${budgetColor})` }} />
-              </div>
-              <div className="flex justify-between mt-2">
-                <span className="text-xs" style={{ color: '#9CA3AF' }}>0%</span>
-                <span className="text-xs font-bold" style={{ color: budgetColor }}>{budgetPercentage}% gebruikt</span>
-                <span className="text-xs" style={{ color: '#9CA3AF' }}>100%</span>
-              </div>
-              {budgetPercentage >= 80 && (
-                <div className="mt-4 px-3 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
-                  <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                  Let op: je hebt al {budgetPercentage}% van je budget gebruikt.
-                </div>
-              )}
-            </div>
-          )}
 
           {!activeProject && (
             <div className="rounded-2xl p-5 sm:p-6 bg-white border text-center" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
