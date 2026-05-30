@@ -31,10 +31,17 @@ export default async function WoningwaardePage() {
 
   const { data: projects } = await supabase
     .from('projects')
-    .select('id')
+    .select('id, start_date')
     .eq('user_id', user.id);
 
-  const projectIds = (projects || []).map((p: { id: string }) => p.id);
+  const projectIds = (projects || []).map((p: { id: string; start_date?: string | null }) => p.id);
+
+  // Earliest project start date for the "since project" chart mode
+  const projectStartDate =
+    (projects || [])
+      .map((p: { start_date?: string | null }) => p.start_date)
+      .filter(Boolean)
+      .sort()[0] ?? null;
 
   if (projectIds.length > 0) {
     const { data: expenses } = await supabase
@@ -57,6 +64,7 @@ export default async function WoningwaardePage() {
       house={house || null}
       totalInvested={totalInvested}
       isPro={isPro}
+      projectStartDate={projectStartDate}
     />
   );
 }
