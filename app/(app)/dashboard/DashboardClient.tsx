@@ -210,7 +210,7 @@ export default function DashboardClient({
   const [aiTip, setAiTip] = useState<string | null>(null);
   const [aiTipLoading, setAiTipLoading] = useState(false);
 
-  const DEFAULT_ORDER = ['budget', 'aitip', 'offertes', 'vandaag'];
+  const DEFAULT_ORDER = ['budget', 'aitip', 'vandaag'];
   const [cardOrder, setCardOrder] = useState<string[]>(DEFAULT_ORDER);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -663,7 +663,7 @@ export default function DashboardClient({
         <p className="text-xs mb-3 hidden md:block" style={{ color: '#C4B5FD' }}>⠿ Sleep de kaarten om de volgorde aan te passen</p>
 
         {/* ── Stat cards ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-5">
           {cardOrder.map(id => (
             <DraggableCard
               key={id} id={id}
@@ -681,6 +681,124 @@ export default function DashboardClient({
 
         {/* ── Bottom grid ── */}
         <div className="grid lg:grid-cols-2 gap-4">
+
+          {/* ── Taken vandaag + Binnenkort — first ── */}
+          <div
+            className="rounded-2xl bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+            style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
+          >
+            {/* Header */}
+            <div className="px-5 pt-5 pb-3">
+              <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Taken vandaag</h2>
+            </div>
+
+            {/* Vandaag lijst */}
+            <div className="px-5 pb-4">
+              {todayTasks.length === 0 ? (
+                <div
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl"
+                  style={{ border: '1.5px dashed #E5E7EB' }}
+                >
+                  <div className="w-5 h-5 rounded-full border-2 shrink-0" style={{ borderColor: '#D1D5DB', borderStyle: 'dashed' }} />
+                  <span className="text-sm" style={{ color: '#C4CACC' }}>Geen taken vandaag</span>
+                </div>
+              ) : (
+                <ul className="space-y-1">
+                  {todayTasks.map(task => {
+                    const done = isTaskCompleted(task);
+                    return (
+                      <li
+                        key={task.id}
+                        className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => toggleTask(task)}
+                      >
+                        <div
+                          className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200"
+                          style={{ borderColor: done ? '#288760' : '#D1D5DB', backgroundColor: done ? '#288760' : 'white' }}
+                        >
+                          <svg className="w-3 h-3 text-white" style={{ opacity: done ? 1 : 0, transform: done ? 'scale(1)' : 'scale(0.5)', transition: 'all 0.2s' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <span className="text-sm flex-1 transition-all duration-200" style={{ color: done ? '#9CA3AF' : '#1A1A1A', textDecoration: done ? 'line-through' : 'none' }}>
+                          {task.title}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
+            {/* Binnenkort sectie */}
+            <div style={{ backgroundColor: '#F4F7F5', borderTop: '1.5px solid #E5E7EB' }}>
+              <div className="flex items-center gap-1.5 px-5 pt-3 pb-2">
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#6B7280' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#6B7280' }}>Binnenkort</p>
+              </div>
+              {upcomingTasks.length > 0 ? (
+                <ul className="px-5 pb-4 space-y-2">
+                  {upcomingTasks.map(task => {
+                    const [y, m, d] = (task.due_date ?? '').split('-').map(Number);
+                    const label = task.due_date
+                      ? new Date(y, m - 1, d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+                      : '';
+                    return (
+                      <li key={task.id} className="flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: '#9CA3AF' }} />
+                        <span className="text-sm flex-1 truncate" style={{ color: '#374151' }}>{task.title}</span>
+                        {label && (
+                          <span className="text-[11px] font-semibold shrink-0 px-2 py-0.5 rounded-lg" style={{ color: '#288760', backgroundColor: '#DCF5EA' }}>
+                            {label}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="px-5 pb-4 text-sm" style={{ color: '#C4CACC' }}>Geen geplande taken</p>
+              )}
+            </div>
+          </div>
+
+          {/* ── Offertes card — second ── */}
+          <div
+            className="rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 flex flex-col"
+            style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#FFF7ED' }}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#F59E0B' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Open offertes</h2>
+            </div>
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-5xl font-black" style={{ color: pendingQuotesCount > 0 ? '#1A1A1A' : '#D1D5DB' }}>{pendingQuotesCount}</span>
+              <span className="text-sm" style={{ color: '#9CA3AF' }}>in behandeling</span>
+            </div>
+            <p className="text-xs mb-6" style={{ color: '#9CA3AF' }}>
+              {pendingQuotesCount === 0
+                ? 'Geen openstaande offertes.'
+                : `${pendingQuotesCount === 1 ? 'Er wacht' : 'Er wachten'} ${pendingQuotesCount} offerte${pendingQuotesCount === 1 ? '' : 's'} op een reactie.`}
+            </p>
+            {activeProject && (
+              <Link
+                href={`/projects/${activeProject.id}?tab=offertes`}
+                className="mt-auto inline-flex items-center gap-1.5 text-sm font-semibold"
+                style={{ color: '#288760' }}
+              >
+                Bekijk offertes
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            )}
+          </div>
 
           {/* Budget details */}
           {activeProject && budget > 0 && (
@@ -727,99 +845,6 @@ export default function DashboardClient({
             </div>
           )}
 
-          {/* Taken vandaag + Binnenkort */}
-          <div
-            className="rounded-2xl bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-            style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
-          >
-            {/* ── Header ── */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-3">
-              <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Taken vandaag</h2>
-              {activeProject && (
-                <Link href={`/projects/${activeProject.id}?tab=taken`} className="text-xs font-semibold" style={{ color: '#288760' }}>
-                  Alle taken →
-                </Link>
-              )}
-            </div>
-
-            {/* ── Vandaag lijst ── */}
-            <div className="px-5 pb-4">
-              {todayTasks.length === 0 ? (
-                <div
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl"
-                  style={{ border: '1.5px dashed #E5E7EB' }}
-                >
-                  <div
-                    className="w-5 h-5 rounded-full border-2 shrink-0"
-                    style={{ borderColor: '#D1D5DB', borderStyle: 'dashed' }}
-                  />
-                  <span className="text-sm" style={{ color: '#C4CACC' }}>Geen taken vandaag</span>
-                </div>
-              ) : (
-                <ul className="space-y-1">
-                  {todayTasks.map(task => {
-                    const done = isTaskCompleted(task);
-                    return (
-                      <li
-                        key={task.id}
-                        className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
-                        onClick={() => toggleTask(task)}
-                      >
-                        <div
-                          className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200"
-                          style={{ borderColor: done ? '#288760' : '#D1D5DB', backgroundColor: done ? '#288760' : 'white' }}
-                        >
-                          <svg className="w-3 h-3 text-white" style={{ opacity: done ? 1 : 0, transform: done ? 'scale(1)' : 'scale(0.5)', transition: 'all 0.2s' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <span className="text-sm flex-1 transition-all duration-200" style={{ color: done ? '#9CA3AF' : '#1A1A1A', textDecoration: done ? 'line-through' : 'none' }}>
-                          {task.title}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-
-            {/* ── Binnenkort sectie — aparte achtergrond ── */}
-            <div style={{ backgroundColor: '#F4F7F5', borderTop: '1.5px solid #E5E7EB' }}>
-              <div className="flex items-center gap-1.5 px-5 pt-3 pb-2">
-                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#6B7280' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#6B7280' }}>Binnenkort</p>
-              </div>
-
-              {upcomingTasks.length > 0 ? (
-                <ul className="px-5 pb-4 space-y-2">
-                  {upcomingTasks.map(task => {
-                    const [y, m, d] = (task.due_date ?? '').split('-').map(Number);
-                    const label = task.due_date
-                      ? new Date(y, m - 1, d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
-                      : '';
-                    return (
-                      <li key={task.id} className="flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: '#9CA3AF' }} />
-                        <span className="text-sm flex-1 truncate" style={{ color: '#374151' }}>{task.title}</span>
-                        {label && (
-                          <span
-                            className="text-[11px] font-semibold shrink-0 px-2 py-0.5 rounded-lg"
-                            style={{ color: '#288760', backgroundColor: '#DCF5EA' }}
-                          >
-                            {label}
-                          </span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <p className="px-5 pb-4 text-sm" style={{ color: '#C4CACC' }}>Geen geplande taken</p>
-              )}
-            </div>
-          </div>
 
           {/* Planning (Gantt compact) */}
           {activeProject && rooms.length > 0 && (
