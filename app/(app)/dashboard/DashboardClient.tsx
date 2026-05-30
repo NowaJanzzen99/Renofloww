@@ -296,13 +296,13 @@ function WoningwaardeCard({ house, data, loading }: { house: House | null; data:
       <div className="flex-1 px-4 py-3 space-y-2.5">
         {[
           purchasePrice ? { label: 'Aankoopprijs', value: formatCurrency(purchasePrice) } : null,
-          data?.mortgageRate ? { label: 'Hypotheekrente', value: `${data.mortgageRate.rate}% · ${data.mortgageRate.label}` } : null,
-          data?.latestIndex ? { label: 'Prijsindex', value: data.latestIndex.toFixed(1) } : null,
+          data?.mortgageRate ? { label: 'Rente NL', value: `${data.mortgageRate.rate}% · ${data.mortgageRate.label}` } : null,
+          data?.latestIndex ? { label: 'Prijsindex', value: `${data.latestIndex.toFixed(1)} (2015=100)` } : null,
           house.address ? { label: 'Adres', value: house.address } : null,
         ].filter(Boolean).map((row) => (
-          <div key={row!.label} className="flex items-baseline justify-between gap-3 min-w-0">
-            <span className="text-xs shrink-0" style={{ color: '#9CA3AF' }}>{row!.label}</span>
-            <span className="text-xs font-semibold truncate text-right" style={{ color: '#374151' }}>{row!.value}</span>
+          <div key={row!.label} className="flex items-center gap-2 w-full">
+            <span className="text-xs whitespace-nowrap shrink-0" style={{ color: '#9CA3AF' }}>{row!.label}</span>
+            <span className="text-xs font-semibold flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-right" style={{ color: '#374151' }}>{row!.value}</span>
           </div>
         ))}
       </div>
@@ -712,7 +712,7 @@ export default function DashboardClient({
   };
 
   return (
-    <div className="min-h-full" style={{ background: 'linear-gradient(160deg, #F8FAF9 0%, #FAFAFA 100%)' }}>
+    <div className="min-h-full overflow-x-hidden" style={{ background: 'linear-gradient(160deg, #F8FAF9 0%, #FAFAFA 100%)' }}>
       {/* Single max-width wrapper so hero + cards are always the same width */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
 
@@ -926,7 +926,7 @@ export default function DashboardClient({
           {/* Planning (Gantt compact) */}
           {activeProject && rooms.length > 0 && (
             <div
-              className="rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5"
+              className="rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
               style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
             >
               <div className="flex items-center justify-between mb-5">
@@ -947,7 +947,7 @@ export default function DashboardClient({
           {/* Compact streak banner */}
           {activeProject && (
             <div
-              className="rounded-2xl px-5 py-3.5 bg-white border lg:col-span-2 flex items-center gap-4"
+              className="rounded-2xl px-5 py-3.5 bg-white border lg:col-span-2 flex items-center gap-4 overflow-hidden"
               style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
             >
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #3b0764, #4c0d87)', boxShadow: '0 2px 8px rgba(109,40,217,0.2)' }}>
@@ -997,7 +997,7 @@ export default function DashboardClient({
 
           {/* Recente activiteit */}
           <div
-            className={`rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 ${(!activeProject || rooms.length === 0) ? 'lg:col-span-2' : 'lg:col-span-2'}`}
+            className={`rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden ${(!activeProject || rooms.length === 0) ? 'lg:col-span-2' : 'lg:col-span-2'}`}
             style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
           >
             <h2 className="text-sm font-bold uppercase tracking-wide mb-5" style={{ color: '#9CA3AF' }}>Recente activiteit</h2>
