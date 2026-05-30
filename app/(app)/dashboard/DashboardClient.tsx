@@ -207,8 +207,10 @@ export default function DashboardClient({
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [pendingQuotesCount, setPendingQuotesCount] = useState(initialPendingQuotesCount);
   const [upgradedBanner, setUpgradedBanner] = useState(false);
+  const [aiTip, setAiTip] = useState<string | null>(null);
+  const [aiTipLoading, setAiTipLoading] = useState(false);
 
-  const DEFAULT_ORDER = ['budget', 'taken', 'offertes', 'vandaag'];
+  const DEFAULT_ORDER = ['budget', 'aitip', 'offertes', 'vandaag'];
   const [cardOrder, setCardOrder] = useState<string[]>(DEFAULT_ORDER);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -280,6 +282,56 @@ export default function DashboardClient({
     }
     return streak;
   }, [activeDates]);
+
+  // Upcoming tasks (due after today, not completed, sorted by due_date)
+  const upcomingTasks = useMemo(() => {
+    const today = localDateStr();
+    return allTasks
+      .filter(t => t.due_date && t.due_date > today && !isTaskCompleted(t))
+      .sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? ''))
+      .slice(0, 3);
+  }, [allTasks]);
+
+  const fetchAiTip = useCallback(async (force = false) => {
+    const cacheKey = `rf-ai-tip-${activeProject?.id ?? 'none'}`;
+    if (!force) {
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) { setAiTip(cached); return; }
+      } catch {}
+    }
+    setAiTipLoading(true);
+    try {
+      const nextDeadlineStr = nextDeadline?.end_date
+        ? new Date(nextDeadline.end_date + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })
+        : null;
+      const endDateStr = activeProject?.end_date
+        ? new Date(activeProject.end_date + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })
+        : null;
+      const res = await fetch('/api/ai-tip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          budgetPct:      budget > 0 ? Math.round((expenses.reduce((s, e) => s + Number(e.amount), 0) / budget) * 100) : null,
+          todayTaskCount: todayTasks.length,
+          openQuotes:     pendingQuotesCount,
+          nextDeadline:   nextDeadlineStr,
+          endDate:        endDateStr,
+          projectType:    activeProject?.type ?? null,
+        }),
+      });
+      const json = await res.json();
+      if (json.tip) {
+        setAiTip(json.tip);
+        try { sessionStorage.setItem(cacheKey, json.tip); } catch {}
+      }
+    } catch { /* silent */ } finally {
+      setAiTipLoading(false);
+    }
+  }, [activeProject, budget, expenses, todayTasks, pendingQuotesCount, nextDeadline]);
+
+  // Load AI tip on mount
+  useEffect(() => { fetchAiTip(); }, [fetchAiTip]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -377,27 +429,45 @@ export default function DashboardClient({
         )}
       </div>
     ),
-    taken: (
+    aitip: (
       <div
         className="rounded-2xl p-4 sm:p-5 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
       >
-        <svg className="w-5 h-5 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1a6b4a' }}>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-        </svg>
-        <p className="text-4xl font-black mb-0.5" style={{ color: '#1A1A1A' }}>{todayTasks.length}</p>
-        <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Taken vandaag</p>
-        {todayTasks.length > 0 && (
-          <div className="flex items-center gap-1.5 mb-2">
-            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
-              <div className="h-full rounded-full transition-all" style={{ width: `${Math.round((completedTodayCount / todayTasks.length) * 100)}%`, backgroundColor: '#1a6b4a' }} />
-            </div>
-            <span className="text-xs" style={{ color: '#9CA3AF' }}>{completedTodayCount}/{todayTasks.length}</span>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{ color: '#288760' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>AI tip</span>
           </div>
-        )}
-        <Link href={activeProject ? `/projects/${activeProject.id}?tab=taken` : '/projects'} className="text-xs font-semibold mt-auto" style={{ color: '#288760' }}>
-          Bekijk taken →
-        </Link>
+          <button
+            onClick={() => fetchAiTip(true)}
+            disabled={aiTipLoading}
+            className="p-1 rounded-lg transition-colors hover:bg-gray-50 disabled:opacity-40"
+            title="Nieuwe tip genereren"
+          >
+            <svg className={`w-3.5 h-3.5 ${aiTipLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#9CA3AF' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Tip content */}
+        <div className="flex-1 flex flex-col justify-center">
+          {aiTipLoading && !aiTip ? (
+            <div className="flex gap-1 items-center">
+              {[0, 1, 2].map(i => (
+                <div key={i} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#288760', animationDelay: `${i * 0.15}s`, opacity: 0.6 }} />
+              ))}
+            </div>
+          ) : aiTip ? (
+            <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{aiTip}</p>
+          ) : (
+            <p className="text-sm" style={{ color: '#9CA3AF' }}>Tip niet beschikbaar.</p>
+          )}
+        </div>
       </div>
     ),
     offertes: (
@@ -656,17 +726,19 @@ export default function DashboardClient({
             </div>
           )}
 
-          {/* Taken vandaag */}
+          {/* Taken vandaag + Binnenkort */}
           <div
             className="rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5"
             style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
           >
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Taken vandaag</h2>
               {activeProject && <Link href={`/projects/${activeProject.id}?tab=taken`} className="text-xs font-semibold" style={{ color: '#288760' }}>Alle taken →</Link>}
             </div>
+
+            {/* Vandaag section */}
             {todayTasks.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="text-center py-6">
                 <div className="text-3xl mb-2">🎉</div>
                 <p className="text-sm font-medium mb-0.5" style={{ color: '#1A1A1A' }}>Vrije dag!</p>
                 <p className="text-xs" style={{ color: '#9CA3AF' }}>Geen taken gepland voor vandaag.</p>
@@ -696,6 +768,33 @@ export default function DashboardClient({
                   );
                 })}
               </ul>
+            )}
+
+            {/* Binnenkort section */}
+            {upcomingTasks.length > 0 ? (
+              <div className="mt-4 pt-4 border-t" style={{ borderColor: '#F3F4F6' }}>
+                <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Binnenkort</p>
+                <ul className="space-y-1">
+                  {upcomingTasks.map(task => {
+                    const [y, m, d] = (task.due_date ?? '').split('-').map(Number);
+                    const label = task.due_date
+                      ? new Date(y, m - 1, d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+                      : '';
+                    return (
+                      <li key={task.id} className="flex items-center gap-3 py-2 px-3 rounded-xl">
+                        <div className="w-4 h-4 rounded-full border-2 shrink-0" style={{ borderColor: '#D1D5DB' }} />
+                        <span className="text-sm flex-1 truncate" style={{ color: '#374151' }}>{task.title}</span>
+                        {label && <span className="text-xs shrink-0 font-medium" style={{ color: '#9CA3AF' }}>{label}</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : (
+              <div className="mt-4 pt-4 border-t" style={{ borderColor: '#F3F4F6' }}>
+                <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: '#9CA3AF' }}>Binnenkort</p>
+                <p className="text-xs" style={{ color: '#D1D5DB' }}>Geen geplande taken</p>
+              </div>
             )}
           </div>
 
