@@ -523,6 +523,18 @@ export default function DashboardClient({
     return () => { supabase.removeChannel(channel); };
   }, [activeProject, refreshTasks, refreshExpenses, refreshQuotes]);
 
+  // Refresh tasks when user returns to this tab (e.g. added a task in the project view)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && activeProject) {
+        const supabase = createClient();
+        refreshTasks(supabase);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [activeProject, refreshTasks]);
+
   const toggleTask = async (task: Task) => {
     const supabase = createClient();
     const newStatus = task.status === 'voltooid' || task.status === 'done' ? 'openstaand' : 'voltooid';
@@ -549,87 +561,71 @@ export default function DashboardClient({
   const cardContent: Record<string, React.ReactNode> = {
     budget: (
       <div
-        className="rounded-2xl p-4 sm:p-5 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
+        className="rounded-2xl p-3 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
       >
-        {/* Bare icon — no background */}
-        <svg className="w-5 h-5 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1a6b4a' }}>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div className="flex flex-col items-center mb-3">
+        <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Budget</p>
+        <div className="flex flex-col items-center mb-2">
           <DonutGauge percentage={budgetPercentage} color={budgetColor} />
-          <p className="text-base font-black leading-tight mt-2 text-center" style={{ color: '#1A1A1A' }}>
-            {budget > 0 ? formatCurrency(totalExpenses) : '—'}
-          </p>
-          <p className="text-xs text-center" style={{ color: '#9CA3AF' }}>
-            {budget > 0 ? `van ${formatCurrency(budget)}` : 'Geen budget'}
+          <p className="text-[10px] text-center mt-1" style={{ color: '#9CA3AF' }}>
+            {budgetPercentage}% van budget gebruikt
           </p>
         </div>
-        <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Budget gebruikt</p>
         {budget > 0 && (
-          <div className="mt-auto">
-            <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
+          <div className="mt-auto space-y-1">
+            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
               <div className="h-full rounded-full transition-all duration-500" style={{ width: `${budgetPercentage}%`, backgroundColor: budgetColor }} />
             </div>
-            <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>{formatCurrency(Math.max(budget - totalExpenses, 0))} resterend</p>
+            <p className="text-[10px]" style={{ color: '#9CA3AF' }}>{formatCurrency(Math.max(budget - totalExpenses, 0))} resterend</p>
           </div>
         )}
       </div>
     ),
     aitip: (
       <div
-        className="rounded-2xl p-4 sm:p-5 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
+        className="rounded-2xl p-3 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{ color: '#288760' }}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{ color: '#288760' }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
             </svg>
-            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>AI tip</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>AI tip</span>
           </div>
-          <button
-            onClick={() => fetchAiTip(true)}
-            disabled={aiTipLoading}
-            className="p-1 rounded-lg transition-colors hover:bg-gray-50 disabled:opacity-40"
-            title="Nieuwe tip genereren"
-          >
-            <svg className={`w-3.5 h-3.5 ${aiTipLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#9CA3AF' }}>
+          <button onClick={() => fetchAiTip(true)} disabled={aiTipLoading} className="p-0.5 rounded disabled:opacity-40" title="Vernieuwen">
+            <svg className={`w-3 h-3 ${aiTipLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#C4CACC' }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
         </div>
-
-        {/* Tip content */}
-        <div className="flex-1 flex flex-col justify-center">
+        <div className="flex-1">
           {aiTipLoading && !aiTip ? (
             <div className="flex gap-1 items-center">
               {[0, 1, 2].map(i => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#288760', animationDelay: `${i * 0.15}s`, opacity: 0.6 }} />
+                <div key={i} className="w-1 h-1 rounded-full animate-bounce" style={{ backgroundColor: '#288760', animationDelay: `${i * 0.15}s`, opacity: 0.6 }} />
               ))}
             </div>
           ) : aiTip ? (
-            <p className="text-xs sm:text-sm leading-snug" style={{ color: '#374151', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{aiTip}</p>
+            <p className="text-xs leading-snug" style={{ color: '#374151', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{aiTip}</p>
           ) : (
-            <p className="text-xs sm:text-sm" style={{ color: '#9CA3AF' }}>Tip niet beschikbaar.</p>
+            <p className="text-xs" style={{ color: '#C4CACC' }}>Laden...</p>
           )}
         </div>
       </div>
     ),
     offertes: (
       <div
-        className="rounded-2xl p-4 sm:p-5 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
+        className="rounded-2xl p-3 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
       >
-        <svg className="w-5 h-5 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1a6b4a' }}>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <p className="text-3xl sm:text-4xl font-black mb-0.5" style={{ color: '#1A1A1A' }}>{pendingQuotesCount}</p>
-        <p className="text-xs font-medium mb-0.5" style={{ color: '#6B7280' }}>Open offertes</p>
-        <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>In behandeling</p>
-        <Link href={activeProject ? `/projects/${activeProject.id}?tab=offertes` : '/projects'} className="text-xs font-semibold mt-auto" style={{ color: '#288760' }}>
-          Bekijk offertes →
+        <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Offertes</p>
+        <p className="text-3xl font-black mb-1" style={{ color: pendingQuotesCount > 0 ? '#1A1A1A' : '#D1D5DB' }}>{pendingQuotesCount}</p>
+        <p className="text-xs flex-1" style={{ color: '#9CA3AF' }}>
+          {pendingQuotesCount === 0 ? 'Geen open offertes' : `open offerte${pendingQuotesCount === 1 ? '' : 's'}`}
+        </p>
+        <Link href={activeProject ? `/projects/${activeProject.id}?tab=offertes` : '/projects'} className="text-[11px] font-semibold mt-auto" style={{ color: '#288760' }}>
+          Bekijk →
         </Link>
       </div>
     ),
