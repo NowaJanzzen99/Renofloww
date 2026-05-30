@@ -33,7 +33,7 @@ function DonutGauge({ percentage, color }: { percentage: number; color: string }
   const circ = 2 * Math.PI * r;
   const filled = (percentage / 100) * circ;
   return (
-    <svg className="w-12 h-12 md:w-20 md:h-20 lg:w-24 lg:h-24 shrink-0" viewBox="0 0 80 80">
+    <svg className="w-20 h-20 shrink-0" viewBox="0 0 80 80">
       <circle cx="40" cy="40" r={r} fill="none" stroke="#E5E7EB" strokeWidth="8" />
       <circle
         cx="40" cy="40" r={r} fill="none"
@@ -357,12 +357,14 @@ export default function DashboardClient({
         <svg className="w-5 h-5 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1a6b4a' }}>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <div className="flex items-center gap-2 md:gap-4 mb-1">
+        <div className="flex flex-col items-center mb-3">
           <DonutGauge percentage={budgetPercentage} color={budgetColor} />
-          <div className="min-w-0">
-            <p className="text-xs md:text-xl font-black leading-tight whitespace-nowrap" style={{ color: '#1A1A1A' }}>{budget > 0 ? formatCurrency(totalExpenses) : '—'}</p>
-            <p className="text-[10px] md:text-sm whitespace-nowrap" style={{ color: '#9CA3AF' }}>{budget > 0 ? `van ${formatCurrency(budget)}` : 'Geen budget'}</p>
-          </div>
+          <p className="text-base font-black leading-tight mt-2 text-center" style={{ color: '#1A1A1A' }}>
+            {budget > 0 ? formatCurrency(totalExpenses) : '—'}
+          </p>
+          <p className="text-xs text-center" style={{ color: '#9CA3AF' }}>
+            {budget > 0 ? `van ${formatCurrency(budget)}` : 'Geen budget'}
+          </p>
         </div>
         <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Budget</p>
         {budget > 0 && (
