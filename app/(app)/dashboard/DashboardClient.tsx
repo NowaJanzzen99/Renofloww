@@ -45,7 +45,7 @@ function DonutGauge({ percentage, color }: { percentage: number; color: string }
   const circ = 2 * Math.PI * r;
   const filled = (percentage / 100) * circ;
   return (
-    <svg className="w-20 h-20 shrink-0" viewBox="0 0 80 80">
+    <svg className="w-14 h-14 sm:w-20 sm:h-20 shrink-0" viewBox="0 0 80 80">
       <circle cx="40" cy="40" r={r} fill="none" stroke="#E5E7EB" strokeWidth="8" />
       <circle
         cx="40" cy="40" r={r} fill="none"
@@ -244,90 +244,71 @@ function WoningwaardeCard({ house, data, loading }: { house: House | null; data:
       style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
 
       {/* Dark header strip */}
-      <div className="px-5 pt-4 pb-3" style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #1a3a2a 100%)' }}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: '#6EE7B7' }}>
+      <div className="px-4 pt-4 pb-3" style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #1a3a2a 100%)' }}>
+        {/* Label + period row */}
+        <div className="flex items-center justify-between mb-2 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: '#6EE7B7' }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#6EE7B7' }}>Woningwaarde</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#6EE7B7' }}>Woningwaarde</span>
           </div>
           {data && (
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: data.isFallback ? '#F59E0B' : '#10B981' }} />
-              <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                {formatPeriod(data.latestPeriod)}
-              </span>
+            <div className="flex items-center gap-1 shrink-0 ml-2">
+              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: data.isFallback ? '#F59E0B' : '#10B981' }} />
+              <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{formatPeriod(data.latestPeriod)}</span>
             </div>
           )}
         </div>
 
+        {/* Value */}
         {loading ? (
-          <div className="flex gap-1 mt-2 mb-1">
+          <div className="flex gap-1 py-2">
             {[0,1,2].map(i => (
               <div key={i} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#6EE7B7', opacity: 0.6, animationDelay: `${i*0.15}s` }} />
             ))}
           </div>
         ) : estimate ? (
-          <div className="flex items-end justify-between gap-2">
-            <div>
-              <p className="text-2xl font-black text-white">{formatCurrency(estimate)}</p>
-              {growthPct !== null && (
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: isUp ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: isUp ? '#10B981' : '#F87171' }}>
-                    {isUp ? '+' : ''}{growthPct.toFixed(1)}%
+          <>
+            <p className="text-xl sm:text-2xl font-black text-white leading-tight">{formatCurrency(estimate)}</p>
+            {growthPct !== null && (
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
+                  style={{ backgroundColor: isUp ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: isUp ? '#10B981' : '#F87171' }}>
+                  {isUp ? '+' : ''}{growthPct.toFixed(1)}%
+                </span>
+                {overwaarde !== null && (
+                  <span className="text-xs font-semibold" style={{ color: isUp ? '#6EE7B7' : '#F87171' }}>
+                    {isUp ? '+' : ''}{formatCurrency(overwaarde)} overwaarde
                   </span>
-                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>t.o.v. aankoop</span>
-                </div>
-              )}
-            </div>
-            {overwaarde !== null && (
-              <div className="text-right shrink-0">
-                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>overwaarde</p>
-                <p className="text-sm font-black" style={{ color: isUp ? '#6EE7B7' : '#F87171' }}>
-                  {isUp ? '+' : ''}{formatCurrency(overwaarde)}
-                </p>
+                )}
               </div>
             )}
-          </div>
+          </>
         ) : (
-          <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            {house.purchase_price ? 'Laden...' : 'Voeg aankoopprijs toe voor schatting'}
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            {house.purchase_price ? 'Laden...' : 'Voeg aankoopprijs toe'}
           </p>
         )}
       </div>
 
       {/* Stats body */}
-      <div className="flex-1 px-5 py-4 space-y-3">
-        {purchasePrice && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs" style={{ color: '#9CA3AF' }}>Aankoopprijs</span>
-            <span className="text-xs font-semibold" style={{ color: '#374151' }}>{formatCurrency(purchasePrice)}</span>
+      <div className="flex-1 px-4 py-3 space-y-2.5">
+        {[
+          purchasePrice ? { label: 'Aankoopprijs', value: formatCurrency(purchasePrice) } : null,
+          data?.mortgageRate ? { label: 'Hypotheekrente', value: `${data.mortgageRate.rate}% · ${data.mortgageRate.label}` } : null,
+          data?.latestIndex ? { label: 'Prijsindex', value: data.latestIndex.toFixed(1) } : null,
+          house.address ? { label: 'Adres', value: house.address } : null,
+        ].filter(Boolean).map((row) => (
+          <div key={row!.label} className="flex items-baseline justify-between gap-3 min-w-0">
+            <span className="text-xs shrink-0" style={{ color: '#9CA3AF' }}>{row!.label}</span>
+            <span className="text-xs font-semibold truncate text-right" style={{ color: '#374151' }}>{row!.value}</span>
           </div>
-        )}
-        {data?.mortgageRate && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs" style={{ color: '#9CA3AF' }}>Hypotheekrente NL</span>
-            <span className="text-xs font-semibold" style={{ color: '#374151' }}>{data.mortgageRate.rate}% · {data.mortgageRate.label}</span>
-          </div>
-        )}
-        {data?.latestIndex && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs" style={{ color: '#9CA3AF' }}>Prijsindex (2015=100)</span>
-            <span className="text-xs font-semibold" style={{ color: '#374151' }}>{data.latestIndex.toFixed(1)}</span>
-          </div>
-        )}
-        {house.address && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs" style={{ color: '#9CA3AF' }}>Adres</span>
-            <span className="text-xs font-semibold truncate max-w-[60%] text-right" style={{ color: '#374151' }}>{house.address}</span>
-          </div>
-        )}
+        ))}
       </div>
 
       {/* Footer link */}
-      <div className="px-5 pb-4 pt-0">
+      <div className="px-4 pb-4 pt-0">
         <Link href="/woningwaarde" className="inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#288760' }}>
           Bekijk alle details
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -629,9 +610,9 @@ export default function DashboardClient({
               ))}
             </div>
           ) : aiTip ? (
-            <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{aiTip}</p>
+            <p className="text-xs sm:text-sm leading-snug" style={{ color: '#374151', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{aiTip}</p>
           ) : (
-            <p className="text-sm" style={{ color: '#9CA3AF' }}>Tip niet beschikbaar.</p>
+            <p className="text-xs sm:text-sm" style={{ color: '#9CA3AF' }}>Tip niet beschikbaar.</p>
           )}
         </div>
       </div>
@@ -644,7 +625,7 @@ export default function DashboardClient({
         <svg className="w-5 h-5 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1a6b4a' }}>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <p className="text-4xl font-black mb-0.5" style={{ color: '#1A1A1A' }}>{pendingQuotesCount}</p>
+        <p className="text-3xl sm:text-4xl font-black mb-0.5" style={{ color: '#1A1A1A' }}>{pendingQuotesCount}</p>
         <p className="text-xs font-medium mb-0.5" style={{ color: '#6B7280' }}>Open offertes</p>
         <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>In behandeling</p>
         <Link href={activeProject ? `/projects/${activeProject.id}?tab=offertes` : '/projects'} className="text-xs font-semibold mt-auto" style={{ color: '#288760' }}>
