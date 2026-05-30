@@ -1,141 +1,203 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Fallback indices (CBS 2015=100 baseline) — only used when both CBS endpoints are unreachable
-const FALLBACK_INDICES = [
-  { period: '2019JJ00', index: 120.7 },
-  { period: '2020JJ00', index: 130.4 },
-  { period: '2021JJ00', index: 157.0 },
-  { period: '2022JJ00', index: 173.2 },
-  { period: '2023JJ00', index: 167.8 },
-  { period: '2024JJ00', index: 182.4 },
-  { period: '2025JJ00', index: 196.1 },
-  { period: '2026KW01', index: 202.3 },
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface QuarterPoint { period: string; quarter: number; year: number; index: number }
+interface YearPoint    { year: number; index: number }
+
+// ─── Fallback data (Eurostat I15_Q baseline, NL) ─────────────────────────────
+const FALLBACK_QUARTERLY: QuarterPoint[] = [
+  { period: '2020-Q1', quarter: 1, year: 2020, index: 125.4 },
+  { period: '2020-Q2', quarter: 2, year: 2020, index: 127.9 },
+  { period: '2020-Q3', quarter: 3, year: 2020, index: 132.1 },
+  { period: '2020-Q4', quarter: 4, year: 2020, index: 137.6 },
+  { period: '2021-Q1', quarter: 1, year: 2021, index: 145.3 },
+  { period: '2021-Q2', quarter: 2, year: 2021, index: 155.8 },
+  { period: '2021-Q3', quarter: 3, year: 2021, index: 162.4 },
+  { period: '2021-Q4', quarter: 4, year: 2021, index: 167.9 },
+  { period: '2022-Q1', quarter: 1, year: 2022, index: 172.1 },
+  { period: '2022-Q2', quarter: 2, year: 2022, index: 176.3 },
+  { period: '2022-Q3', quarter: 3, year: 2022, index: 174.8 },
+  { period: '2022-Q4', quarter: 4, year: 2022, index: 170.2 },
+  { period: '2023-Q1', quarter: 1, year: 2023, index: 183.14 },
+  { period: '2023-Q2', quarter: 2, year: 2023, index: 180.92 },
+  { period: '2023-Q3', quarter: 3, year: 2023, index: 182.91 },
+  { period: '2023-Q4', quarter: 4, year: 2023, index: 186.07 },
+  { period: '2024-Q1', quarter: 1, year: 2024, index: 189.87 },
+  { period: '2024-Q2', quarter: 2, year: 2024, index: 194.81 },
+  { period: '2024-Q3', quarter: 3, year: 2024, index: 201.98 },
+  { period: '2024-Q4', quarter: 4, year: 2024, index: 206.31 },
+  { period: '2025-Q1', quarter: 1, year: 2025, index: 210.27 },
+  { period: '2025-Q2', quarter: 2, year: 2025, index: 213.35 },
+  { period: '2025-Q3', quarter: 3, year: 2025, index: 217.61 },
+  { period: '2025-Q4', quarter: 4, year: 2025, index: 219.01 },
 ];
 
-function periodToDate(period: string): Date {
-  const year = parseInt(period.substring(0, 4));
-  if (period.includes('KW')) {
-    const q = parseInt(period.charAt(6));
-    return new Date(year, q * 3 - 2, 1);
-  }
-  if (period.includes('MM')) {
-    const month = parseInt(period.substring(6, 8)) - 1;
-    return new Date(year, month, 15);
-  }
-  return new Date(year, 6, 1); // JJ00 = mid-year
+// ─── Quarter → approximate date ───────────────────────────────────────────────
+function quarterToDate(period: string): Date {
+  // "2024-Q3" → ~Aug 1, 2024
+  const year = parseInt(period.slice(0, 4));
+  const q    = parseInt(period.slice(6));
+  return new Date(year, q * 3 - 2, 1);
 }
 
-async function getIndices(): Promise<{
-  indices: { period: string; index: number }[];
-  isFallback: boolean;
-}> {
-  // Try two CBS endpoints in order. next: { revalidate } uses Next.js Data Cache
-  // so the actual HTTP request to CBS happens at most once per 24h across all
-  // Vercel instances — no per-instance memory cache needed.
-  const endpoints = [
-    // OData4 (newer, works better with Vercel's edge network)
-    'https://odata4.cbs.nl/CBS/83625NED/Observations' +
-      '?$select=Perioden,PrijsindexBestaandeKoopwoningen_1' +
-      '&$filter=PrijsindexBestaandeKoopwoningen_1 ne null' +
-      '&$orderby=Perioden desc&$top=40',
-    // OData3 (original)
-    'https://opendata.cbs.nl/ODataApi/odata/83625NED/TypedDataSet' +
-      '?$select=Perioden,PrijsindexBestaandeKoopwoningen_1' +
-      '&$filter=PrijsindexBestaandeKoopwoningen_1%20ne%20null' +
-      '&$orderby=Perioden%20desc&$top=40',
-  ];
+// ─── Eurostat quarterly house price index for NL ──────────────────────────────
+async function fetchEurostatHPI(): Promise<{ data: QuarterPoint[]; isFallback: boolean }> {
+  try {
+    const url =
+      'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hpi_q' +
+      '?geo=NL&unit=I15_Q&format=JSON';
 
-  for (const url of endpoints) {
-    try {
-      const res = await fetch(url, {
-        headers: { Accept: 'application/json' },
-        next: { revalidate: 86400 }, // 24h CDN cache — shared across all Vercel instances
-        signal: AbortSignal.timeout(10000),
-      });
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 86400 }, // CDN cache 24 h
+      signal: AbortSignal.timeout(10000),
+    });
 
-      if (!res.ok) continue;
+    if (!res.ok) throw new Error(`Eurostat ${res.status}`);
 
-      const json = await res.json();
-      const raw: Record<string, unknown>[] = json.value ?? [];
+    const json = await res.json();
+    const timeIndex: Record<string, number> = json.dimension?.time?.category?.index ?? {};
+    const values: Record<string, number>    = json.value ?? {};
 
-      const indices = raw
-        .filter((d) => d.PrijsindexBestaandeKoopwoningen_1 != null)
-        .map((d) => ({
-          period: String(d.Perioden).trim(),
-          index: parseFloat(String(d.PrijsindexBestaandeKoopwoningen_1)),
-        }))
-        .filter((d) => !isNaN(d.index));
+    const points: QuarterPoint[] = Object.entries(timeIndex)
+      .map(([period, idx]) => {
+        const val = values[String(idx)];
+        if (val == null) return null;
+        const year = parseInt(period.slice(0, 4));
+        const q    = parseInt(period.slice(6));
+        return { period, quarter: q, year, index: val };
+      })
+      .filter((x): x is QuarterPoint => x !== null)
+      .sort((a, b) => a.period.localeCompare(b.period));
 
-      if (indices.length > 0) return { indices, isFallback: false };
-    } catch {
-      // try next endpoint
-    }
+    if (points.length > 0) return { data: points, isFallback: false };
+    throw new Error('Empty');
+  } catch {
+    return { data: FALLBACK_QUARTERLY, isFallback: true };
   }
-
-  // Both endpoints failed — use hardcoded fallback
-  return { indices: [...FALLBACK_INDICES].reverse(), isFallback: true };
 }
 
+// ─── ECB monthly mortgage rate for NL ─────────────────────────────────────────
+async function fetchMortgageRate(): Promise<{ rate: number; period: string } | null> {
+  try {
+    const url =
+      'https://data-api.ecb.europa.eu/service/data/MIR/M.NL.B.A2C.AM.R.A.2250.EUR.N' +
+      '?format=jsondata&lastNObservations=3';
+
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) throw new Error(`ECB ${res.status}`);
+
+    const json = await res.json();
+    const times: { id: string }[] =
+      json.structure?.dimensions?.observation?.[0]?.values ?? [];
+    const seriesValues = Object.values(json.dataSets?.[0]?.series ?? {}) as { observations?: Record<string, number[]> }[];
+    const obs: Record<string, number[]> = seriesValues[0]?.observations ?? {};
+
+    const sorted = Object.entries(obs).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+    const last   = sorted[sorted.length - 1];
+    if (!last) throw new Error('Empty');
+
+    const idx    = parseInt(last[0]);
+    const period = times[idx]?.id ?? '';
+    const rate   = last[1][0];
+
+    return { rate: Math.round(rate * 100) / 100, period };
+  } catch {
+    return null;
+  }
+}
+
+// ─── Compute annual averages from quarterly data ───────────────────────────────
+function toYearly(quarters: QuarterPoint[]): YearPoint[] {
+  const byYear: Record<number, number[]> = {};
+  quarters.forEach((q) => {
+    if (!byYear[q.year]) byYear[q.year] = [];
+    byYear[q.year].push(q.index);
+  });
+  return Object.entries(byYear)
+    .map(([year, vals]) => ({ year: parseInt(year), index: vals.reduce((a, b) => a + b) / vals.length }))
+    .sort((a, b) => a.year - b.year);
+}
+
+// ─── Route ────────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const purchaseDateStr = searchParams.get('purchase_date');
+  const purchaseDateStr  = searchParams.get('purchase_date');
   const purchasePriceStr = searchParams.get('purchase_price');
 
-  const { indices, isFallback } = await getIndices();
+  const [{ data: allQuarters, isFallback }, mortgageResult] = await Promise.all([
+    fetchEurostatHPI(),
+    fetchMortgageRate(),
+  ]);
 
-  if (indices.length === 0) {
+  if (allQuarters.length === 0) {
     return NextResponse.json({ error: 'Geen marktdata beschikbaar' }, { status: 503 });
   }
 
-  // indices is sorted desc — most recent first
-  const latest = indices[0];
+  // Latest quarter (sorted asc, so last element is most recent)
+  const latest = allQuarters[allQuarters.length - 1];
+
+  // Estimate house value
   let estimate: number | null = null;
   let low: number | null = null;
   let high: number | null = null;
   let purchaseIndexValue: number | null = null;
 
   if (purchaseDateStr && purchasePriceStr) {
-    const purchaseDate = new Date(purchaseDateStr);
+    const purchaseDate  = new Date(purchaseDateStr);
     const purchasePrice = parseFloat(purchasePriceStr);
 
     if (!isNaN(purchasePrice) && !isNaN(purchaseDate.getTime())) {
-      const best = [...indices]
-        .map((idx) => ({
-          ...idx,
-          diff: Math.abs(periodToDate(idx.period).getTime() - purchaseDate.getTime()),
-        }))
+      const best = allQuarters
+        .map((q) => ({ ...q, diff: Math.abs(quarterToDate(q.period).getTime() - purchaseDate.getTime()) }))
         .sort((a, b) => a.diff - b.diff)[0];
 
       if (best && best.index > 0 && latest.index > 0) {
         purchaseIndexValue = best.index;
         const ratio = latest.index / best.index;
-        estimate = Math.round(purchasePrice * ratio);
-        low = Math.round(estimate * 0.93);
-        high = Math.round(estimate * 1.07);
+        estimate    = Math.round(purchasePrice * ratio);
+        low         = Math.round(estimate * 0.93);
+        high        = Math.round(estimate * 1.07);
       }
     }
   }
 
-  // 6 most recent annual records, ascending for the chart
-  const yearlyData = [...indices]
-    .reverse()
-    .filter((idx) => idx.period.includes('JJ'))
-    .slice(-6)
-    .map((idx) => ({
-      year: parseInt(idx.period.substring(0, 4)),
-      index: idx.index,
-    }));
+  // Last 12 quarters for chart (3 years of quarterly detail)
+  const quarterlyData = allQuarters.slice(-12);
+
+  // Annual averages from full history, last 8 complete years
+  const yearlyData = toYearly(allQuarters).slice(-8);
+
+  // Mortgage rate label
+  const mortgageRate = mortgageResult
+    ? {
+        rate:   mortgageResult.rate,
+        period: mortgageResult.period,
+        label:  (() => {
+          const [yr, mo] = mortgageResult.period.split('-');
+          const months   = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+          return `${months[parseInt(mo) - 1]} ${yr}`;
+        })(),
+      }
+    : null;
 
   return NextResponse.json({
     estimate,
     low,
     high,
-    latestPeriod: latest.period,
-    latestIndex: latest.index,
+    latestPeriod:  latest.period,
+    latestIndex:   latest.index,
     purchaseIndex: purchaseIndexValue,
+    quarterlyData,
     yearlyData,
-    source: 'CBS StatLine – Prijsindex bestaande koopwoningen (83625NED)',
+    mortgageRate,
+    source:        'Eurostat (prc_hpi_q) · ECB (MIR)',
     isFallback,
-    fetchedAt: new Date().toISOString(),
+    fetchedAt:     new Date().toISOString(),
   });
 }

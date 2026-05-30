@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { House } from '@/types';
 
+interface QuarterPoint { period: string; quarter: number; year: number; index: number }
+interface YearPoint    { year: number; index: number }
+interface MortgageRate { rate: number; period: string; label: string }
+
 interface MarketData {
   estimate: number | null;
   low: number | null;
@@ -12,7 +16,9 @@ interface MarketData {
   latestPeriod: string;
   latestIndex: number;
   purchaseIndex: number | null;
-  yearlyData: { year: number; index: number }[];
+  quarterlyData: QuarterPoint[];
+  yearlyData: YearPoint[];
+  mortgageRate: MortgageRate | null;
   source: string;
   isFallback: boolean;
   fetchedAt: string;
@@ -117,96 +123,142 @@ function OverwaardeCard({
   );
 }
 
-type ChartMode = 'index' | 'yoy' | 'since';
+type ChartMode = 'kwartaal' | 'jaarlijks' | 'yoy' | 'since';
+
+interface ChartPoint { label: string; xLabel: string; value: number; up: boolean }
 
 function MarketChart({
-  data,
+  quarterlyData,
+  yearlyData,
   purchaseDate,
   projectStartDate,
   isFallback,
   latestPeriod,
+  mortgageRate,
   onRefresh,
   refreshing,
 }: {
-  data: { year: number; index: number }[];
+  quarterlyData: QuarterPoint[];
+  yearlyData: YearPoint[];
   purchaseDate?: string | null;
   projectStartDate?: string | null;
   isFallback: boolean;
   latestPeriod: string;
+  mortgageRate: MortgageRate | null;
   onRefresh: () => void;
   refreshing: boolean;
 }) {
-  const [mode, setMode] = useState<ChartMode>('index');
+  const [mode, setMode] = useState<ChartMode>('kwartaal');
 
-  if (data.length === 0) return null;
-
-  // Reference year for 'since' mode — prefer earliest project, else purchase date
+  // Reference for 'since' mode
   const refDateStr = projectStartDate || purchaseDate;
-  const refYear = refDateStr ? new Date(refDateStr).getFullYear() : null;
-  const refLabel = projectStartDate
-    ? `Eerste project (${refYear})`
-    : purchaseDate
-    ? `Aankoop (${refYear})`
-    : null;
+  const refYear    = refDateStr ? new Date(refDateStr).getFullYear() : null;
+  const refLabel   = projectStartDate
+    ? `eerste project (${refYear})`
+    : purchaseDate ? `aankoop (${refYear})` : null;
 
-  // Find the data point closest to the reference year
-  const baseItem = refYear
-    ? data.reduce((best, d) =>
-        Math.abs(d.year - refYear) < Math.abs(best.year - refYear) ? d : best, data[0])
-    : data[0];
-
-  // Build chart points per mode
-  interface ChartPoint { year: number; value: number; up: boolean; label: string }
-  const allPoints: ChartPoint[] = data.map((d, i) => {
-    if (mode === 'index') {
-      const up = i === 0 || d.index >= data[i - 1].index;
-      return { year: d.year, value: d.index, up, label: d.index.toFixed(0) };
+  // Build chart points
+  const buildPoints = (): ChartPoint[] => {
+    if (mode === 'kwartaal') {
+      return quarterlyData.map((q, i) => {
+        const prev = quarterlyData[i - 1];
+        const up   = !prev || q.index >= prev.index;
+        return {
+          label:  q.index.toFixed(0),
+          xLabel: `Q${q.quarter}'${String(q.year).slice(2)}`,
+          value:  q.index,
+          up,
+        };
+      });
     }
+
+    if (mode === 'jaarlijks') {
+      return yearlyData.map((d, i) => {
+        const prev = yearlyData[i - 1];
+        const up   = !prev || d.index >= prev.index;
+        return { label: d.index.toFixed(0), xLabel: String(d.year), value: d.index, up };
+      });
+    }
+
     if (mode === 'yoy') {
-      if (i === 0) return { year: d.year, value: 0, up: true, label: '' };
-      const pct = ((d.index - data[i - 1].index) / data[i - 1].index) * 100;
-      return { year: d.year, value: pct, up: pct >= 0, label: `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%` };
+      return yearlyData.slice(1).map((d, i) => {
+        const prev = yearlyData[i];
+        const pct  = ((d.index - prev.index) / prev.index) * 100;
+        return {
+          label:  `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`,
+          xLabel: String(d.year),
+          value:  pct,
+          up:     pct >= 0,
+        };
+      });
     }
+
     // since
-    const pct = ((d.index - baseItem.index) / baseItem.index) * 100;
-    return { year: d.year, value: pct, up: pct >= 0, label: `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%` };
-  });
+    const baseYear = yearlyData.reduce((best, d) =>
+      Math.abs(d.year - (refYear ?? 0)) < Math.abs(best.year - (refYear ?? 0)) ? d : best,
+      yearlyData[0]);
+    return yearlyData
+      .filter((d) => d.year >= (baseYear?.year ?? 0))
+      .map((d) => {
+        const pct = ((d.index - baseYear.index) / baseYear.index) * 100;
+        return {
+          label:  `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`,
+          xLabel: String(d.year),
+          value:  pct,
+          up:     pct >= 0,
+        };
+      });
+  };
 
-  // For yoy, drop the first bar (no previous year to compare)
-  const points = mode === 'yoy' ? allPoints.slice(1) : allPoints;
+  const points = buildPoints();
+  if (points.length === 0) return null;
 
-  // Scale bars
-  const values = points.map((p) => p.value);
-  const minVal = mode === 'index' ? Math.min(...values) * 0.92 : Math.min(0, ...values);
-  const maxVal = Math.max(...values);
-  const range = (maxVal - minVal) || 1;
+  const values  = points.map((p) => p.value);
+  const isIndex = mode === 'kwartaal' || mode === 'jaarlijks';
+  const minVal  = isIndex ? Math.min(...values) * 0.92 : Math.min(0, ...values);
+  const maxVal  = Math.max(...values);
+  const range   = (maxVal - minVal) || 1;
 
-  // Summary line
-  const first = points[0];
-  const last = points[points.length - 1];
-  const totalGrowth = mode === 'index'
-    ? (((data[data.length - 1].index / data[0].index) - 1) * 100).toFixed(1)
-    : last?.value.toFixed(1);
-  const growthLabel = mode === 'index'
-    ? `Totale groei ${data[0].year}–${data[data.length - 1].year}`
+  const last         = points[points.length - 1];
+  const growthPos    = last.up;
+  const summaryLabel = mode === 'kwartaal'
+    ? `Stijging afgelopen ${points.length} kwartalen`
+    : mode === 'jaarlijks'
+    ? `Stijging ${yearlyData[0]?.year}–${yearlyData[yearlyData.length - 1]?.year}`
     : mode === 'yoy'
-    ? `Groei in ${last?.year}`
-    : `Groei since ${baseItem.year}`;
-  const growthPositive = parseFloat(totalGrowth ?? '0') >= 0;
+    ? `Groei in ${last.xLabel}`
+    : `Totale groei since ${refLabel}`;
+
+  // Latest quarter label
+  const [latestYr, latestQ] = latestPeriod.includes('-Q')
+    ? latestPeriod.split('-Q')
+    : [latestPeriod.slice(0, 4), ''];
+  const latestLabel = latestQ ? `Q${latestQ} ${latestYr}` : latestPeriod;
+
+  const availableModes: { id: ChartMode; label: string }[] = [
+    { id: 'kwartaal',  label: 'Per kwartaal' },
+    { id: 'jaarlijks', label: 'Per jaar' },
+    { id: 'yoy',       label: '% per jaar' },
+    ...(refYear ? [{ id: 'since' as ChartMode, label: `Sinds ${refYear}` }] : []),
+  ];
 
   return (
     <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-      {/* Header */}
+
+      {/* Header + live badge */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
           <h3 className="text-base font-semibold" style={{ color: '#1A1A1A' }}>Huizenmarkt ontwikkeling</h3>
           <div className="flex items-center gap-1.5 mt-0.5">
             <div
               className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: isFallback ? '#F59E0B' : '#10B981' }}
+              style={{
+                backgroundColor: isFallback ? '#F59E0B' : '#10B981',
+                boxShadow: isFallback ? 'none' : '0 0 0 3px rgba(16,185,129,0.2)',
+              }}
             />
             <span className="text-xs" style={{ color: '#9CA3AF' }}>
-              {isFallback ? 'Schattingsdata' : 'Live CBS data'} · {formatPeriod(latestPeriod)}
+              {isFallback ? 'Schattingsdata' : `Eurostat · ${latestLabel}`}
             </span>
           </div>
         </div>
@@ -219,24 +271,34 @@ function MarketChart({
           <svg className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Live
+          Herlaad
         </button>
       </div>
 
-      {/* Mode filter pills */}
+      {/* Mortgage rate chip */}
+      {mortgageRate && (
+        <div
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-xs font-medium"
+          style={{ backgroundColor: '#FFF7ED', color: '#C2410C', border: '1px solid #FED7AA' }}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Hypotheekrente NL: <strong>{mortgageRate.rate}%</strong>
+          <span style={{ opacity: 0.7 }}>· {mortgageRate.label} · ECB</span>
+        </div>
+      )}
+
+      {/* Mode pills */}
       <div className="flex gap-1.5 mb-4 flex-wrap">
-        {([
-          { id: 'index' as ChartMode, label: 'Prijsindex' },
-          { id: 'yoy' as ChartMode, label: '% per jaar' },
-          ...(refYear ? [{ id: 'since' as ChartMode, label: refLabel ?? `Sinds ${refYear}` }] : []),
-        ] as { id: ChartMode; label: string }[]).map((m) => (
+        {availableModes.map((m) => (
           <button
             key={m.id}
             onClick={() => setMode(m.id)}
             className="px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap"
             style={{
               backgroundColor: mode === m.id ? '#1a3a2a' : '#F3F4F6',
-              color: mode === m.id ? '#FFFFFF' : '#6B7280',
+              color:           mode === m.id ? '#FFFFFF'  : '#6B7280',
             }}
           >
             {m.label}
@@ -244,14 +306,14 @@ function MarketChart({
         ))}
       </div>
 
-      {/* Bars */}
-      <div className="flex items-end gap-1.5 h-28">
-        {points.map((p) => {
-          const barPct = ((p.value - minVal) / range) * 85 + 10;
+      {/* Chart */}
+      <div className="flex items-end gap-1 h-32">
+        {points.map((p, i) => {
+          const barPct = ((p.value - minVal) / range) * 82 + 8;
           return (
-            <div key={`${p.year}-${mode}`} className="flex-1 flex flex-col items-center gap-0.5 min-w-0">
+            <div key={i} className="flex-1 flex flex-col items-center gap-0.5 min-w-0">
               <span
-                className="text-[10px] font-semibold truncate w-full text-center"
+                className="text-[9px] font-semibold truncate w-full text-center leading-tight"
                 style={{ color: p.up ? '#288760' : '#EF4444' }}
               >
                 {p.label}
@@ -259,31 +321,29 @@ function MarketChart({
               <div
                 className="w-full rounded-t-sm transition-all duration-300"
                 style={{
-                  height: `${Math.max(barPct, 4)}%`,
+                  height:          `${Math.max(barPct, 3)}%`,
                   backgroundColor: p.up ? '#288760' : '#EF4444',
-                  opacity: 0.82,
+                  opacity:         0.85,
                 }}
               />
-              <span className="text-[10px] truncate w-full text-center" style={{ color: '#9CA3AF' }}>
-                {p.year}
+              <span className="text-[9px] truncate w-full text-center" style={{ color: '#9CA3AF' }}>
+                {p.xLabel}
               </span>
             </div>
           );
         })}
       </div>
 
-      {/* Summary */}
-      {points.length >= 2 && totalGrowth !== undefined && (
-        <p className="text-xs mt-3 pt-3 border-t" style={{ color: '#6B7280', borderColor: '#F3F4F6' }}>
-          {growthLabel}:{' '}
-          <strong style={{ color: growthPositive ? '#288760' : '#EF4444' }}>
-            {growthPositive ? '+' : ''}{totalGrowth}%
-          </strong>
-          {mode === 'since' && refLabel && (
-            <span style={{ color: '#9CA3AF' }}> t.o.v. {refLabel.toLowerCase()}</span>
-          )}
-        </p>
-      )}
+      {/* Summary footer */}
+      <p className="text-xs mt-3 pt-3 border-t" style={{ color: '#6B7280', borderColor: '#F3F4F6' }}>
+        {summaryLabel}:{' '}
+        <strong style={{ color: growthPos ? '#288760' : '#EF4444' }}>
+          {last.label}
+        </strong>
+        {mode === 'since' && refLabel && (
+          <span style={{ color: '#9CA3AF' }}> · t.o.v. {refLabel}</span>
+        )}
+      </p>
     </div>
   );
 }
@@ -494,14 +554,16 @@ export default function WoningwaardeClient({ house, totalInvested, isPro, projec
             )}
 
             {/* Market chart */}
-            {marketData.yearlyData.length > 0 && (
+            {(marketData.quarterlyData?.length > 0 || marketData.yearlyData.length > 0) && (
               <div className="mt-4">
                 <MarketChart
-                  data={marketData.yearlyData}
+                  quarterlyData={marketData.quarterlyData ?? []}
+                  yearlyData={marketData.yearlyData}
                   purchaseDate={house?.purchase_date}
                   projectStartDate={projectStartDate}
                   isFallback={marketData.isFallback}
                   latestPeriod={marketData.latestPeriod}
+                  mortgageRate={marketData.mortgageRate ?? null}
                   onRefresh={fetchMarketData}
                   refreshing={loadingMarket}
                 />
