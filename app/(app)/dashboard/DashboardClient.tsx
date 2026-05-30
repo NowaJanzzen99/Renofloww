@@ -729,71 +729,85 @@ export default function DashboardClient({
 
           {/* Taken vandaag + Binnenkort */}
           <div
-            className="rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5"
+            className="rounded-2xl bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
             style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
           >
-            <div className="flex items-center justify-between mb-4">
+            {/* ── Header ── */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Taken vandaag</h2>
-              {activeProject && <Link href={`/projects/${activeProject.id}?tab=taken`} className="text-xs font-semibold" style={{ color: '#288760' }}>Alle taken →</Link>}
+              {activeProject && (
+                <Link href={`/projects/${activeProject.id}?tab=taken`} className="text-xs font-semibold" style={{ color: '#288760' }}>
+                  Alle taken →
+                </Link>
+              )}
             </div>
 
-            {/* Vandaag section */}
-            {todayTasks.length === 0 ? (
-              <p className="text-sm py-1 px-1" style={{ color: 'rgba(156,163,175,0.55)' }}>
-                Geen taken vandaag
-              </p>
-            ) : (
-              <ul className="space-y-1">
-                {todayTasks.map(task => {
-                  const done = isTaskCompleted(task);
-                  return (
-                    <li
-                      key={task.id}
-                      className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => toggleTask(task)}
-                    >
-                      <div
-                        className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200"
-                        style={{ borderColor: done ? '#288760' : '#D1D5DB', backgroundColor: done ? '#288760' : 'white' }}
+            {/* ── Vandaag lijst ── */}
+            <div className="px-5 pb-4">
+              {todayTasks.length === 0 ? (
+                <div
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl"
+                  style={{ border: '1.5px dashed #E5E7EB' }}
+                >
+                  <div
+                    className="w-5 h-5 rounded-full border-2 shrink-0"
+                    style={{ borderColor: '#D1D5DB', borderStyle: 'dashed' }}
+                  />
+                  <span className="text-sm" style={{ color: '#C4CACC' }}>Geen taken vandaag</span>
+                </div>
+              ) : (
+                <ul className="space-y-1">
+                  {todayTasks.map(task => {
+                    const done = isTaskCompleted(task);
+                    return (
+                      <li
+                        key={task.id}
+                        className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => toggleTask(task)}
                       >
-                        <svg className="w-3 h-3 text-white" style={{ opacity: done ? 1 : 0, transform: done ? 'scale(1)' : 'scale(0.5)', transition: 'all 0.2s' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span className="text-sm flex-1 transition-all duration-200" style={{ color: done ? '#9CA3AF' : '#1A1A1A', textDecoration: done ? 'line-through' : 'none' }}>
-                        {task.title}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+                        <div
+                          className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200"
+                          style={{ borderColor: done ? '#288760' : '#D1D5DB', backgroundColor: done ? '#288760' : 'white' }}
+                        >
+                          <svg className="w-3 h-3 text-white" style={{ opacity: done ? 1 : 0, transform: done ? 'scale(1)' : 'scale(0.5)', transition: 'all 0.2s' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <span className="text-sm flex-1 transition-all duration-200" style={{ color: done ? '#9CA3AF' : '#1A1A1A', textDecoration: done ? 'line-through' : 'none' }}>
+                          {task.title}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
 
-            {/* Binnenkort section */}
-            <div className="mt-4 rounded-xl overflow-hidden" style={{ backgroundColor: '#F8FAF9' }}>
-              <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: '#288760' }}>
+            {/* ── Binnenkort sectie — aparte achtergrond ── */}
+            <div style={{ backgroundColor: '#F4F7F5', borderTop: '1.5px solid #E5E7EB' }}>
+              <div className="flex items-center gap-1.5 px-5 pt-3 pb-2">
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#6B7280' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#288760' }}>Binnenkort</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#6B7280' }}>Binnenkort</p>
               </div>
+
               {upcomingTasks.length > 0 ? (
-                <ul className="pb-2">
-                  {upcomingTasks.map((task, i) => {
+                <ul className="px-5 pb-4 space-y-2">
+                  {upcomingTasks.map(task => {
                     const [y, m, d] = (task.due_date ?? '').split('-').map(Number);
                     const label = task.due_date
                       ? new Date(y, m - 1, d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
                       : '';
                     return (
-                      <li
-                        key={task.id}
-                        className="flex items-center gap-2.5 px-3 py-2"
-                        style={{ borderTop: i > 0 ? '1px solid rgba(0,0,0,0.04)' : 'none' }}
-                      >
-                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: '#288760', opacity: 0.4 }} />
-                        <span className="text-xs flex-1 truncate font-medium" style={{ color: '#374151' }}>{task.title}</span>
+                      <li key={task.id} className="flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: '#9CA3AF' }} />
+                        <span className="text-sm flex-1 truncate" style={{ color: '#374151' }}>{task.title}</span>
                         {label && (
-                          <span className="text-[10px] shrink-0 font-semibold px-1.5 py-0.5 rounded-md" style={{ color: '#288760', backgroundColor: 'rgba(40,135,96,0.1)' }}>
+                          <span
+                            className="text-[11px] font-semibold shrink-0 px-2 py-0.5 rounded-lg"
+                            style={{ color: '#288760', backgroundColor: '#DCF5EA' }}
+                          >
                             {label}
                           </span>
                         )}
@@ -802,7 +816,7 @@ export default function DashboardClient({
                   })}
                 </ul>
               ) : (
-                <p className="text-xs px-3 pb-3" style={{ color: 'rgba(156,163,175,0.5)' }}>Geen geplande taken</p>
+                <p className="px-5 pb-4 text-sm" style={{ color: '#C4CACC' }}>Geen geplande taken</p>
               )}
             </div>
           </div>
