@@ -25,8 +25,15 @@ export default async function DashboardPage() {
   const projects: Project[] = projectsRes.data || [];
   const house = houseRes.data || null;
 
-  // Get first active project data
-  const activeProject = projects.find((p) => p.status === 'lopend') || projects[0];
+  // Pick the active project: prefer the oldest 'lopend' project (most established),
+  // then the oldest project overall. This prevents a newly-created project from
+  // hijacking the dashboard — the client's localStorage switcher overrides this anyway.
+  const lopend = projects.filter((p) => p.status === 'lopend');
+  const activeProject =
+    (lopend.length > 0 ? lopend[lopend.length - 1] : null) || // oldest lopend
+    projects[projects.length - 1] ||                           // oldest overall
+    projects[0] ||
+    null;
 
   let tasks: Task[] = [];
   let expenses: Expense[] = [];
