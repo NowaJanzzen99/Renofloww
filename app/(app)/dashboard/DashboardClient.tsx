@@ -778,21 +778,54 @@ export default function DashboardClient({
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             {/* Left: greeting */}
             <div className="flex-1 min-w-0">
-              {/* Project switcher — shown only when there are multiple projects */}
-              {allProjects.length > 1 && (
-                <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3" style={{ scrollbarWidth: 'none' }}>
-                  {allProjects.map(p => (
-                    <button key={p.id} onClick={() => switchProject(p)} disabled={switching}
-                      className="shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-all"
-                      style={{
-                        backgroundColor: currentProject?.id === p.id ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)',
-                        color: currentProject?.id === p.id ? '#FFFFFF' : 'rgba(255,255,255,0.5)',
-                        border: currentProject?.id === p.id ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.1)',
-                      }}>
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
+              {/* Project switcher */}
+              {allProjects.length > 0 && (
+                <>
+                  <style>{`
+                    .proj-pill { transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s; cursor: pointer; }
+                    .proj-pill:hover:not(:disabled) { background-color: rgba(255,255,255,0.18) !important; border-color: rgba(255,255,255,0.45) !important; transform: translateY(-1px); }
+                    .proj-pill.proj-active { background-color: rgba(255,255,255,0.93) !important; color: #1a3a2a !important; border-color: transparent !important; }
+                    .proj-pill.proj-active:hover { background-color: white !important; }
+                  `}</style>
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <span className="text-[10px] font-bold uppercase tracking-widest shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>Project</span>
+                    <div className="flex gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                      {allProjects.map(p => {
+                        const isActive = currentProject?.id === p.id;
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => switchProject(p)}
+                            disabled={switching}
+                            className={`proj-pill shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border${isActive ? ' proj-active' : ''}`}
+                            style={{
+                              backgroundColor: isActive ? 'rgba(255,255,255,0.93)' : 'rgba(255,255,255,0.08)',
+                              color: isActive ? '#1a3a2a' : 'rgba(255,255,255,0.6)',
+                              borderColor: isActive ? 'transparent' : 'rgba(255,255,255,0.18)',
+                            }}
+                          >
+                            {isActive && (
+                              <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                              </svg>
+                            )}
+                            {p.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <Link
+                      href="/projects"
+                      className="shrink-0 flex items-center gap-1 text-[11px] font-semibold transition-opacity hover:opacity-100"
+                      style={{ color: 'rgba(255,255,255,0.4)', opacity: 0.7 }}
+                    >
+                      Alle
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                  </div>
+                </>
               )}
               {currentProject && (
                 <div className="flex items-center gap-2 mb-3">
