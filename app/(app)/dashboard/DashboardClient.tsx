@@ -815,17 +815,17 @@ export default function DashboardClient({
               {allProjects.length > 0 && (
                 <>
                   <style>{`
-                    .proj-pill { transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s; cursor: pointer; }
-                    .proj-pill:hover:not(:disabled) { background-color: rgba(255,255,255,0.18) !important; border-color: rgba(255,255,255,0.45) !important; transform: translateY(-1px); }
+                    .proj-pill { transition: background 0.15s, border-color 0.15s; cursor: pointer; }
+                    .proj-pill:hover:not(:disabled) { background-color: rgba(255,255,255,0.22) !important; border-color: rgba(255,255,255,0.5) !important; }
                     .proj-pill.proj-active { background-color: rgba(255,255,255,0.93) !important; color: #1a3a2a !important; border-color: transparent !important; }
                     .proj-pill.proj-active:hover { background-color: white !important; }
-                    .proj-pill-all { transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s; cursor: pointer; }
-                    .proj-pill-all:hover:not(:disabled) { background-color: rgba(110,231,183,0.2) !important; border-color: rgba(110,231,183,0.5) !important; transform: translateY(-1px); }
+                    .proj-pill-all { transition: background 0.15s, border-color 0.15s; cursor: pointer; }
+                    .proj-pill-all:hover:not(:disabled) { background-color: rgba(110,231,183,0.25) !important; border-color: rgba(110,231,183,0.6) !important; }
                     .proj-pill-all.proj-all-active { background-color: rgba(110,231,183,0.25) !important; color: #6EE7B7 !important; border-color: rgba(110,231,183,0.5) !important; }
+                    .proj-pill-all.proj-all-active:hover { background-color: rgba(110,231,183,0.35) !important; }
                   `}</style>
-                  <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    <span className="text-[10px] font-bold uppercase tracking-widest shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>Project</span>
-                    <div className="flex gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                  <div className="flex items-center gap-1.5 mb-3 flex-wrap pb-0.5">
+                    <div className="flex gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none', overflow: 'visible' }}>
                       {/* "Alle projecten" pill */}
                       <button
                         onClick={switchToAll}
@@ -923,7 +923,7 @@ export default function DashboardClient({
                 </div>
               </div>
             )}
-            {!currentProject && (
+            {!currentProject && !allProjectsMode && (
               <Link
                 href="/projects"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold"
@@ -1050,7 +1050,7 @@ export default function DashboardClient({
           {/* Woningwaarde card — right column */}
           <WoningwaardeCard house={house} data={woningData} loading={woningLoading} />
 
-          {!currentProject && (
+          {!currentProject && !allProjectsMode && allProjects.length === 0 && (
             <div className="rounded-2xl p-5 sm:p-6 bg-white border text-center lg:col-span-2" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
               <div className="text-4xl mb-3">🏗️</div>
               <h3 className="text-base font-semibold mb-2" style={{ color: '#1A1A1A' }}>Geen actief project</h3>
