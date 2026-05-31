@@ -476,7 +476,7 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
       {/* ── Quick-add modals ── */}
       {openModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[88dvh] overflow-y-auto">
 
             {/* ── Task modal ── */}
             {openModal === 'task' && (

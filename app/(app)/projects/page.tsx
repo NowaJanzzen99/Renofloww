@@ -141,7 +141,7 @@ function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl" style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.2)' }}>
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[88dvh] overflow-y-auto" style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.2)' }}>
         <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: '#E5E7EB' }}>
           <h2 className="text-lg font-semibold" style={{ color: '#1A1A1A' }}>Nieuw project</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center" style={{ color: '#6B7280' }}>

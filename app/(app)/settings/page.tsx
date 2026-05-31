@@ -465,7 +465,7 @@ export default function SettingsPage() {
       {/* Delete account modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl p-6">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[88dvh] overflow-y-auto p-6">
             <h2 className="text-lg font-bold mb-2" style={{ color: '#EF4444' }}>Account verwijderen</h2>
             <p className="text-sm mb-4" style={{ color: '#6B7280' }}>
               Typ <strong>VERWIJDER</strong> om te bevestigen dat je je account wil verwijderen.
