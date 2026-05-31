@@ -812,7 +812,7 @@ export default function DashboardClient({
             {/* Left: greeting */}
             <div className="flex-1 min-w-0">
               {/* Project switcher */}
-              {allProjects.length > 0 && (
+              {allProjects.length > 1 && (
                 <>
                   <style>{`
                     .proj-pill { transition: background 0.15s, border-color 0.15s; cursor: pointer; }
