@@ -337,6 +337,7 @@ export default function DashboardClient({
   const [pendingQuotesCount, setPendingQuotesCount] = useState(initialPendingQuotesCount);
   const [currentProject, setCurrentProject] = useState<Project | null>(activeProject);
   const [currentRooms, setCurrentRooms] = useState<Room[]>(initialRooms);
+  const [allProjectsMode, setAllProjectsMode] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [upgradedBanner, setUpgradedBanner] = useState(false);
   const [aiTip, setAiTip] = useState<string | null>(null);
@@ -344,12 +345,42 @@ export default function DashboardClient({
   const [woningData, setWoningData] = useState<WoningData | null>(null);
   const [woningLoading, setWoningLoading] = useState(false);
 
-  // Derive budget from currentProject instead of receiving it as a prop
-  const budget = useMemo(() => Number(currentProject?.budget) || 0, [currentProject]);
+  // Budget: sum all projects in "alle" mode, otherwise from current project
+  const budget = useMemo(() =>
+    allProjectsMode
+      ? allProjects.reduce((s, p) => s + (Number(p.budget) || 0), 0)
+      : Number(currentProject?.budget) || 0,
+  [allProjectsMode, allProjects, currentProject]);
+
+  // Fetch aggregated data for ALL projects
+  const switchToAll = useCallback(async () => {
+    if (allProjects.length === 0) return;
+    setSwitching(true);
+    setAllProjectsMode(true);
+    setCurrentProject(null);
+    const supabase = createClient();
+    const today = localDateStr();
+    const ids = allProjects.map(p => p.id);
+    const [todayRes, allRes, expRes, quotesCount, roomsRes] = await Promise.all([
+      supabase.from('tasks').select('*').in('project_id', ids).eq('due_date', today),
+      supabase.from('tasks').select('*').in('project_id', ids).order('created_at', { ascending: false }),
+      supabase.from('expenses').select('*').in('project_id', ids),
+      supabase.from('quotes').select('*', { count: 'exact', head: true }).in('project_id', ids).in('status', ['in_behandeling', 'pending']),
+      supabase.from('rooms').select('*').in('project_id', ids),
+    ]);
+    if (todayRes.data) setTodayTasks(todayRes.data);
+    if (allRes.data) setAllTasks(allRes.data);
+    if (expRes.data) setExpenses(expRes.data);
+    setPendingQuotesCount(quotesCount.count ?? 0);
+    if (roomsRes.data) setCurrentRooms(roomsRes.data);
+    try { localStorage.setItem('rf-active-project', '__all__'); } catch {}
+    setSwitching(false);
+  }, [allProjects]);
 
   const switchProject = useCallback(async (project: Project) => {
-    if (project.id === currentProject?.id) return;
+    if (project.id === currentProject?.id && !allProjectsMode) return;
     setSwitching(true);
+    setAllProjectsMode(false);
     setCurrentProject(project);
     const supabase = createClient();
     const today = localDateStr();
@@ -367,13 +398,15 @@ export default function DashboardClient({
     if (roomsRes.data) setCurrentRooms(roomsRes.data);
     try { localStorage.setItem('rf-active-project', project.id); } catch {}
     setSwitching(false);
-  }, [currentProject]);
+  }, [currentProject, allProjectsMode]);
 
   // On mount, restore last-selected project from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('rf-active-project');
-      if (saved && saved !== currentProject?.id) {
+      if (saved === '__all__') {
+        switchToAll();
+      } else if (saved && saved !== currentProject?.id) {
         const found = allProjects.find((p) => p.id === saved);
         if (found) switchProject(found);
       }
@@ -786,12 +819,33 @@ export default function DashboardClient({
                     .proj-pill:hover:not(:disabled) { background-color: rgba(255,255,255,0.18) !important; border-color: rgba(255,255,255,0.45) !important; transform: translateY(-1px); }
                     .proj-pill.proj-active { background-color: rgba(255,255,255,0.93) !important; color: #1a3a2a !important; border-color: transparent !important; }
                     .proj-pill.proj-active:hover { background-color: white !important; }
+                    .proj-pill-all { transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s; cursor: pointer; }
+                    .proj-pill-all:hover:not(:disabled) { background-color: rgba(110,231,183,0.2) !important; border-color: rgba(110,231,183,0.5) !important; transform: translateY(-1px); }
+                    .proj-pill-all.proj-all-active { background-color: rgba(110,231,183,0.25) !important; color: #6EE7B7 !important; border-color: rgba(110,231,183,0.5) !important; }
                   `}</style>
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <span className="text-[10px] font-bold uppercase tracking-widest shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>Project</span>
                     <div className="flex gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                      {/* "Alle projecten" pill */}
+                      <button
+                        onClick={switchToAll}
+                        disabled={switching}
+                        className={`proj-pill-all shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border${allProjectsMode ? ' proj-all-active' : ''}`}
+                        style={{
+                          backgroundColor: allProjectsMode ? 'rgba(110,231,183,0.25)' : 'rgba(255,255,255,0.06)',
+                          color: allProjectsMode ? '#6EE7B7' : 'rgba(255,255,255,0.45)',
+                          borderColor: allProjectsMode ? 'rgba(110,231,183,0.5)' : 'rgba(255,255,255,0.12)',
+                        }}
+                      >
+                        <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                        Alle projecten
+                      </button>
+
+                      {/* Individual project pills */}
                       {allProjects.map(p => {
-                        const isActive = currentProject?.id === p.id;
+                        const isActive = !allProjectsMode && currentProject?.id === p.id;
                         return (
                           <button
                             key={p.id}
@@ -814,20 +868,17 @@ export default function DashboardClient({
                         );
                       })}
                     </div>
-                    <Link
-                      href="/projects"
-                      className="shrink-0 flex items-center gap-1 text-[11px] font-semibold transition-opacity hover:opacity-100"
-                      style={{ color: 'rgba(255,255,255,0.4)', opacity: 0.7 }}
-                    >
-                      Alle
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Link>
                   </div>
                 </>
               )}
-              {currentProject && (
+              {allProjectsMode ? (
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#6EE7B7', boxShadow: '0 0 6px rgba(110,231,183,0.8)' }} />
+                  <span className="text-xs font-semibold" style={{ color: '#6EE7B7' }}>
+                    {allProjects.length} projecten · Totaaloverzicht
+                  </span>
+                </div>
+              ) : currentProject ? (
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ boxShadow: '0 0 6px rgba(52,211,153,0.8)', animation: 'pulse 2s infinite' }} />
                   <span className="text-xs font-semibold" style={{ color: '#6EE7B7' }}>
@@ -840,12 +891,14 @@ export default function DashboardClient({
                     {currentProject.status}
                   </span>
                 </div>
-              )}
+              ) : null}
               <h1 className="text-2xl sm:text-3xl font-bold text-white">
                 {greeting}, {profile?.name?.split(' ')[0] || 'daar'}! 👋
               </h1>
               <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                {currentProject
+                {allProjectsMode
+                  ? `Gecombineerde data van al je verbouwingsprojecten`
+                  : currentProject
                   ? `${currentProject.type.charAt(0).toUpperCase() + currentProject.type.slice(1).replace('_', ' ')} · Gestart ${currentProject.start_date ? new Date(currentProject.start_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' }) : 'onbekend'}`
                   : 'Start je eerste verbouwingsproject om te beginnen.'}
               </p>
@@ -1008,24 +1061,47 @@ export default function DashboardClient({
 
 
           {/* Planning (Gantt compact) */}
-          {currentProject && currentRooms.length > 0 && (
-            <div
-              className="rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-              style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
-            >
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Planning</h2>
-                <Link href={`/projects/${currentProject.id}?tab=overzicht#planning`} className="text-xs font-semibold" style={{ color: '#288760' }}>
-                  Bewerk planning →
-                </Link>
+          {allProjectsMode ? (
+            // All-projects mode: one Gantt per project that has rooms
+            allProjects.filter(p => currentRooms.some(r => r.project_id === p.id)).length > 0 && (
+              <div className="rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 overflow-hidden" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+                <h2 className="text-sm font-bold uppercase tracking-wide mb-5" style={{ color: '#9CA3AF' }}>Planning — alle projecten</h2>
+                <div className="space-y-6">
+                  {allProjects.filter(p => currentRooms.some(r => r.project_id === p.id)).map(p => {
+                    const pRooms = currentRooms.filter(r => r.project_id === p.id);
+                    return (
+                      <div key={p.id}>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold" style={{ color: '#374151' }}>{p.name}</p>
+                          <Link href={`/projects/${p.id}?tab=overzicht`} className="text-xs font-semibold" style={{ color: '#288760' }}>Bekijk →</Link>
+                        </div>
+                        <GanttChart rooms={pRooms} projectStart={p.start_date} projectEnd={p.end_date} compact />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <GanttChart
-                rooms={currentRooms}
-                projectStart={currentProject.start_date}
-                projectEnd={currentProject.end_date}
-                compact
-              />
-            </div>
+            )
+          ) : (
+            currentProject && currentRooms.length > 0 && (
+              <div
+                className="rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+                style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Planning</h2>
+                  <Link href={`/projects/${currentProject.id}?tab=overzicht#planning`} className="text-xs font-semibold" style={{ color: '#288760' }}>
+                    Bewerk planning →
+                  </Link>
+                </div>
+                <GanttChart
+                  rooms={currentRooms}
+                  projectStart={currentProject.start_date}
+                  projectEnd={currentProject.end_date}
+                  compact
+                />
+              </div>
+            )
           )}
 
           {/* Compact streak banner */}

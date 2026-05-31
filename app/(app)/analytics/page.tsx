@@ -98,6 +98,8 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const ALL_ID = '__all__';
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -106,7 +108,9 @@ export default function AnalyticsPage() {
         if (!user) return;
         const { data } = await supabase.from('projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
         setProjects(data || []);
-        if (data && data.length > 0) setSelectedProjectId(data[0].id);
+        // Default to ALL when multiple projects, else first project
+        if (data && data.length > 1) setSelectedProjectId(ALL_ID);
+        else if (data && data.length > 0) setSelectedProjectId(data[0].id);
       } catch { setError('Kon projecten niet laden.'); }
       finally { setLoading(false); }
     };
@@ -119,22 +123,38 @@ export default function AnalyticsPage() {
       setLoading(true);
       try {
         const supabase = createClient();
-        const [tasksRes, expensesRes, roomsRes] = await Promise.all([
-          supabase.from('tasks').select('*').eq('project_id', selectedProjectId),
-          supabase.from('expenses').select('*').eq('project_id', selectedProjectId).order('date'),
-          supabase.from('rooms').select('*').eq('project_id', selectedProjectId),
-        ]);
-        setTasks(tasksRes.data || []);
-        setExpenses(expensesRes.data || []);
-        setRooms(roomsRes.data || []);
+        if (selectedProjectId === ALL_ID) {
+          const ids = projects.map(p => p.id);
+          if (ids.length === 0) { setLoading(false); return; }
+          const [tasksRes, expensesRes, roomsRes] = await Promise.all([
+            supabase.from('tasks').select('*').in('project_id', ids),
+            supabase.from('expenses').select('*').in('project_id', ids).order('date'),
+            supabase.from('rooms').select('*').in('project_id', ids),
+          ]);
+          setTasks(tasksRes.data || []);
+          setExpenses(expensesRes.data || []);
+          setRooms(roomsRes.data || []);
+        } else {
+          const [tasksRes, expensesRes, roomsRes] = await Promise.all([
+            supabase.from('tasks').select('*').eq('project_id', selectedProjectId),
+            supabase.from('expenses').select('*').eq('project_id', selectedProjectId).order('date'),
+            supabase.from('rooms').select('*').eq('project_id', selectedProjectId),
+          ]);
+          setTasks(tasksRes.data || []);
+          setExpenses(expensesRes.data || []);
+          setRooms(roomsRes.data || []);
+        }
       } catch { setError('Kon analysegegevens niet laden.'); }
       finally { setLoading(false); }
     };
     load();
-  }, [selectedProjectId]);
+  }, [selectedProjectId, projects]);
 
-  const selectedProject = projects.find((p) => p.id === selectedProjectId);
-  const budget = Number(selectedProject?.budget) || 0;
+  const isAllMode = selectedProjectId === ALL_ID;
+  const selectedProject = isAllMode ? null : projects.find((p) => p.id === selectedProjectId);
+  const budget = isAllMode
+    ? projects.reduce((s, p) => s + (Number(p.budget) || 0), 0)
+    : Number(selectedProject?.budget) || 0;
 
   const totalExpenses = useMemo(() => expenses.reduce((s, e) => s + Number(e.amount), 0), [expenses]);
   const completedTasks = useMemo(() => tasks.filter((t) => t.status === 'voltooid' || t.status === 'done').length, [tasks]);
@@ -231,22 +251,49 @@ export default function AnalyticsPage() {
             <div className="flex-1">
               <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#6EE7B7' }}>Voortgang & Analyse</p>
               <h1 className="text-2xl sm:text-3xl font-black text-white">
-                {selectedProject?.name || 'Project'}
+                {isAllMode ? 'Alle projecten' : (selectedProject?.name || 'Project')}
               </h1>
-              {selectedProject?.start_date && (
-                <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Gestart {new Date(selectedProject.start_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  {selectedProject.end_date && ` · Einddatum ${new Date(selectedProject.end_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}`}
-                </p>
-              )}
+              <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                {isAllMode
+                  ? `Gecombineerde analyse van ${projects.length} project${projects.length !== 1 ? 'en' : ''}`
+                  : selectedProject?.start_date
+                  ? `Gestart ${new Date(selectedProject.start_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}${selectedProject.end_date ? ` · Einddatum ${new Date(selectedProject.end_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}` : ''}`
+                  : ''}
+              </p>
             </div>
             {/* Project selector */}
-            {projects.length > 1 && (
-              <select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="px-3 py-2 rounded-xl text-sm outline-none self-start"
-                style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.15)' }}>
-                {projects.map((p) => <option key={p.id} value={p.id} style={{ color: '#1A1A1A', backgroundColor: 'white' }}>{p.name}</option>)}
-              </select>
+            {projects.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 self-start">
+                {/* Alle projecten pill */}
+                <button
+                  onClick={() => setSelectedProjectId(ALL_ID)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                  style={{
+                    backgroundColor: isAllMode ? 'rgba(110,231,183,0.25)' : 'rgba(255,255,255,0.08)',
+                    color: isAllMode ? '#6EE7B7' : 'rgba(255,255,255,0.5)',
+                    border: isAllMode ? '1px solid rgba(110,231,183,0.4)' : '1px solid rgba(255,255,255,0.15)',
+                  }}
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  Alle
+                </button>
+                {projects.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedProjectId(p.id)}
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                    style={{
+                      backgroundColor: selectedProjectId === p.id ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.08)',
+                      color: selectedProjectId === p.id ? '#1a3a2a' : 'rgba(255,255,255,0.6)',
+                      border: selectedProjectId === p.id ? '1px solid transparent' : '1px solid rgba(255,255,255,0.15)',
+                    }}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
