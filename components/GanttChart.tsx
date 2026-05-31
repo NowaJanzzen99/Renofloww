@@ -249,7 +249,7 @@ export default function GanttChart({ rooms: initialRooms, projectStart, projectE
 
   const rowHeight = compact ? 20 : 28;
   const rowGap = compact ? 6 : 10;
-  const labelWidth = compact ? 80 : 120;
+  const labelWidth = compact ? 110 : 120;
 
   return (
     <div>
@@ -306,11 +306,11 @@ export default function GanttChart({ rooms: initialRooms, projectStart, projectE
                 style={{ width: `${labelWidth}px` }}
               >
                 <span
-                  className="truncate font-medium"
+                  className="font-medium"
                   style={{
-                    fontSize: compact ? '10px' : '12px',
+                    fontSize: compact ? '9px' : '12px',
                     color: '#374151',
-                    maxWidth: `${labelWidth - 28}px`,
+                    maxWidth: `${labelWidth - 8}px`,
                   }}
                   title={room.name}
                 >

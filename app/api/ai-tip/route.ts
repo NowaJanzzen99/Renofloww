@@ -6,7 +6,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { budgetPct, todayTaskCount, nextDeadline, openQuotes, endDate, projectType } = body;
+    const { budgetPct, todayTaskCount, nextDeadline, openQuotes, endDate, projectType, projectId } = body;
 
     const contextParts: string[] = [];
     if (budgetPct != null)     contextParts.push(`Budget: ${budgetPct}% gebruikt`);
@@ -22,18 +22,43 @@ export async function POST(req: NextRequest) {
 
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 60,
-      system:
-        'Je bent een renovatieassistent voor Renofloww. Geef precies 1 korte zin (max 15 woorden) als praktische tip op basis van de projectdata. Geen inleiding, geen uitleg, alleen de tip. Alleen Nederlands.',
+      max_tokens: 120,
+      system: `Je bent een renovatieassistent voor Renofloww. Geef een JSON object terug (geen andere tekst) met twee velden:
+- "tip": precies 1 korte Nederlandse zin (max 15 woorden) als praktische tip
+- "action": één van deze strings op basis van het onderwerp van de tip: "taken", "budget", "planning", "offertes", "kosten", of null als niet van toepassing
+
+Voorbeeld: {"tip":"Plan je schilder vroeg in om vertragingen te voorkomen.","action":"planning"}
+Alleen geldig JSON, geen markdown.`,
       messages: [{ role: 'user', content: userMessage }],
     });
 
-    const tip =
-      message.content[0].type === 'text' ? message.content[0].text.trim() : '';
+    const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : '{}';
+    let tip = '';
+    let action: string | null = null;
+    try {
+      const parsed = JSON.parse(raw);
+      tip = parsed.tip ?? '';
+      action = parsed.action ?? null;
+    } catch {
+      // Fallback: treat full response as plain tip
+      tip = raw.replace(/^\{.*"tip"\s*:\s*"/, '').replace(/".*\}$/, '').trim();
+    }
 
-    return NextResponse.json({ tip });
+    // Map action keyword to href
+    const actionMap: Record<string, { label: string; href: string }> = {
+      taken:     { label: 'Bekijk taken →',     href: projectId ? `/projects/${projectId}?tab=taken`     : '/projects' },
+      budget:    { label: 'Bekijk budget →',    href: projectId ? `/projects/${projectId}?tab=kosten`    : '/projects' },
+      planning:  { label: 'Bekijk planning →',  href: projectId ? `/projects/${projectId}?tab=overzicht` : '/projects' },
+      offertes:  { label: 'Bekijk offertes →',  href: projectId ? `/projects/${projectId}?tab=offertes`  : '/projects' },
+      kosten:    { label: 'Bekijk kosten →',    href: '/woningkosten' },
+    };
+
+    return NextResponse.json({
+      tip,
+      actionLink: action && actionMap[action] ? actionMap[action] : null,
+    });
   } catch (err) {
     console.error('AI tip error:', err);
-    return NextResponse.json({ tip: null, error: 'Tip tijdelijk niet beschikbaar.' }, { status: 500 });
+    return NextResponse.json({ tip: null, actionLink: null, error: 'Tip tijdelijk niet beschikbaar.' }, { status: 500 });
   }
 }

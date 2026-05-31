@@ -34,6 +34,11 @@ interface Props {
   house: House | null;
 }
 
+// Short currency: no decimals, for large display numbers in cards
+function formatShort(n: number): string {
+  return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+}
+
 // ─── Local date helper ────────────────────────────────────────────────────────
 function localDateStr(d: Date = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -205,13 +210,6 @@ function DraggableCard({
 
 // ─── Woningwaarde card ────────────────────────────────────────────────────────
 function WoningwaardeCard({ house, data, loading }: { house: House | null; data: WoningData | null; loading: boolean }) {
-  const formatPeriod = (p: string) => {
-    if (!p) return '';
-    if (p.includes('-Q')) { const [y, q] = p.split('-Q'); return `Q${q} ${y}`; }
-    if (p.includes('JJ')) return p.slice(0, 4);
-    return p;
-  };
-
   // No house profile set up yet
   if (!house) {
     return (
@@ -245,20 +243,12 @@ function WoningwaardeCard({ house, data, loading }: { house: House | null; data:
 
       {/* Dark header strip */}
       <div className="px-4 pt-4 pb-3" style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #1a3a2a 100%)' }}>
-        {/* Label + period row */}
-        <div className="flex items-center justify-between mb-2 min-w-0">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: '#6EE7B7' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#6EE7B7' }}>Woningwaarde</span>
-          </div>
-          {data && (
-            <div className="flex items-center gap-1 shrink-0 ml-2">
-              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: data.isFallback ? '#F59E0B' : '#10B981' }} />
-              <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{formatPeriod(data.latestPeriod)}</span>
-            </div>
-          )}
+        {/* Label row */}
+        <div className="flex items-center gap-1.5 mb-2 min-w-0">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: '#6EE7B7' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#6EE7B7' }}>Woningwaarde</span>
         </div>
 
         {/* Value */}
@@ -293,18 +283,10 @@ function WoningwaardeCard({ house, data, loading }: { house: House | null; data:
       </div>
 
       {/* Stats body */}
-      <div className="flex-1 px-4 py-3 space-y-2.5">
-        {[
-          purchasePrice ? { label: 'Aankoopprijs', value: formatCurrency(purchasePrice) } : null,
-          data?.mortgageRate ? { label: 'Rente NL', value: `${data.mortgageRate.rate}% · ${data.mortgageRate.label}` } : null,
-          data?.latestIndex ? { label: 'Prijsindex', value: `${data.latestIndex.toFixed(1)} (2015=100)` } : null,
-          house.address ? { label: 'Adres', value: house.address } : null,
-        ].filter(Boolean).map((row) => (
-          <div key={row!.label} className="flex items-center gap-2 w-full">
-            <span className="text-xs whitespace-nowrap shrink-0" style={{ color: '#9CA3AF' }}>{row!.label}</span>
-            <span className="text-xs font-semibold flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-right" style={{ color: '#374151' }}>{row!.value}</span>
-          </div>
-        ))}
+      <div className="flex-1 px-4 py-3">
+        {house.address && (
+          <p className="text-xs truncate" style={{ color: '#9CA3AF' }}>{house.address}</p>
+        )}
       </div>
 
       {/* Footer link */}
@@ -341,9 +323,11 @@ export default function DashboardClient({
   const [switching, setSwitching] = useState(false);
   const [upgradedBanner, setUpgradedBanner] = useState(false);
   const [aiTip, setAiTip] = useState<string | null>(null);
+  const [aiTipAction, setAiTipAction] = useState<{ label: string; href: string } | null>(null);
   const [aiTipLoading, setAiTipLoading] = useState(false);
   const [woningData, setWoningData] = useState<WoningData | null>(null);
   const [woningLoading, setWoningLoading] = useState(false);
+  const [woonkosten, setWoonkosten] = useState<{ total: number; categories: Record<string, number> } | null>(null);
 
   // Budget: sum all projects in "alle" mode, otherwise from current project
   const budget = useMemo(() =>
@@ -502,7 +486,12 @@ export default function DashboardClient({
     if (!force) {
       try {
         const cached = sessionStorage.getItem(cacheKey);
-        if (cached) { setAiTip(cached); return; }
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setAiTip(parsed.tip);
+          setAiTipAction(parsed.action ?? null);
+          return;
+        }
       } catch {}
     }
     setAiTipLoading(true);
@@ -523,12 +512,14 @@ export default function DashboardClient({
           nextDeadline:   nextDeadlineStr,
           endDate:        endDateStr,
           projectType:    currentProject?.type ?? null,
+          projectId:      currentProject?.id ?? null,
         }),
       });
       const json = await res.json();
       if (json.tip) {
         setAiTip(json.tip);
-        try { sessionStorage.setItem(cacheKey, json.tip); } catch {}
+        if (json.actionLink) setAiTipAction(json.actionLink);
+        try { sessionStorage.setItem(cacheKey, JSON.stringify({ tip: json.tip, action: json.actionLink ?? null })); } catch {}
       }
     } catch { /* silent */ } finally {
       setAiTipLoading(false);
@@ -551,6 +542,33 @@ export default function DashboardClient({
       .catch(() => {})
       .finally(() => setWoningLoading(false));
   }, [house]);
+
+  useEffect(() => {
+    const loadWoonkosten = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        // Get all house IDs for the user
+        const { data: houses } = await supabase.from('houses').select('id').eq('user_id', user.id);
+        const houseIds = (houses || []).map((h: { id: string }) => h.id);
+        // All project expenses (verbouwing)
+        const projectIds = allProjects.map(p => p.id);
+        const [onderhoudRes, expRes] = await Promise.all([
+          houseIds.length > 0 ? supabase.from('onderhoud_kosten').select('amount, category').in('house_id', houseIds) : Promise.resolve({ data: [] }),
+          projectIds.length > 0 ? supabase.from('expenses').select('amount').in('project_id', projectIds) : Promise.resolve({ data: [] }),
+        ]);
+        const cats: Record<string, number> = { verbouwing: 0 };
+        (expRes.data || []).forEach((e: { amount: number }) => { cats.verbouwing = (cats.verbouwing || 0) + Number(e.amount); });
+        (onderhoudRes.data || []).forEach((k: { amount: number; category: string }) => {
+          cats[k.category] = (cats[k.category] || 0) + Number(k.amount);
+        });
+        const total = Object.values(cats).reduce((s, v) => s + v, 0);
+        setWoonkosten({ total, categories: cats });
+      } catch { /* silent */ }
+    };
+    loadWoonkosten();
+  }, [allProjects]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -634,7 +652,7 @@ export default function DashboardClient({
     budget: (
       <div
         className="rounded-2xl p-3 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
-        style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
+        style={{ backgroundColor: '#FFFFFF', borderColor: '#D1E8DC', boxShadow: '0 4px 24px rgba(40,135,96,0.12), 0 1px 4px rgba(0,0,0,0.04)', border: '1px solid #D1E8DC' }}
       >
         <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Budget</p>
         <div className="flex flex-col items-center mb-2">
@@ -642,13 +660,24 @@ export default function DashboardClient({
           <p className="text-[10px] text-center mt-1" style={{ color: '#9CA3AF' }}>
             {budgetPercentage}% van budget gebruikt
           </p>
+          {budget > 0 && (
+            <p className="text-[10px] text-center" style={{ color: '#6B7280' }}>
+              {formatShort(totalExpenses)} van {formatShort(budget)}
+            </p>
+          )}
         </div>
+        {budget === 0 && (
+          <Link href={currentProject ? `/projects/${currentProject.id}?tab=instellingen` : '/projects'}
+            className="text-[10px] font-semibold mt-auto text-center block" style={{ color: '#288760' }}>
+            Stel budget in →
+          </Link>
+        )}
         {budget > 0 && (
           <div className="mt-auto space-y-1">
             <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
               <div className="h-full rounded-full transition-all duration-500" style={{ width: `${budgetPercentage}%`, backgroundColor: budgetColor }} />
             </div>
-            <p className="text-[10px]" style={{ color: '#9CA3AF' }}>{formatCurrency(Math.max(budget - totalExpenses, 0))} resterend</p>
+            <p className="text-[10px]" style={{ color: '#9CA3AF' }}>{formatShort(Math.max(budget - totalExpenses, 0))} resterend</p>
           </div>
         )}
       </div>
@@ -663,7 +692,7 @@ export default function DashboardClient({
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{ color: '#288760' }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
             </svg>
-            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>AI tip</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>AI-advies</span>
           </div>
           <button onClick={() => fetchAiTip(true)} disabled={aiTipLoading} className="p-0.5 rounded disabled:opacity-40" title="Vernieuwen">
             <svg className={`w-3 h-3 ${aiTipLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#C4CACC' }}>
@@ -679,28 +708,74 @@ export default function DashboardClient({
               ))}
             </div>
           ) : aiTip ? (
-            <p className="text-xs leading-snug" style={{ color: '#374151', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{aiTip}</p>
+            <>
+              <p className="text-xs leading-snug" style={{ color: '#374151', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{aiTip}</p>
+              {aiTipAction && (
+                <Link href={aiTipAction.href} className="text-xs font-semibold mt-2 inline-block" style={{ color: '#288760' }}>
+                  {aiTipAction.label}
+                </Link>
+              )}
+            </>
           ) : (
-            <p className="text-xs" style={{ color: '#C4CACC' }}>Laden...</p>
+            <p className="text-xs" style={{ color: '#C4CACC' }}>
+              {allProjects.length === 0 ? 'Voeg een project toe voor tips' : 'Laden...'}
+            </p>
           )}
         </div>
       </div>
     ),
-    offertes: (
-      <div
-        className="rounded-2xl p-3 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
-        style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
-      >
-        <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Offertes</p>
-        <p className="text-3xl font-black mb-1" style={{ color: pendingQuotesCount > 0 ? '#1A1A1A' : '#D1D5DB' }}>{pendingQuotesCount}</p>
-        <p className="text-xs flex-1" style={{ color: '#9CA3AF' }}>
-          {pendingQuotesCount === 0 ? 'Geen open offertes' : `open offerte${pendingQuotesCount === 1 ? '' : 's'}`}
-        </p>
-        <Link href={currentProject ? `/projects/${currentProject.id}?tab=offertes` : '/projects'} className="text-[11px] font-semibold mt-auto" style={{ color: '#288760' }}>
-          Bekijk →
-        </Link>
-      </div>
-    ),
+    offertes: (() => {
+      const CAT_COLORS: Record<string, string> = {
+        verbouwing: '#288760', onderhoud: '#3B82F6', reparatie: '#F59E0B',
+        tuin: '#10B981', verzekering: '#8B5CF6', energie: '#EC4899',
+        belasting: '#6B7280', overig: '#94A3B8',
+      };
+      const CAT_LABELS: Record<string, string> = {
+        verbouwing: 'Verbouwing', onderhoud: 'Onderhoud', reparatie: 'Reparatie',
+        tuin: 'Tuin', verzekering: 'Verzekering', energie: 'Energie',
+        belasting: 'Belasting', overig: 'Overig',
+      };
+      const total = woonkosten?.total ?? 0;
+      const cats = woonkosten?.categories ?? {};
+      const sorted = Object.entries(cats).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+      const top3 = sorted.slice(0, 3);
+      return (
+        <div className="rounded-2xl p-3 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
+          style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#9CA3AF' }}>Woonkosten</p>
+          {total === 0 ? (
+            <>
+              <p className="text-xl font-black mb-1" style={{ color: '#D1D5DB' }}>€ 0</p>
+              <p className="text-xs flex-1" style={{ color: '#9CA3AF' }}>Nog geen kosten</p>
+              <Link href="/woningkosten" className="text-[11px] font-semibold mt-auto" style={{ color: '#288760' }}>Voeg kosten toe →</Link>
+            </>
+          ) : (
+            <>
+              <p className="text-xl font-black leading-tight mb-2" style={{ color: '#1A1A1A' }}>{formatShort(total)}</p>
+              {/* Segmented bar */}
+              {sorted.length > 0 && (
+                <div className="w-full h-1.5 rounded-full overflow-hidden flex mb-2">
+                  {sorted.map(([cat, val]) => (
+                    <div key={cat} style={{ width: `${(val / total) * 100}%`, backgroundColor: CAT_COLORS[cat] ?? '#94A3B8', minWidth: val > 0 ? '2px' : 0 }} />
+                  ))}
+                </div>
+              )}
+              {/* Top 3 legend */}
+              <div className="space-y-0.5 flex-1">
+                {top3.map(([cat, val]) => (
+                  <div key={cat} className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: CAT_COLORS[cat] ?? '#94A3B8' }} />
+                    <span className="text-[10px] truncate flex-1" style={{ color: '#6B7280' }}>{CAT_LABELS[cat] ?? cat}</span>
+                    <span className="text-[10px] font-semibold shrink-0" style={{ color: '#374151' }}>{formatShort(val)}</span>
+                  </div>
+                ))}
+              </div>
+              <Link href="/woningkosten" className="text-[11px] font-semibold mt-2" style={{ color: '#288760' }}>Bekijk woonkosten →</Link>
+            </>
+          )}
+        </div>
+      );
+    })(),
     vandaag: (() => {
       // Build snapshot rows from available data — hide empty ones
       const fmtDeadline = (d: string) => {
@@ -942,9 +1017,6 @@ export default function DashboardClient({
       {/* ── Main content ─────────────────────────────────────────────────────── */}
       <div className="pt-4 sm:pt-5 pb-4 sm:pb-6">
 
-        {/* Drag hint */}
-        <p className="text-xs mb-3 hidden md:block" style={{ color: '#C4B5FD' }}>⠿ Sleep de kaarten om de volgorde aan te passen</p>
-
         {/* ── Stat cards ── */}
         <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-5">
           {cardOrder.map(id => (
@@ -972,7 +1044,7 @@ export default function DashboardClient({
           >
             {/* Header */}
             <div className="px-5 pt-5 pb-3">
-              <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Taken vandaag</h2>
+              <h2 className="text-sm font-semibold" style={{ color: '#9CA3AF' }}>Vandaag</h2>
             </div>
 
             {/* Vandaag lijst */}

@@ -289,7 +289,6 @@ export default function Sidebar() {
 
           {/* Beheer group — Instellingen */}
           <div style={{ borderTop: '1px solid #E5E7EB', margin: '8px 0 4px 0' }} />
-          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Beheer</p>
           {navItems.slice(5).map((item) => {
             const active = isActive(item.href);
             return (
@@ -313,6 +312,13 @@ export default function Sidebar() {
                   0%   { transform: translateX(-110%) skewX(-20deg); }
                   100% { transform: translateX(340%) skewX(-20deg); }
                 }
+                @keyframes rf-upgrade-pulse {
+                  0%,42%,58%,100% { transform: scale(1); }
+                  50% { transform: scale(1.02); }
+                }
+                .rf-upgrade-compact {
+                  animation: rf-upgrade-pulse 5s ease-in-out infinite;
+                }
                 .rf-upgrade-compact .rf-glass {
                   animation: rf-glass-shimmer 3s ease-in-out infinite;
                 }
@@ -320,7 +326,7 @@ export default function Sidebar() {
               <Link
                 href="/settings#abonnement"
                 className="rf-upgrade-compact relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl mt-2 overflow-hidden transition-opacity hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, #1e4d36 0%, #1a3a2a 100%)' }}
+                style={{ background: 'linear-gradient(135deg, #1e5c40 0%, #1a4032 50%, #1a3a2a 100%)' }}
               >
                 <div
                   className="rf-glass absolute inset-0 pointer-events-none"
