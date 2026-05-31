@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 import type { House } from '@/types';
 
 interface QuarterPoint { period: string; quarter: number; year: number; index: number }
@@ -25,10 +26,119 @@ interface MarketData {
 }
 
 interface Props {
-  house: House | null;
+  houses: House[];
   totalInvested: number;
   isPro: boolean;
   projectStartDate: string | null;
+}
+
+const WONINGTYPE_OPTIONS = [
+  { value: 'appartement',        label: 'Appartement' },
+  { value: 'tussenwoning',       label: 'Tussenwoning' },
+  { value: 'hoekwoning',         label: 'Hoekwoning' },
+  { value: 'twee_onder_een_kap', label: '2-onder-1-kap' },
+  { value: 'vrijstaand',         label: 'Vrijstaand' },
+];
+
+function AddHouseModal({ onClose, onAdded }: { onClose: () => void; onAdded: (h: House) => void }) {
+  const [address, setAddress] = useState('');
+  const [postcode, setPostcode] = useState('');
+  const [woningtype, setWoningtype] = useState('');
+  const [surface, setSurface] = useState('');
+  const [purchasePrice, setPurchasePrice] = useState('');
+  const [purchaseDate, setPurchaseDate] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const inp = 'w-full px-3 py-2.5 rounded-xl border text-sm outline-none';
+  const inpStyle = { borderColor: '#E5E7EB', color: '#1A1A1A' };
+  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => (e.target.style.borderColor = '#288760');
+  const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => (e.target.style.borderColor = '#E5E7EB');
+
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setError('Niet ingelogd'); setLoading(false); return; }
+      const { data, error: err } = await supabase
+        .from('houses')
+        .insert({
+          user_id: user.id,
+          address: address || null,
+          postcode: postcode || null,
+          woningtype: woningtype || null,
+          surface_m2: surface ? Number(surface) : null,
+          purchase_price: purchasePrice ? parseFloat(purchasePrice.replace(/\./g, '').replace(',', '.')) : null,
+          purchase_date: purchaseDate || null,
+        })
+        .select()
+        .single();
+      if (err) { setError('Opslaan mislukt'); setLoading(false); return; }
+      if (data) onAdded(data as House);
+    } catch {
+      setError('Onverwachte fout');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[88dvh] flex flex-col overflow-hidden">
+        <div className="shrink-0 flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: '#E5E7EB' }}>
+          <h2 className="text-base font-semibold" style={{ color: '#1A1A1A' }}>Woning toevoegen</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center" style={{ color: '#6B7280' }}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Adres</label>
+            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Hoofdstraat 1" className={inp} style={inpStyle} onFocus={focus} onBlur={blur} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Postcode</label>
+              <input value={postcode} onChange={(e) => setPostcode(e.target.value)} placeholder="1234 AB" className={inp} style={inpStyle} onFocus={focus} onBlur={blur} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Woningtype</label>
+              <select value={woningtype} onChange={(e) => setWoningtype(e.target.value)} className={inp} style={inpStyle} onFocus={focus} onBlur={blur}>
+                <option value="">Selecteer...</option>
+                {WONINGTYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Oppervlak (m²)</label>
+            <input type="number" min="0" value={surface} onChange={(e) => setSurface(e.target.value)} placeholder="120" className={inp} style={inpStyle} onFocus={focus} onBlur={blur} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Aankoopprijs</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#6B7280' }}>€</span>
+                <input type="number" min="0" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} placeholder="350000" className="w-full pl-7 pr-3 py-2.5 rounded-xl border text-sm outline-none" style={inpStyle} onFocus={focus} onBlur={blur} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Aankoopdatum</label>
+              <input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} className={inp} style={inpStyle} onFocus={focus} onBlur={blur} />
+            </div>
+          </div>
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium border" style={{ borderColor: '#E5E7EB', color: '#6B7280' }}>Annuleren</button>
+            <button type="submit" disabled={loading} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50" style={{ backgroundColor: '#288760' }}>
+              {loading ? 'Opslaan...' : 'Toevoegen'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 const WONINGTYPE_LABELS: Record<string, string> = {
@@ -348,13 +458,18 @@ function MarketChart({
   );
 }
 
-export default function WoningwaardeClient({ house, totalInvested, isPro, projectStartDate }: Props) {
+export default function WoningwaardeClient({ houses: initialHouses, totalInvested, isPro, projectStartDate }: Props) {
+  const [houseList, setHouseList] = useState<House[]>(initialHouses);
+  const [selectedHouseIdx, setSelectedHouseIdx] = useState(0);
+  const [showAddHouse, setShowAddHouse] = useState(false);
+  const house = houseList[selectedHouseIdx] ?? null;
+
   const [marketData, setMarketData] = useState<MarketData | null>(null);
   const [loadingMarket, setLoadingMarket] = useState(false);
   const [marketError, setMarketError] = useState<string | null>(null);
 
-  const fetchMarketData = async () => {
-    if (!house?.purchase_price && !house?.purchase_date) {
+  const fetchMarketData = async (h: House | null = house) => {
+    if (!h?.purchase_price && !h?.purchase_date) {
       setLoadingMarket(true);
       setMarketError(null);
       try {
@@ -372,8 +487,8 @@ export default function WoningwaardeClient({ house, totalInvested, isPro, projec
     setMarketError(null);
     try {
       const params = new URLSearchParams();
-      if (house.purchase_price) params.set('purchase_price', String(house.purchase_price));
-      if (house.purchase_date) params.set('purchase_date', house.purchase_date);
+      if (h?.purchase_price) params.set('purchase_price', String(h.purchase_price));
+      if (h?.purchase_date) params.set('purchase_date', h.purchase_date);
       const res = await fetch(`/api/woningwaarde?${params}`);
       if (!res.ok) throw new Error('API fout');
       setMarketData(await res.json());
@@ -385,7 +500,7 @@ export default function WoningwaardeClient({ house, totalInvested, isPro, projec
   };
 
   useEffect(() => {
-    if (isPro) fetchMarketData();
+    if (isPro) fetchMarketData(house);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPro, house?.id]);
 
@@ -449,6 +564,34 @@ export default function WoningwaardeClient({ house, totalInvested, isPro, projec
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Geschatte marktwaarde en overwaarde berekening</p>
       </div>
 
+      {/* ── House selector ─────────────────────────────────────────── */}
+      {(houseList.length > 0 || true) && (
+        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          {houseList.map((h, idx) => (
+            <button
+              key={h.id}
+              onClick={() => { setSelectedHouseIdx(idx); setMarketData(null); }}
+              className="shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all"
+              style={{
+                backgroundColor: selectedHouseIdx === idx ? '#1a3a2a' : '#F3F4F6',
+                color: selectedHouseIdx === idx ? '#FFFFFF' : '#6B7280',
+                border: selectedHouseIdx === idx ? '1px solid #1a3a2a' : '1px solid #E5E7EB',
+              }}
+            >
+              {h.address ? h.address.split(',')[0] : `Woning ${idx + 1}`}
+            </button>
+          ))}
+          <button
+            onClick={() => setShowAddHouse(true)}
+            className="shrink-0 px-4 py-2 rounded-full text-sm font-semibold border transition-all hover:bg-gray-50 flex items-center gap-1.5"
+            style={{ borderColor: '#E5E7EB', color: '#288760' }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            Woning toevoegen
+          </button>
+        </div>
+      )}
+
       {/* ── House profile ──────────────────────────────────────────── */}
       {!house ? (
         <div className="rounded-2xl p-6 text-center border-2 border-dashed" style={{ borderColor: '#D1FAE5', backgroundColor: '#F0FDF4' }}>
@@ -489,7 +632,7 @@ export default function WoningwaardeClient({ house, totalInvested, isPro, projec
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-semibold" style={{ color: '#1A1A1A' }}>Geschatte marktwaarde</h2>
           <button
-            onClick={fetchMarketData}
+            onClick={() => fetchMarketData()}
             disabled={loadingMarket}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border hover:bg-gray-50 disabled:opacity-50"
             style={{ borderColor: '#E5E7EB', color: '#6B7280' }}
@@ -564,7 +707,7 @@ export default function WoningwaardeClient({ house, totalInvested, isPro, projec
                   isFallback={marketData.isFallback}
                   latestPeriod={marketData.latestPeriod}
                   mortgageRate={marketData.mortgageRate ?? null}
-                  onRefresh={fetchMarketData}
+                  onRefresh={() => fetchMarketData()}
                   refreshing={loadingMarket}
                 />
               </div>
@@ -572,6 +715,20 @@ export default function WoningwaardeClient({ house, totalInvested, isPro, projec
           </>
         )}
       </div>
+
+      {/* ── Add house modal ─────────────────────────────────────────── */}
+      {showAddHouse && (
+        <AddHouseModal
+          onClose={() => setShowAddHouse(false)}
+          onAdded={(h) => {
+            const newList = [...houseList, h];
+            setHouseList(newList);
+            setSelectedHouseIdx(newList.length - 1);
+            setMarketData(null);
+            setShowAddHouse(false);
+          }}
+        />
+      )}
     </div>
   );
 }

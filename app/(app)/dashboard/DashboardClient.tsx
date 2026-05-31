@@ -22,14 +22,14 @@ interface Props {
   greeting: string;
   profile: Profile | null;
   activeProject: Project | null;
+  allProjects: Project[];
   todayTasks: Task[];
   allTasks: Task[];
   expenses: Expense[];
   rooms: Room[];
   pendingQuotesCount: number;
-  totalExpenses: number;
-  budget: number;
-  budgetPercentage: number;
+  totalExpenses: number; // kept for backward compat; client recomputes from state
+  budgetPercentage: number; // kept for backward compat; client recomputes from state
   activeDays: number;
   house: House | null;
 }
@@ -322,13 +322,12 @@ function WoningwaardeCard({ house, data, loading }: { house: House | null; data:
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function DashboardClient({
-  greeting, profile, activeProject,
+  greeting, profile, activeProject, allProjects,
   todayTasks: initialTodayTasks,
   allTasks: initialAllTasks,
   expenses: initialExpenses,
-  rooms,
+  rooms: initialRooms,
   pendingQuotesCount: initialPendingQuotesCount,
-  budget,
   activeDays,
   house,
 }: Props) {
@@ -336,11 +335,51 @@ export default function DashboardClient({
   const [allTasks, setAllTasks] = useState<Task[]>(initialAllTasks);
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [pendingQuotesCount, setPendingQuotesCount] = useState(initialPendingQuotesCount);
+  const [currentProject, setCurrentProject] = useState<Project | null>(activeProject);
+  const [currentRooms, setCurrentRooms] = useState<Room[]>(initialRooms);
+  const [switching, setSwitching] = useState(false);
   const [upgradedBanner, setUpgradedBanner] = useState(false);
   const [aiTip, setAiTip] = useState<string | null>(null);
   const [aiTipLoading, setAiTipLoading] = useState(false);
   const [woningData, setWoningData] = useState<WoningData | null>(null);
   const [woningLoading, setWoningLoading] = useState(false);
+
+  // Derive budget from currentProject instead of receiving it as a prop
+  const budget = useMemo(() => Number(currentProject?.budget) || 0, [currentProject]);
+
+  const switchProject = useCallback(async (project: Project) => {
+    if (project.id === currentProject?.id) return;
+    setSwitching(true);
+    setCurrentProject(project);
+    const supabase = createClient();
+    const today = localDateStr();
+    const [todayRes, allRes, expRes, quotesCount, roomsRes] = await Promise.all([
+      supabase.from('tasks').select('*').eq('project_id', project.id).eq('due_date', today),
+      supabase.from('tasks').select('*').eq('project_id', project.id).order('created_at', { ascending: false }),
+      supabase.from('expenses').select('*').eq('project_id', project.id),
+      supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('project_id', project.id).in('status', ['in_behandeling', 'pending']),
+      supabase.from('rooms').select('*').eq('project_id', project.id),
+    ]);
+    if (todayRes.data) setTodayTasks(todayRes.data);
+    if (allRes.data) setAllTasks(allRes.data);
+    if (expRes.data) setExpenses(expRes.data);
+    setPendingQuotesCount(quotesCount.count ?? 0);
+    if (roomsRes.data) setCurrentRooms(roomsRes.data);
+    try { localStorage.setItem('rf-active-project', project.id); } catch {}
+    setSwitching(false);
+  }, [currentProject]);
+
+  // On mount, restore last-selected project from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('rf-active-project');
+      if (saved && saved !== currentProject?.id) {
+        const found = allProjects.find((p) => p.id === saved);
+        if (found) switchProject(found);
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const DEFAULT_ORDER = ['budget', 'aitip', 'offertes'];
   const [cardOrder, setCardOrder] = useState<string[]>(DEFAULT_ORDER);
@@ -394,11 +433,11 @@ export default function DashboardClient({
   // Nearest future room deadline for snapshot card
   const nextDeadline = useMemo(() => {
     const today = localDateStr();
-    return rooms
+    return currentRooms
       .filter(r => r.end_date && r.end_date >= today)
       .sort((a, b) => (a.end_date ?? '').localeCompare(b.end_date ?? ''))
       .at(0) ?? null;
-  }, [rooms]);
+  }, [currentRooms]);
 
   // Current consecutive streak — same algorithm as the streak page (with grace period for yesterday)
   const currentStreak = useMemo(() => {
@@ -426,7 +465,7 @@ export default function DashboardClient({
   }, [allTasks]);
 
   const fetchAiTip = useCallback(async (force = false) => {
-    const cacheKey = `rf-ai-tip-${activeProject?.id ?? 'none'}`;
+    const cacheKey = `rf-ai-tip-${currentProject?.id ?? 'none'}`;
     if (!force) {
       try {
         const cached = sessionStorage.getItem(cacheKey);
@@ -438,8 +477,8 @@ export default function DashboardClient({
       const nextDeadlineStr = nextDeadline?.end_date
         ? new Date(nextDeadline.end_date + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })
         : null;
-      const endDateStr = activeProject?.end_date
-        ? new Date(activeProject.end_date + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })
+      const endDateStr = currentProject?.end_date
+        ? new Date(currentProject.end_date + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })
         : null;
       const res = await fetch('/api/ai-tip', {
         method: 'POST',
@@ -450,7 +489,7 @@ export default function DashboardClient({
           openQuotes:     pendingQuotesCount,
           nextDeadline:   nextDeadlineStr,
           endDate:        endDateStr,
-          projectType:    activeProject?.type ?? null,
+          projectType:    currentProject?.type ?? null,
         }),
       });
       const json = await res.json();
@@ -461,7 +500,7 @@ export default function DashboardClient({
     } catch { /* silent */ } finally {
       setAiTipLoading(false);
     }
-  }, [activeProject, budget, expenses, todayTasks, pendingQuotesCount, nextDeadline]);
+  }, [currentProject, budget, expenses, todayTasks, pendingQuotesCount, nextDeadline]);
 
   // Load AI tip on mount
   useEffect(() => { fetchAiTip(); }, [fetchAiTip]);
@@ -489,51 +528,51 @@ export default function DashboardClient({
   }, []);
 
   const refreshTasks = useCallback(async (supabase: ReturnType<typeof createClient>) => {
-    if (!activeProject) return;
+    if (!currentProject) return;
     const today = localDateStr();
     const [todayRes, allRes] = await Promise.all([
-      supabase.from('tasks').select('*').eq('project_id', activeProject.id).eq('due_date', today),
-      supabase.from('tasks').select('*').eq('project_id', activeProject.id).order('created_at', { ascending: false }),
+      supabase.from('tasks').select('*').eq('project_id', currentProject.id).eq('due_date', today),
+      supabase.from('tasks').select('*').eq('project_id', currentProject.id).order('created_at', { ascending: false }),
     ]);
     if (todayRes.data) setTodayTasks(todayRes.data);
     if (allRes.data) setAllTasks(allRes.data);
-  }, [activeProject]);
+  }, [currentProject]);
 
   const refreshExpenses = useCallback(async (supabase: ReturnType<typeof createClient>) => {
-    if (!activeProject) return;
-    const { data } = await supabase.from('expenses').select('*').eq('project_id', activeProject.id).order('created_at', { ascending: false });
+    if (!currentProject) return;
+    const { data } = await supabase.from('expenses').select('*').eq('project_id', currentProject.id).order('created_at', { ascending: false });
     if (data) setExpenses(data);
-  }, [activeProject]);
+  }, [currentProject]);
 
   const refreshQuotes = useCallback(async (supabase: ReturnType<typeof createClient>) => {
-    if (!activeProject) return;
-    const { count } = await supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('project_id', activeProject.id).in('status', ['in_behandeling', 'pending']);
+    if (!currentProject) return;
+    const { count } = await supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('project_id', currentProject.id).in('status', ['in_behandeling', 'pending']);
     setPendingQuotesCount(count ?? 0);
-  }, [activeProject]);
+  }, [currentProject]);
 
   useEffect(() => {
-    if (!activeProject) return;
+    if (!currentProject) return;
     const supabase = createClient();
     const channel = supabase
-      .channel(`dashboard-${activeProject.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `project_id=eq.${activeProject.id}` }, () => refreshTasks(supabase))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses', filter: `project_id=eq.${activeProject.id}` }, () => refreshExpenses(supabase))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'quotes', filter: `project_id=eq.${activeProject.id}` }, () => refreshQuotes(supabase))
+      .channel(`dashboard-${currentProject.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `project_id=eq.${currentProject.id}` }, () => refreshTasks(supabase))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses', filter: `project_id=eq.${currentProject.id}` }, () => refreshExpenses(supabase))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'quotes', filter: `project_id=eq.${currentProject.id}` }, () => refreshQuotes(supabase))
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [activeProject, refreshTasks, refreshExpenses, refreshQuotes]);
+  }, [currentProject, refreshTasks, refreshExpenses, refreshQuotes]);
 
   // Refresh tasks when user returns to this tab (e.g. added a task in the project view)
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && activeProject) {
+      if (document.visibilityState === 'visible' && currentProject) {
         const supabase = createClient();
         refreshTasks(supabase);
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [activeProject, refreshTasks]);
+  }, [currentProject, refreshTasks]);
 
   const toggleTask = async (task: Task) => {
     const supabase = createClient();
@@ -624,7 +663,7 @@ export default function DashboardClient({
         <p className="text-xs flex-1" style={{ color: '#9CA3AF' }}>
           {pendingQuotesCount === 0 ? 'Geen open offertes' : `open offerte${pendingQuotesCount === 1 ? '' : 's'}`}
         </p>
-        <Link href={activeProject ? `/projects/${activeProject.id}?tab=offertes` : '/projects'} className="text-[11px] font-semibold mt-auto" style={{ color: '#288760' }}>
+        <Link href={currentProject ? `/projects/${currentProject.id}?tab=offertes` : '/projects'} className="text-[11px] font-semibold mt-auto" style={{ color: '#288760' }}>
           Bekijk →
         </Link>
       </div>
@@ -738,18 +777,34 @@ export default function DashboardClient({
 
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             {/* Left: greeting */}
-            <div>
-              {activeProject && (
+            <div className="flex-1 min-w-0">
+              {/* Project switcher — shown only when there are multiple projects */}
+              {allProjects.length > 1 && (
+                <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3" style={{ scrollbarWidth: 'none' }}>
+                  {allProjects.map(p => (
+                    <button key={p.id} onClick={() => switchProject(p)} disabled={switching}
+                      className="shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-all"
+                      style={{
+                        backgroundColor: currentProject?.id === p.id ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)',
+                        color: currentProject?.id === p.id ? '#FFFFFF' : 'rgba(255,255,255,0.5)',
+                        border: currentProject?.id === p.id ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.1)',
+                      }}>
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {currentProject && (
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ boxShadow: '0 0 6px rgba(52,211,153,0.8)', animation: 'pulse 2s infinite' }} />
                   <span className="text-xs font-semibold" style={{ color: '#6EE7B7' }}>
-                    {activeProject.name}
+                    {currentProject.name}
                   </span>
                   <span
                     className="px-2 py-0.5 rounded-full text-xs font-medium"
                     style={{ backgroundColor: 'rgba(40,135,96,0.25)', color: '#86EFAC' }}
                   >
-                    {activeProject.status}
+                    {currentProject.status}
                   </span>
                 </div>
               )}
@@ -757,14 +812,14 @@ export default function DashboardClient({
                 {greeting}, {profile?.name?.split(' ')[0] || 'daar'}! 👋
               </h1>
               <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                {activeProject
-                  ? `${activeProject.type.charAt(0).toUpperCase() + activeProject.type.slice(1).replace('_', ' ')} · Gestart ${activeProject.start_date ? new Date(activeProject.start_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' }) : 'onbekend'}`
+                {currentProject
+                  ? `${currentProject.type.charAt(0).toUpperCase() + currentProject.type.slice(1).replace('_', ' ')} · Gestart ${currentProject.start_date ? new Date(currentProject.start_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' }) : 'onbekend'}`
                   : 'Start je eerste verbouwingsproject om te beginnen.'}
               </p>
             </div>
 
             {/* Right: key stats */}
-            {activeProject && budget > 0 && (
+            {currentProject && budget > 0 && (
               <div className="hidden sm:flex items-center gap-5 sm:gap-7">
                 <div className="text-center">
                   <p className="text-2xl sm:text-3xl font-black text-white">{budgetPercentage}%</p>
@@ -782,7 +837,7 @@ export default function DashboardClient({
                 </div>
               </div>
             )}
-            {!activeProject && (
+            {!currentProject && (
               <Link
                 href="/projects"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold"
@@ -909,7 +964,7 @@ export default function DashboardClient({
           {/* Woningwaarde card — right column */}
           <WoningwaardeCard house={house} data={woningData} loading={woningLoading} />
 
-          {!activeProject && (
+          {!currentProject && (
             <div className="rounded-2xl p-5 sm:p-6 bg-white border text-center lg:col-span-2" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
               <div className="text-4xl mb-3">🏗️</div>
               <h3 className="text-base font-semibold mb-2" style={{ color: '#1A1A1A' }}>Geen actief project</h3>
@@ -920,28 +975,28 @@ export default function DashboardClient({
 
 
           {/* Planning (Gantt compact) */}
-          {activeProject && rooms.length > 0 && (
+          {currentProject && currentRooms.length > 0 && (
             <div
               className="rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
               style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
             >
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Planning</h2>
-                <Link href={`/projects/${activeProject.id}?tab=overzicht#planning`} className="text-xs font-semibold" style={{ color: '#288760' }}>
+                <Link href={`/projects/${currentProject.id}?tab=overzicht#planning`} className="text-xs font-semibold" style={{ color: '#288760' }}>
                   Bewerk planning →
                 </Link>
               </div>
               <GanttChart
-                rooms={rooms}
-                projectStart={activeProject.start_date}
-                projectEnd={activeProject.end_date}
+                rooms={currentRooms}
+                projectStart={currentProject.start_date}
+                projectEnd={currentProject.end_date}
                 compact
               />
             </div>
           )}
 
           {/* Compact streak banner */}
-          {activeProject && (
+          {currentProject && (
             <div
               className="rounded-2xl px-5 py-3.5 bg-white border lg:col-span-2 flex items-center gap-4 overflow-hidden"
               style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
@@ -993,7 +1048,7 @@ export default function DashboardClient({
 
           {/* Recente activiteit */}
           <div
-            className={`rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden ${(!activeProject || rooms.length === 0) ? 'lg:col-span-2' : 'lg:col-span-2'}`}
+            className={`rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden ${(!currentProject || currentRooms.length === 0) ? 'lg:col-span-2' : 'lg:col-span-2'}`}
             style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
           >
             <h2 className="text-sm font-bold uppercase tracking-wide mb-5" style={{ color: '#9CA3AF' }}>Recente activiteit</h2>

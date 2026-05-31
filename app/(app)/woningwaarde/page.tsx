@@ -19,12 +19,13 @@ export default async function WoningwaardePage() {
   const trialExpired = !!(profile?.trial_ends_at && new Date(profile.trial_ends_at) <= new Date());
   const isPro = !!(profile?.is_pro || profile?.plan === 'pro' || !trialExpired);
 
-  // Fetch house
-  const { data: house } = await supabase
+  // Fetch all houses
+  const { data: houses } = await supabase
     .from('houses')
     .select('*')
     .eq('user_id', user.id)
-    .single();
+    .order('created_at', { ascending: false });
+  const houseList = houses || [];
 
   // Fetch total invested (project expenses + onderhoud_kosten)
   let totalInvested = 0;
@@ -51,17 +52,18 @@ export default async function WoningwaardePage() {
     totalInvested += (expenses || []).reduce((s: number, e: { amount: number }) => s + Number(e.amount), 0);
   }
 
-  if (house) {
+  if (houseList.length > 0) {
+    const houseIds = houseList.map((h: { id: string }) => h.id);
     const { data: onderhoud } = await supabase
       .from('onderhoud_kosten')
       .select('amount')
-      .eq('house_id', house.id);
+      .in('house_id', houseIds);
     totalInvested += (onderhoud || []).reduce((s: number, k: { amount: number }) => s + Number(k.amount), 0);
   }
 
   return (
     <WoningwaardeClient
-      house={house || null}
+      houses={houseList}
       totalInvested={totalInvested}
       isPro={isPro}
       projectStartDate={projectStartDate}

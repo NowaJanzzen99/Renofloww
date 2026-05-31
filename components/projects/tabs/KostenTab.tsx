@@ -291,8 +291,8 @@ export default function KostenTab({ project, initialExpenses }: Props) {
       {/* Add / Edit modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[88dvh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: '#E5E7EB' }}>
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[88dvh] flex flex-col overflow-hidden">
+            <div className="shrink-0 flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: '#E5E7EB' }}>
               <h2 className="text-base font-semibold" style={{ color: '#1A1A1A' }}>
                 {modalMode === 'edit' ? 'Kosten bewerken' : 'Kosten toevoegen'}
               </h2>
@@ -306,7 +306,7 @@ export default function KostenTab({ project, initialExpenses }: Props) {
                 </svg>
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Omschrijving *</label>
                 <input

@@ -62,14 +62,14 @@ function QuoteForm({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[88dvh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: '#E5E7EB' }}>
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[88dvh] flex flex-col overflow-hidden">
+        <div className="shrink-0 flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: '#E5E7EB' }}>
           <h2 className="text-base font-semibold" style={{ color: '#1A1A1A' }}>{isEdit ? 'Offerte bewerken' : 'Offerte toevoegen'}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center" style={{ color: '#6B7280' }}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Aannemer</label>
             <select value={contractorId} onChange={(e) => setContractorId(e.target.value)} className={inp} style={inpStyle} onFocus={focus} onBlur={blur}>

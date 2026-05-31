@@ -24,24 +24,29 @@ const woningTypes: { type: WoningType; label: string; emoji: string }[] = [
 
 const tourSlides = [
   {
+    icon: '📊',
+    title: 'Dashboard overzicht',
+    description: 'Jouw persoonlijk dashboard toont budget, taken voor vandaag, aankomende deadlines en een AI-tip. Heb je meerdere projecten? Wissel eenvoudig via de project-knoppen bovenaan.',
+  },
+  {
     icon: '🏠',
     title: 'Woningkosten bijhouden',
-    description: 'Houd al je kosten bij: verbouwingen, onderhoud, verzekeringen, belastingen. Zie je totale investering in één overzicht.',
+    description: 'Houd al je kosten bij: verbouwingen, onderhoud, verzekeringen en belastingen. Zie je totale investering per categorie in één helder overzicht.',
   },
   {
     icon: '📈',
     title: 'Woningwaarde berekenen',
-    description: 'Bereken je geschatte marktwaarde via CBS-data en zie je werkelijke overwaarde na alle verbouwingen en onderhoudskosten.',
+    description: 'Bereken je geschatte marktwaarde via Eurostat-data en zie je werkelijke overwaarde. Heb je meerdere woningen? Voeg ze toe en bekijk alle waarden.',
   },
   {
     icon: '💰',
-    title: 'Budget beheren',
-    description: 'Voeg kosten toe per categorie en zie altijd hoeveel budget je nog over hebt per verbouwingsproject.',
+    title: 'Budget & kosten beheren',
+    description: 'Voeg kosten, offertes en aannemers toe per verbouwingsproject. Zie realtime hoeveel budget je nog over hebt en ontvang waarschuwingen op tijd.',
   },
   {
     icon: '🤖',
     title: 'AI assistent',
-    description: 'Stel vragen, maak taken aan en registreer kosten via onze AI. Van vergunningen tot kostenramingen — altijd klaar.',
+    description: 'Stel vragen, maak taken aan en registreer kosten via de AI-chat. Van vergunningsvragen tot kostenramingen — altijd direct beschikbaar.',
   },
 ];
 

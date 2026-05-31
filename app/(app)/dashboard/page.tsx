@@ -76,13 +76,13 @@ export default async function DashboardPage() {
       greeting={greeting}
       profile={profile}
       activeProject={activeProject || null}
+      allProjects={projects}
       todayTasks={todayTasks}
       allTasks={tasks}
       expenses={expenses}
       rooms={rooms}
       pendingQuotesCount={pendingQuotes.length}
       totalExpenses={totalExpenses}
-      budget={budget}
       budgetPercentage={budgetPercentage}
       activeDays={activeDays}
       house={house}
