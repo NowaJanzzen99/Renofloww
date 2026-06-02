@@ -546,23 +546,55 @@ export default function DashboardClient({
     }
     setAiTipLoading(true);
     try {
-      const nextDeadlineStr = nextDeadline?.end_date
-        ? new Date(nextDeadline.end_date + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })
+      const today = localDateStr();
+      const totalSpent = expenses.reduce((s, e) => s + Number(e.amount), 0);
+      const budgetPct = budget > 0 ? Math.round((totalSpent / budget) * 100) : null;
+      const budgetLeft = budget > 0 ? Math.round(budget - totalSpent) : null;
+
+      // Overdue taken (due_date in het verleden, niet voltooid)
+      const overdueTasks = allTasks.filter(t =>
+        t.due_date && t.due_date < today && t.status !== 'voltooid' && t.status !== 'done'
+      );
+      // Open taken (niet voltooid)
+      const openTasks = allTasks.filter(t => t.status !== 'voltooid' && t.status !== 'done');
+
+      // Grootste uitgavecategorie
+      const catMap: Record<string, number> = {};
+      expenses.forEach(e => { const k = e.category || 'overig'; catMap[k] = (catMap[k] || 0) + Number(e.amount); });
+      const topCat = Object.entries(catMap).sort((a, b) => b[1] - a[1])[0];
+
+      // Dagen tot deadline
+      const daysUntilEnd = currentProject?.end_date
+        ? Math.ceil((new Date(currentProject.end_date + 'T12:00:00').getTime() - Date.now()) / 86400000)
         : null;
-      const endDateStr = currentProject?.end_date
-        ? new Date(currentProject.end_date + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })
+      const daysUntilNextDeadline = nextDeadline?.end_date
+        ? Math.ceil((new Date(nextDeadline.end_date + 'T12:00:00').getTime() - Date.now()) / 86400000)
         : null;
+
       const res = await fetch('/api/ai-tip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          budgetPct:      budget > 0 ? Math.round((expenses.reduce((s, e) => s + Number(e.amount), 0) / budget) * 100) : null,
-          todayTaskCount: todayTasks.length,
-          openQuotes:     pendingQuotesCount,
-          nextDeadline:   nextDeadlineStr,
-          endDate:        endDateStr,
-          projectType:    currentProject?.type ?? null,
-          projectId:      currentProject?.id ?? null,
+          projectId:            currentProject?.id ?? null,
+          projectName:          currentProject?.name ?? null,
+          projectType:          currentProject?.type ?? null,
+          budgetPct,
+          budgetLeft,
+          totalSpent:           Math.round(totalSpent),
+          totalBudget:          budget > 0 ? budget : null,
+          todayTaskCount:       todayTasks.length,
+          todayTaskNames:       todayTasks.slice(0, 3).map(t => t.title),
+          todayCompletedCount:  todayTasks.filter(t => isTaskCompleted(t)).length,
+          overdueTaskCount:     overdueTasks.length,
+          overdueTaskNames:     overdueTasks.slice(0, 2).map(t => t.title),
+          openTaskCount:        openTasks.length,
+          openQuotes:           pendingQuotesCount,
+          nextDeadlineName:     nextDeadline?.name ?? null,
+          nextDeadlineDays:     daysUntilNextDeadline,
+          projectEndDays:       daysUntilEnd,
+          topExpenseCategory:   topCat ? `${topCat[0]} (€${Math.round(topCat[1]).toLocaleString('nl-NL')})` : null,
+          currentStreak,
+          roomCount:            currentRooms.length,
         }),
       });
       const json = await res.json();

@@ -6,30 +6,77 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { budgetPct, todayTaskCount, nextDeadline, openQuotes, endDate, projectType, projectId } = body;
+    const {
+      projectId, projectName, projectType,
+      budgetPct, budgetLeft, totalSpent, totalBudget,
+      todayTaskCount, todayTaskNames, todayCompletedCount,
+      overdueTaskCount, overdueTaskNames,
+      openTaskCount, openQuotes,
+      nextDeadlineName, nextDeadlineDays,
+      projectEndDays,
+      topExpenseCategory,
+      currentStreak, roomCount,
+    } = body;
 
-    const contextParts: string[] = [];
-    if (budgetPct != null)     contextParts.push(`Budget: ${budgetPct}% gebruikt`);
-    if (todayTaskCount != null) contextParts.push(`${todayTaskCount} taken gepland vandaag`);
-    if (openQuotes != null && openQuotes > 0) contextParts.push(`${openQuotes} open offerte${openQuotes > 1 ? 's' : ''}`);
-    if (nextDeadline)          contextParts.push(`Volgende deadline: ${nextDeadline}`);
-    if (endDate)               contextParts.push(`Einddatum project: ${endDate}`);
-    if (projectType)           contextParts.push(`Type project: ${projectType}`);
+    // Bouw een gestructureerde context op met alle beschikbare data
+    const lines: string[] = [];
 
-    const userMessage = contextParts.length > 0
-      ? contextParts.join(', ') + '.'
-      : 'Geen specifieke projectdata beschikbaar.';
+    if (projectName) lines.push(`Project: "${projectName}" (${projectType ?? 'verbouwing'})`);
+
+    if (budgetPct != null && totalBudget != null)
+      lines.push(`Budget: ${budgetPct}% gebruikt — €${Math.round(totalSpent ?? 0).toLocaleString('nl-NL')} van €${Math.round(totalBudget).toLocaleString('nl-NL')} — €${Math.round(budgetLeft ?? 0).toLocaleString('nl-NL')} over`);
+
+    if (todayTaskCount != null) {
+      const names = todayTaskNames?.length ? ` (${todayTaskNames.join(', ')})` : '';
+      lines.push(`Vandaag: ${todayCompletedCount ?? 0}/${todayTaskCount} taken gedaan${names}`);
+    }
+
+    if (overdueTaskCount > 0) {
+      const names = overdueTaskNames?.length ? `: ${overdueTaskNames.join(', ')}` : '';
+      lines.push(`Achterstallig: ${overdueTaskCount} taken te laat${names}`);
+    }
+
+    if (openTaskCount != null) lines.push(`Totaal openstaand: ${openTaskCount} taken`);
+    if (openQuotes > 0)        lines.push(`${openQuotes} offerte${openQuotes > 1 ? 's' : ''} wacht op reactie`);
+
+    if (nextDeadlineName && nextDeadlineDays != null)
+      lines.push(`Volgende deadline: "${nextDeadlineName}" over ${nextDeadlineDays} dag${nextDeadlineDays === 1 ? '' : 'en'}`);
+
+    if (projectEndDays != null)
+      lines.push(`Project eindigt over ${projectEndDays} dag${projectEndDays === 1 ? '' : 'en'}`);
+
+    if (topExpenseCategory) lines.push(`Grootste uitgavepost: ${topExpenseCategory}`);
+    if (roomCount > 0)      lines.push(`${roomCount} ruimte${roomCount === 1 ? '' : 'n'} in planning`);
+    if (currentStreak > 0)  lines.push(`Huidige streak: ${currentStreak} dag${currentStreak === 1 ? '' : 'en'}`);
+
+    const context = lines.length > 0 ? lines.join('\n') : 'Geen projectdata beschikbaar.';
 
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 120,
-      system: `Je bent een renovatieassistent voor Renofloww. Geef een JSON object terug (geen andere tekst) met twee velden:
-- "tip": precies 1 korte Nederlandse zin (max 15 woorden) als praktische tip
-- "action": één van deze strings op basis van het onderwerp van de tip: "taken", "budget", "planning", "offertes", "kosten", of null als niet van toepassing
+      max_tokens: 150,
+      system: `Je bent een slimme renovatieassistent voor Renofloww. Je geeft SPECIFIEKE, ACTIEGERICHTE tips op basis van de ECHTE data van de gebruiker.
 
-Voorbeeld: {"tip":"Plan je schilder vroeg in om vertragingen te voorkomen.","action":"planning"}
-Alleen geldig JSON, geen markdown.`,
-      messages: [{ role: 'user', content: userMessage }],
+REGELS:
+- Gebruik altijd de specifieke getallen, namen of datums uit de context
+- Geen algemene adviezen zoals "plan vroeg" of "houd budget bij" — die zijn nutteloos
+- De tip moet kloppen met de situatie: als het budget bijna op is, zeg dat; als er achterstallige taken zijn, noem ze bij naam; als een deadline nadert, noem het exacte aantal dagen
+- Max 18 woorden voor de tip
+- Schrijf in het Nederlands, directe toon
+
+Geef een JSON object terug (geen andere tekst):
+{"tip": "<specifieke tip op basis van de data>", "action": "<taken|budget|planning|offertes|kosten|null>"}
+
+Voorbeelden van GOEDE tips:
+- "Je hebt nog €3.200 budget over — gebruik dit voor de afwerking."
+- "Schilderwerk staat al 4 dagen open — plan dit vandaag in."
+- "Deadline badkamer is over 8 dagen, maar nog 3 taken open."
+- "85% van je budget is al op — rem op materiaalkosten."
+
+Voorbeelden van SLECHTE tips (niet doen):
+- "Plan je schilder vroeg in om vertragingen te voorkomen."
+- "Houd je budget goed bij."
+- "Zorg dat je deadlines haalt."`,
+      messages: [{ role: 'user', content: context }],
     });
 
     const rawText = message.content[0].type === 'text' ? message.content[0].text.trim() : '{}';
@@ -41,17 +88,15 @@ Alleen geldig JSON, geen markdown.`,
       tip = parsed.tip ?? '';
       action = parsed.action ?? null;
     } catch {
-      // Fallback: treat full response as plain tip
       tip = raw.replace(/^\{.*"tip"\s*:\s*"/, '').replace(/".*\}$/, '').trim();
     }
 
-    // Map action keyword to href
     const actionMap: Record<string, { label: string; href: string }> = {
-      taken:     { label: 'Bekijk taken →',     href: projectId ? `/projects/${projectId}?tab=taken`     : '/projects' },
-      budget:    { label: 'Bekijk budget →',    href: projectId ? `/projects/${projectId}?tab=kosten`    : '/projects' },
-      planning:  { label: 'Bekijk planning →',  href: projectId ? `/projects/${projectId}?tab=overzicht` : '/projects' },
-      offertes:  { label: 'Bekijk offertes →',  href: projectId ? `/projects/${projectId}?tab=offertes`  : '/projects' },
-      kosten:    { label: 'Bekijk kosten →',    href: '/woningkosten' },
+      taken:    { label: 'Bekijk taken →',    href: projectId ? `/projects/${projectId}?tab=taken`     : '/projects' },
+      budget:   { label: 'Bekijk budget →',   href: projectId ? `/projects/${projectId}?tab=kosten`    : '/projects' },
+      planning: { label: 'Bekijk planning →', href: projectId ? `/projects/${projectId}?tab=overzicht` : '/projects' },
+      offertes: { label: 'Bekijk offertes →', href: projectId ? `/projects/${projectId}?tab=offertes`  : '/projects' },
+      kosten:   { label: 'Bekijk kosten →',   href: '/woningkosten' },
     };
 
     return NextResponse.json({
