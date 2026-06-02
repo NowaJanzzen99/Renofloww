@@ -313,16 +313,20 @@ export function CategoryDonut({ cats, total, size = 120 }: { cats: [string, numb
       {segments.map(({ cat, start, end }) => (
         <path
           key={cat}
-          d={arcPath(50, 50, 38, start + gap / 2, end - gap / 2)}
+          d={arcPath(50, 50, 36, start + gap / 2, end - gap / 2)}
           fill="none"
           stroke={CAT_COLORS[cat] ?? '#94A3B8'}
-          strokeWidth="18"
+          strokeWidth="16"
           strokeLinecap="round"
         />
       ))}
-      <circle cx="50" cy="50" r="28" fill="white" />
-      <text x="50" y="47" textAnchor="middle" fontSize="9" fontWeight="800" fill="#1A1A1A" fontFamily="inherit">{formatted}</text>
-      <text x="50" y="57" textAnchor="middle" fontSize="7" fill="#9CA3AF" fontFamily="inherit">totaal</text>
+      {/* White center hole */}
+      <circle cx="50" cy="50" r="27" fill="white" />
+      {/* Total label */}
+      <text x="50" y="45" textAnchor="middle" fontSize="6" fill="#9CA3AF" fontFamily="inherit" letterSpacing="0.5">TOTAAL</text>
+      {/* Amount – textLength forces it to always fit inside the circle */}
+      <text x="50" y="57" textAnchor="middle" fontSize="11" fontWeight="800" fill="#1A1A1A" fontFamily="inherit"
+        textLength="46" lengthAdjust="spacingAndGlyphs">{formatted}</text>
     </svg>
   );
 }
