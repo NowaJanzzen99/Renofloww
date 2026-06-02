@@ -3,18 +3,19 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 
-// Green palette — darkest to lightest, matches the brand
+// Palette — brand green als primair, aangevuld met kleuren die al in de app zitten
+// Duidelijk van elkaar te onderscheiden maar samenhangend
 const GREEN_PALETTE = [
-  '#288760',
-  '#1A5140',
-  '#3EAA7A',
-  '#0d5c3a',
-  '#52BB8A',
-  '#6EC99B',
-  '#21694F',
-  '#8DD4AC',
-  '#B7E5BA',
-  '#9CA3AF',
+  '#288760', // brand groen
+  '#3B82F6', // blauw
+  '#F59E0B', // amber
+  '#0D9488', // teal
+  '#8B5CF6', // paars
+  '#F97316', // oranje
+  '#06B6D4', // cyaan
+  '#EC4899', // roze
+  '#6366F1', // indigo
+  '#9CA3AF', // grijs
 ];
 
 export interface KostenItem {
