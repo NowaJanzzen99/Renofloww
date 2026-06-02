@@ -309,25 +309,34 @@ export function CategoryDonut({ cats, total, size = 120 }: { cats: [string, numb
   const gap = 1.5;
   const formatted = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(total);
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size}>
-      {segments.map(({ cat, start, end }) => (
-        <path
-          key={cat}
-          d={arcPath(50, 50, 36, start + gap / 2, end - gap / 2)}
-          fill="none"
-          stroke={CAT_COLORS[cat] ?? '#94A3B8'}
-          strokeWidth="16"
-          strokeLinecap="round"
-        />
-      ))}
-      {/* White center hole */}
-      <circle cx="50" cy="50" r="27" fill="white" />
-      {/* Total label */}
-      <text x="50" y="45" textAnchor="middle" fontSize="6" fill="#9CA3AF" fontFamily="inherit" letterSpacing="0.5">TOTAAL</text>
-      {/* Amount – textLength forces it to always fit inside the circle */}
-      <text x="50" y="57" textAnchor="middle" fontSize="11" fontWeight="800" fill="#1A1A1A" fontFamily="inherit"
-        textLength="46" lengthAdjust="spacingAndGlyphs">{formatted}</text>
-    </svg>
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg viewBox="0 0 100 100" width={size} height={size}>
+        {segments.map(({ cat, start, end }) => (
+          <path
+            key={cat}
+            d={arcPath(50, 50, 36, start + gap / 2, end - gap / 2)}
+            fill="none"
+            stroke={CAT_COLORS[cat] ?? '#94A3B8'}
+            strokeWidth="16"
+            strokeLinecap="round"
+          />
+        ))}
+        <circle cx="50" cy="50" r="27" fill="white" />
+      </svg>
+      {/* HTML overlay — always renders correctly */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        pointerEvents: 'none',
+      }}>
+        <span style={{ fontSize: size * 0.085, fontWeight: 800, color: '#1A1A1A', lineHeight: 1.1, textAlign: 'center' }}>
+          {formatted}
+        </span>
+        <span style={{ fontSize: size * 0.065, color: '#9CA3AF', fontWeight: 500, marginTop: 1 }}>
+          totaal
+        </span>
+      </div>
+    </div>
   );
 }
 
