@@ -3,6 +3,12 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 
+function compactEur(n: number): string {
+  if (n >= 100000) return `€ ${Math.round(n / 1000)}K`;
+  if (n >= 10000)  return `€ ${(n / 1000).toFixed(1)}K`;
+  return formatCurrency(n);
+}
+
 // Green palette — darkest to lightest, matches the brand
 const GREEN_PALETTE = [
   '#288760',
@@ -47,8 +53,8 @@ export function KostenVerdelingDonut({ items, total, size = 140 }: Props) {
     color: GREEN_PALETTE[i % GREEN_PALETTE.length],
   }));
 
-  const innerR = Math.round(size * 0.30);
-  const outerR = Math.round(size * 0.46);
+  const innerR = Math.round(size * 0.38);
+  const outerR = Math.round(size * 0.50);
 
   return (
     <div className="flex items-center gap-5">
@@ -83,23 +89,25 @@ export function KostenVerdelingDonut({ items, total, size = 140 }: Props) {
           pointerEvents: 'none',
         }}>
           <span style={{
-            fontSize: Math.round(size * 0.072),
+            fontSize: Math.round(size * 0.068),
             color: '#9CA3AF',
             fontWeight: 600,
-            letterSpacing: '0.04em',
+            letterSpacing: '0.06em',
             lineHeight: 1,
           }}>
             TOTAAL
           </span>
           <span style={{
-            fontSize: Math.round(size * 0.115),
+            fontSize: Math.round(size * 0.10),
             color: '#1A1A1A',
             fontWeight: 800,
-            lineHeight: 1.2,
+            lineHeight: 1.25,
             textAlign: 'center',
             marginTop: 2,
+            maxWidth: innerR * 1.8,
+            wordBreak: 'break-all',
           }}>
-            {formatCurrency(total)}
+            {compactEur(total)}
           </span>
         </div>
       </div>

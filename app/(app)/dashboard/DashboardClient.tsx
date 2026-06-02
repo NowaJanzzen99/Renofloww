@@ -316,7 +316,7 @@ function WoningkostenCard({ data }: { data: { total: number; categories: Record<
   const total = data?.total ?? 0;
 
   return (
-    <div className="rounded-2xl bg-white border overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
+    <div className="rounded-2xl bg-white border overflow-hidden transition-all duration-200 hover:-translate-y-0.5 h-full"
       style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
       <div className="px-5 pt-5 pb-1 flex items-center justify-between">
         <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Kostenverdeling</p>
@@ -595,14 +595,15 @@ export default function DashboardClient({
         // Get all house IDs for the user
         const { data: houses } = await supabase.from('houses').select('id').eq('user_id', user.id);
         const houseIds = (houses || []).map((h: { id: string }) => h.id);
-        // All project expenses (verbouwing)
         const projectIds = allProjects.map(p => p.id);
         const [onderhoudRes, expRes] = await Promise.all([
           houseIds.length > 0 ? supabase.from('onderhoud_kosten').select('amount, category').in('house_id', houseIds) : Promise.resolve({ data: [] }),
-          projectIds.length > 0 ? supabase.from('expenses').select('amount').in('project_id', projectIds) : Promise.resolve({ data: [] }),
+          projectIds.length > 0 ? supabase.from('expenses').select('amount, category').in('project_id', projectIds) : Promise.resolve({ data: [] }),
         ]);
-        const cats: Record<string, number> = { verbouwing: 0 };
-        (expRes.data || []).forEach((e: { amount: number }) => { cats.verbouwing = (cats.verbouwing || 0) + Number(e.amount); });
+        const cats: Record<string, number> = {};
+        (expRes.data || []).forEach((e: { amount: number; category: string }) => {
+          cats[e.category] = (cats[e.category] || 0) + Number(e.amount);
+        });
         (onderhoudRes.data || []).forEach((k: { amount: number; category: string }) => {
           cats[k.category] = (cats[k.category] || 0) + Number(k.amount);
         });
@@ -1113,11 +1114,11 @@ export default function DashboardClient({
         <div className="space-y-4">
 
         {/* Row 1: Taken + Kostenverdeling */}
-        <div className="grid lg:grid-cols-2 gap-4 items-start">
+        <div className="grid lg:grid-cols-2 gap-4 items-stretch">
 
           {/* ── Taken vandaag + Binnenkort ── */}
           <div
-            className="rounded-2xl bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+            className="rounded-2xl bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden flex flex-col"
             style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
           >
             {/* Header */}
@@ -1164,7 +1165,7 @@ export default function DashboardClient({
             </div>
 
             {/* Binnenkort sectie */}
-            <div style={{ backgroundColor: '#F4F7F5', borderTop: '1.5px solid #E5E7EB' }}>
+            <div className="flex-1" style={{ backgroundColor: '#F4F7F5', borderTop: '1.5px solid #E5E7EB' }}>
               <div className="flex items-center gap-1.5 px-5 pt-3 pb-2">
                 <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#6B7280' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
