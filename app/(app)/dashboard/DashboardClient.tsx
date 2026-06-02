@@ -1115,10 +1115,13 @@ export default function DashboardClient({
           ))}
         </div>
 
-        {/* ── Bottom grid ── */}
-        <div className="grid lg:grid-cols-2 gap-4">
+        {/* ── Bottom section ── */}
+        <div className="space-y-4">
 
-          {/* ── Taken vandaag + Binnenkort — first ── */}
+        {/* Row 1: Taken + Kostenverdeling */}
+        <div className="grid lg:grid-cols-2 gap-4 items-start">
+
+          {/* ── Taken vandaag + Binnenkort ── */}
           <div
             className="rounded-2xl bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
             style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
@@ -1200,72 +1203,73 @@ export default function DashboardClient({
             </div>
           </div>
 
-          {/* Right column: woonkosten + woningwaarde stacked */}
-          <div className="flex flex-col gap-4">
-            <WoningkostenCard data={woonkosten} />
-            <WoningwaardeCard house={house} data={woningData} loading={woningLoading} />
+          {/* Kostenverdeling */}
+          <WoningkostenCard data={woonkosten} />
+
+        </div>{/* end row 1 */}
+
+        {/* Row 2: Woningwaarde – full width */}
+        <WoningwaardeCard house={house} data={woningData} loading={woningLoading} />
+
+        {/* Empty project state */}
+        {!currentProject && !allProjectsMode && allProjects.length === 0 && (
+          <div className="rounded-2xl p-5 sm:p-6 bg-white border text-center" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+            <div className="text-4xl mb-3">🏗️</div>
+            <h3 className="text-base font-semibold mb-2" style={{ color: '#1A1A1A' }}>Geen actief project</h3>
+            <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Maak je eerste verbouwingsproject aan om te beginnen.</p>
+            <Link href="/projects" className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#288760' }}>Project aanmaken</Link>
           </div>
+        )}
 
-          {!currentProject && !allProjectsMode && allProjects.length === 0 && (
-            <div className="rounded-2xl p-5 sm:p-6 bg-white border text-center lg:col-span-2" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
-              <div className="text-4xl mb-3">🏗️</div>
-              <h3 className="text-base font-semibold mb-2" style={{ color: '#1A1A1A' }}>Geen actief project</h3>
-              <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Maak je eerste verbouwingsproject aan om te beginnen.</p>
-              <Link href="/projects" className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#288760' }}>Project aanmaken</Link>
-            </div>
-          )}
-
-
-          {/* Planning (Gantt compact) */}
-          {allProjectsMode ? (
-            // All-projects mode: one Gantt per project that has rooms
-            allProjects.filter(p => currentRooms.some(r => r.project_id === p.id)).length > 0 && (
-              <div className="rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 overflow-hidden" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
-                <h2 className="text-sm font-bold uppercase tracking-wide mb-5" style={{ color: '#9CA3AF' }}>Planning — alle projecten</h2>
-                <div className="space-y-6">
-                  {allProjects.filter(p => currentRooms.some(r => r.project_id === p.id)).map(p => {
-                    const pRooms = currentRooms.filter(r => r.project_id === p.id);
-                    return (
-                      <div key={p.id}>
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-semibold" style={{ color: '#374151' }}>{p.name}</p>
-                          <Link href={`/projects/${p.id}?tab=overzicht`} className="text-xs font-semibold" style={{ color: '#288760' }}>Bekijk →</Link>
-                        </div>
-                        <GanttChart rooms={pRooms} projectStart={p.start_date} projectEnd={p.end_date} compact />
+        {/* Row 3: Gantt – full width */}
+        {allProjectsMode ? (
+          allProjects.filter(p => currentRooms.some(r => r.project_id === p.id)).length > 0 && (
+            <div className="rounded-2xl p-5 sm:p-6 bg-white border overflow-hidden" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+              <h2 className="text-sm font-bold uppercase tracking-wide mb-5" style={{ color: '#9CA3AF' }}>Planning — alle projecten</h2>
+              <div className="space-y-6">
+                {allProjects.filter(p => currentRooms.some(r => r.project_id === p.id)).map(p => {
+                  const pRooms = currentRooms.filter(r => r.project_id === p.id);
+                  return (
+                    <div key={p.id}>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold" style={{ color: '#374151' }}>{p.name}</p>
+                        <Link href={`/projects/${p.id}?tab=overzicht`} className="text-xs font-semibold" style={{ color: '#288760' }}>Bekijk →</Link>
                       </div>
-                    );
-                  })}
-                </div>
+                      <GanttChart rooms={pRooms} projectStart={p.start_date} projectEnd={p.end_date} compact />
+                    </div>
+                  );
+                })}
               </div>
-            )
-          ) : (
-            currentProject && currentRooms.length > 0 && (
-              <div
-                className="rounded-2xl p-5 sm:p-6 bg-white border lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-                style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
-              >
-                <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Planning</h2>
-                  <Link href={`/projects/${currentProject.id}?tab=overzicht#planning`} className="text-xs font-semibold" style={{ color: '#288760' }}>
-                    Bewerk planning →
-                  </Link>
-                </div>
-                <GanttChart
-                  rooms={currentRooms}
-                  projectStart={currentProject.start_date}
-                  projectEnd={currentProject.end_date}
-                  compact
-                />
-              </div>
-            )
-          )}
-
-          {/* Compact streak banner */}
-          {currentProject && (
+            </div>
+          )
+        ) : (
+          currentProject && currentRooms.length > 0 && (
             <div
-              className="rounded-2xl px-5 py-3.5 bg-white border lg:col-span-2 flex items-center gap-4 overflow-hidden"
-              style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+              className="rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+              style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
             >
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Planning</h2>
+                <Link href={`/projects/${currentProject.id}?tab=overzicht#planning`} className="text-xs font-semibold" style={{ color: '#288760' }}>
+                  Bewerk planning →
+                </Link>
+              </div>
+              <GanttChart
+                rooms={currentRooms}
+                projectStart={currentProject.start_date}
+                projectEnd={currentProject.end_date}
+                compact
+              />
+            </div>
+          )
+        )}
+
+        {/* Compact streak banner */}
+        {currentProject && (
+          <div
+            className="rounded-2xl px-5 py-3.5 bg-white border flex items-center gap-4 overflow-hidden"
+            style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+          >
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #3b0764, #4c0d87)', boxShadow: '0 2px 8px rgba(109,40,217,0.2)' }}>
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" style={{ color: '#C4B5FD' }}>
                   <path d="M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 17.03 19.32C18.86 17.66 19.5 15 18.56 12.72L18.43 12.46C18.22 12 17.66 11.2 17.66 11.2Z" />
@@ -1311,11 +1315,11 @@ export default function DashboardClient({
             </div>
           )}
 
-          {/* Recente activiteit */}
-          <div
-            className={`rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden ${(!currentProject || currentRooms.length === 0) ? 'lg:col-span-2' : 'lg:col-span-2'}`}
-            style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
-          >
+        {/* Recente activiteit */}
+        <div
+          className="rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+          style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
+        >
             <h2 className="text-sm font-bold uppercase tracking-wide mb-5" style={{ color: '#9CA3AF' }}>Recente activiteit</h2>
             {recentActivity.length === 0 ? (
               <div className="text-center py-8">
@@ -1386,8 +1390,9 @@ export default function DashboardClient({
                 })}
               </ul>
             )}
-          </div>
         </div>
+
+        </div>{/* end space-y-4 */}
       </div>
 
       </div>{/* end max-w-7xl wrapper */}
