@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, timeAgo } from '@/lib/utils';
 import type { Profile, Project, Task, Expense, Room, House } from '@/types';
 import GanttChart from '@/components/GanttChart';
+import { CAT_COLORS, CategoryDonut } from '@/app/(app)/woningkosten/WoningkostenClient';
 
 interface WoningData {
   estimate: number | null;
@@ -298,6 +299,59 @@ function WoningwaardeCard({ house, data, loading }: { house: House | null; data:
           </svg>
         </Link>
       </div>
+    </div>
+  );
+}
+
+// ─── Woonkosten compact card ──────────────────────────────────────────────────
+function WoningkostenCard({ data }: { data: { total: number; categories: Record<string, number> } | null }) {
+  const cats = Object.entries(data?.categories ?? {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const total = data?.total ?? 0;
+  const CAT_LABELS: Record<string, string> = {
+    verbouwing: 'Verbouwing', onderhoud: 'Onderhoud', reparatie: 'Reparatie',
+    tuin: 'Tuin', verzekering: 'Verzekering', energie: 'Energie',
+    belasting: 'Belasting', materiaal: 'Materiaal', arbeid: 'Arbeid',
+    vergunning: 'Vergunning', transport: 'Transport', overig: 'Overig',
+  };
+  return (
+    <div className="rounded-2xl bg-white border overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5"
+      style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+      <div className="px-4 pt-4 pb-3 flex items-center gap-1.5">
+        <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: '#288760' }}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Woonkosten</span>
+      </div>
+      {total === 0 ? (
+        <div className="px-4 pb-4 flex flex-col gap-1">
+          <p className="text-xl font-black" style={{ color: '#D1D5DB' }}>€ 0</p>
+          <p className="text-xs" style={{ color: '#9CA3AF' }}>Nog geen kosten geregistreerd</p>
+          <Link href="/woningkosten" className="text-xs font-semibold mt-1" style={{ color: '#288760' }}>Kosten toevoegen →</Link>
+        </div>
+      ) : (
+        <div className="px-4 pb-4 flex items-center gap-4">
+          <div className="shrink-0">
+            <CategoryDonut cats={cats} total={total} size={80} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-black leading-tight mb-2" style={{ color: '#1A1A1A' }}>
+              {new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(total)}
+            </p>
+            <div className="space-y-1">
+              {cats.slice(0, 3).map(([cat, val]) => (
+                <div key={cat} className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: CAT_COLORS[cat] ?? '#94A3B8' }} />
+                  <span className="text-[10px] truncate flex-1" style={{ color: '#6B7280' }}>{CAT_LABELS[cat] ?? cat}</span>
+                  <span className="text-[10px] font-semibold shrink-0" style={{ color: '#374151' }}>
+                    {new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Link href="/woningkosten" className="text-[11px] font-semibold mt-2 inline-block" style={{ color: '#288760' }}>Bekijk woonkosten →</Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1151,8 +1205,11 @@ export default function DashboardClient({
             </div>
           </div>
 
-          {/* Woningwaarde card — right column */}
-          <WoningwaardeCard house={house} data={woningData} loading={woningLoading} />
+          {/* Right column: woonkosten + woningwaarde stacked */}
+          <div className="flex flex-col gap-4">
+            <WoningkostenCard data={woonkosten} />
+            <WoningwaardeCard house={house} data={woningData} loading={woningLoading} />
+          </div>
 
           {!currentProject && !allProjectsMode && allProjects.length === 0 && (
             <div className="rounded-2xl p-5 sm:p-6 bg-white border text-center lg:col-span-2" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>

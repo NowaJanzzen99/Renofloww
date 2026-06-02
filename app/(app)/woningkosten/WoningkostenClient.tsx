@@ -274,7 +274,57 @@ function AddKostModal({
   );
 }
 
-// ─── Bar chart helper ─────────────────────────────────────────────────────────
+// ─── Category colors ──────────────────────────────────────────────────────────
+
+export const CAT_COLORS: Record<string, string> = {
+  verbouwing: '#288760', onderhoud: '#3B82F6', reparatie: '#F59E0B',
+  tuin: '#10B981', verzekering: '#8B5CF6', energie: '#EC4899',
+  belasting: '#6B7280', materiaal: '#F97316', arbeid: '#0EA5E9',
+  vergunning: '#6366F1', transport: '#A78BFA', overig: '#94A3B8',
+};
+
+// ─── SVG donut chart ──────────────────────────────────────────────────────────
+
+function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function arcPath(cx: number, cy: number, r: number, start: number, end: number) {
+  if (end - start >= 360) end = start + 359.99;
+  const s = polarToCartesian(cx, cy, r, start);
+  const e = polarToCartesian(cx, cy, r, end);
+  const large = end - start > 180 ? 1 : 0;
+  return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
+}
+
+export function CategoryDonut({ cats, total, size = 120 }: { cats: [string, number][]; total: number; size?: number }) {
+  let angle = 0;
+  const segments = cats.map(([cat, val]) => {
+    const sweep = total > 0 ? (val / total) * 360 : 0;
+    const seg = { cat, start: angle, end: angle + sweep };
+    angle += sweep;
+    return seg;
+  });
+  const gap = 1.5;
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size}>
+      {segments.map(({ cat, start, end }) => (
+        <path
+          key={cat}
+          d={arcPath(50, 50, 38, start + gap / 2, end - gap / 2)}
+          fill="none"
+          stroke={CAT_COLORS[cat] ?? '#94A3B8'}
+          strokeWidth="18"
+          strokeLinecap="round"
+        />
+      ))}
+      <circle cx="50" cy="50" r="28" fill="white" />
+    </svg>
+  );
+}
+
+// ─── Bar chart helper ──────────────────────────────────────────────────────────
 
 function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? Math.max(2, (value / max) * 100) : 0;
@@ -454,10 +504,17 @@ export default function WoningkostenClient({ house: initialHouse, projectExpense
         ))}
         {house?.purchase_price && (
           <div className="col-span-2 sm:col-span-4 rounded-2xl p-4 border" style={{ borderColor: '#B7E5BA', backgroundColor: '#F0FDF4' }}>
-            <p className="text-xs font-medium mb-0.5" style={{ color: '#1a5140' }}>
-              💡 Aankoopprijs {formatCurrency(Number(house.purchase_price))} + {formatCurrency(totalInvested)} geïnvesteerd
-              = werkelijke eigendomskosten <strong>{formatCurrency(realOwnership!)}</strong>
-            </p>
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs font-medium" style={{ color: '#1a5140' }}>
+              <span>💡</span>
+              <span className="font-black">{formatCurrency(Number(house.purchase_price))}</span>
+              <span style={{ color: '#4B7A62' }}>aankoopprijs</span>
+              <span>+</span>
+              <span className="font-black">{formatCurrency(totalInvested)}</span>
+              <span style={{ color: '#4B7A62' }}>geïnvesteerd</span>
+              <span>=</span>
+              <strong>{formatCurrency(realOwnership!)}</strong>
+              <span style={{ color: '#4B7A62' }}>werkelijke eigendomskosten</span>
+            </div>
           </div>
         )}
       </div>
@@ -466,14 +523,22 @@ export default function WoningkostenClient({ house: initialHouse, projectExpense
       {categoryTotals.length > 0 && (
         <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <h2 className="text-base font-semibold mb-4" style={{ color: '#1A1A1A' }}>Per categorie</h2>
-          <div className="space-y-3">
-            {categoryTotals.map(([cat, total]) => (
-              <div key={cat} className="flex items-center gap-3">
-                <p className="text-xs w-32 shrink-0" style={{ color: '#374151' }}>{catLabel(cat)}</p>
-                <MiniBar value={total} max={maxCatAmount} color="#288760" />
-                <p className="text-xs font-semibold shrink-0 text-right w-20" style={{ color: '#1A1A1A' }}>{formatCurrency(total)}</p>
-              </div>
-            ))}
+          <div className="flex items-center gap-6">
+            <div className="shrink-0">
+              <CategoryDonut cats={categoryTotals} total={totalInvested} size={140} />
+            </div>
+            <div className="flex-1 space-y-2 min-w-0">
+              {categoryTotals.map(([cat, val]) => (
+                <div key={cat} className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CAT_COLORS[cat] ?? '#94A3B8' }} />
+                  <span className="text-xs flex-1 truncate" style={{ color: '#374151' }}>{catLabel(cat)}</span>
+                  <span className="text-xs font-semibold shrink-0" style={{ color: '#1A1A1A' }}>{formatCurrency(val)}</span>
+                  <span className="text-xs shrink-0 w-8 text-right" style={{ color: '#9CA3AF' }}>
+                    {totalInvested > 0 ? `${Math.round((val / totalInvested) * 100)}%` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
