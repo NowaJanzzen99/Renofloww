@@ -3,12 +3,6 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 
-function compactEur(n: number): string {
-  if (n >= 100000) return `€ ${Math.round(n / 1000)}K`;
-  if (n >= 10000)  return `€ ${(n / 1000).toFixed(1)}K`;
-  return formatCurrency(n);
-}
-
 // Green palette — darkest to lightest, matches the brand
 const GREEN_PALETTE = [
   '#288760',
@@ -99,16 +93,16 @@ export function KostenVerdelingDonut({ items, size = 140 }: Props) {
             TOTAAL
           </span>
           <span style={{
-            fontSize: Math.round(size * 0.10),
+            fontSize: Math.round(size * 0.088),
             color: '#1A1A1A',
             fontWeight: 800,
             lineHeight: 1.25,
             textAlign: 'center',
             marginTop: 2,
-            maxWidth: innerR * 1.8,
-            wordBreak: 'break-all',
+            maxWidth: innerR * 1.85,
+            overflow: 'hidden',
           }}>
-            {compactEur(total)}
+            {formatCurrency(total)}
           </span>
         </div>
       </div>
