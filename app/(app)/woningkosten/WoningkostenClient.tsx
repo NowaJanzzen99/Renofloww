@@ -479,9 +479,7 @@ export default function WoningkostenClient({ house: initialHouse, projectExpense
               key: cat,
               label: catLabel(cat),
               value: val,
-              pct: totalInvested > 0 ? Math.round((val / totalInvested) * 100) : 0,
             }))}
-            total={totalInvested}
             size={140}
           />
         </div>

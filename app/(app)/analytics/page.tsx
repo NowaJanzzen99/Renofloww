@@ -476,8 +476,7 @@ export default function AnalyticsPage() {
                   </div>
                 ) : (
                   <KostenVerdelingDonut
-                    items={categoryData.map(c => ({ key: c.category, label: `${c.icon} ${c.displayName}`, value: c.value, pct: c.pct }))}
-                    total={totalExpenses}
+                    items={categoryData.map(c => ({ key: c.category, label: `${c.icon} ${c.displayName}`, value: c.value }))}
                     size={140}
                   />
                 )}

@@ -334,9 +334,7 @@ function WoningkostenCard({ data }: { data: { total: number; categories: Record<
               key: cat,
               label: DASH_CAT_LABELS[cat] ?? cat,
               value: val,
-              pct: total > 0 ? Math.round((val / total) * 100) : 0,
             }))}
-            total={total}
             size={130}
           />
         </div>

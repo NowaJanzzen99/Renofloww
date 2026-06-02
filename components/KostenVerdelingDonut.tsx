@@ -27,13 +27,11 @@ export interface KostenItem {
   key: string;
   label: string;
   value: number;
-  pct: number;
 }
 
 interface Props {
   items: KostenItem[];
-  total: number;
-  size?: number; // diameter of the donut in px
+  size?: number;
 }
 
 function DonutTooltip({ active, payload }: { active?: boolean; payload?: { name: string; value: number }[] }) {
@@ -46,7 +44,10 @@ function DonutTooltip({ active, payload }: { active?: boolean; payload?: { name:
   );
 }
 
-export function KostenVerdelingDonut({ items, total, size = 140 }: Props) {
+export function KostenVerdelingDonut({ items, size = 140 }: Props) {
+  // Compute total directly from items — always consistent with what's in the donut
+  const total = items.reduce((s, item) => s + item.value, 0);
+
   const pieData = items.map((item, i) => ({
     name: item.label,
     value: item.value,
@@ -82,7 +83,7 @@ export function KostenVerdelingDonut({ items, total, size = 140 }: Props) {
           </PieChart>
         </ResponsiveContainer>
 
-        {/* Totaal in midden */}
+        {/* Totaal in midden — altijd gelijk aan som van segmenten */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -112,7 +113,7 @@ export function KostenVerdelingDonut({ items, total, size = 140 }: Props) {
         </div>
       </div>
 
-      {/* Legenda */}
+      {/* Legenda — percentages berekend vanuit dezelfde total */}
       <div className="flex-1 min-w-0 space-y-2">
         {items.map((item, i) => (
           <div key={item.key} className="flex items-center gap-2">
@@ -125,7 +126,7 @@ export function KostenVerdelingDonut({ items, total, size = 140 }: Props) {
               {formatCurrency(item.value)}
             </span>
             <span className="text-xs shrink-0 tabular-nums" style={{ color: '#9CA3AF', width: 28, textAlign: 'right' }}>
-              {item.pct}%
+              {total > 0 ? Math.round((item.value / total) * 100) : 0}%
             </span>
           </div>
         ))}
