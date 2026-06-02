@@ -398,7 +398,7 @@ export default function DashboardClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const DEFAULT_ORDER = ['budget', 'aitip', 'offertes'];
+  const DEFAULT_ORDER = ['budget', 'aitip'];
   const [cardOrder, setCardOrder] = useState<string[]>(DEFAULT_ORDER);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -407,7 +407,7 @@ export default function DashboardClient({
     try {
       const saved = localStorage.getItem('rf-card-order');
       if (saved) {
-        const parsed = JSON.parse(saved) as string[];
+        const parsed = (JSON.parse(saved) as string[]).filter(k => DEFAULT_ORDER.includes(k));
         if (DEFAULT_ORDER.every(k => parsed.includes(k))) setCardOrder(parsed);
       }
     } catch {}
@@ -898,10 +898,44 @@ export default function DashboardClient({
                     .proj-pill-all:hover:not(:disabled) { background-color: rgba(110,231,183,0.25) !important; border-color: rgba(110,231,183,0.6) !important; }
                     .proj-pill-all.proj-all-active { background-color: rgba(110,231,183,0.25) !important; color: #6EE7B7 !important; border-color: rgba(110,231,183,0.5) !important; }
                     .proj-pill-all.proj-all-active:hover { background-color: rgba(110,231,183,0.35) !important; }
+                    .proj-select option { background-color: #1a3a2a; color: white; }
                   `}</style>
-                  <div className="flex items-center gap-1.5 mb-3 flex-wrap pb-0.5">
+
+                  {/* Mobile: compact dropdown + alle projecten button */}
+                  <div className="sm:hidden flex items-center gap-2 mb-3">
+                    <div className="relative flex-1">
+                      <select
+                        value={allProjectsMode ? '__all__' : (currentProject?.id ?? '')}
+                        onChange={(e) => {
+                          if (e.target.value === '__all__') switchToAll();
+                          else {
+                            const p = allProjects.find(proj => proj.id === e.target.value);
+                            if (p) switchProject(p);
+                          }
+                        }}
+                        disabled={switching}
+                        className="proj-select w-full text-xs font-semibold pl-3 pr-7 py-1.5 rounded-xl border appearance-none"
+                        style={{
+                          backgroundColor: 'rgba(255,255,255,0.10)',
+                          color: 'white',
+                          borderColor: 'rgba(255,255,255,0.2)',
+                          outline: 'none',
+                        }}
+                      >
+                        {allProjects.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                        <option value="__all__">Alle projecten</option>
+                      </select>
+                      <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Desktop: pill row */}
+                  <div className="hidden sm:flex items-center gap-1.5 mb-3 flex-wrap pb-0.5">
                     <div className="flex gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none', overflow: 'visible' }}>
-                      {/* "Alle projecten" pill */}
                       <button
                         onClick={switchToAll}
                         disabled={switching}
@@ -917,8 +951,6 @@ export default function DashboardClient({
                         </svg>
                         Alle projecten
                       </button>
-
-                      {/* Individual project pills */}
                       {allProjects.map(p => {
                         const isActive = !allProjectsMode && currentProject?.id === p.id;
                         return (
@@ -1018,7 +1050,7 @@ export default function DashboardClient({
       <div className="pt-4 sm:pt-5 pb-4 sm:pb-6">
 
         {/* ── Stat cards ── */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-5">
           {cardOrder.map(id => (
             <DraggableCard
               key={id} id={id}
