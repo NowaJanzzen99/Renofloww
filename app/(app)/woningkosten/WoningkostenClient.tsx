@@ -307,6 +307,7 @@ export function CategoryDonut({ cats, total, size = 120 }: { cats: [string, numb
     return seg;
   });
   const gap = 1.5;
+  const formatted = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(total);
   return (
     <svg viewBox="0 0 100 100" width={size} height={size}>
       {segments.map(({ cat, start, end }) => (
@@ -320,6 +321,8 @@ export function CategoryDonut({ cats, total, size = 120 }: { cats: [string, numb
         />
       ))}
       <circle cx="50" cy="50" r="28" fill="white" />
+      <text x="50" y="47" textAnchor="middle" fontSize="9" fontWeight="800" fill="#1A1A1A" fontFamily="inherit">{formatted}</text>
+      <text x="50" y="57" textAnchor="middle" fontSize="7" fill="#9CA3AF" fontFamily="inherit">totaal</text>
     </svg>
   );
 }

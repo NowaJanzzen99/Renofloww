@@ -303,52 +303,47 @@ function WoningwaardeCard({ house, data, loading }: { house: House | null; data:
   );
 }
 
-// ─── Woonkosten compact card ──────────────────────────────────────────────────
+// ─── Kostenverdeling card (dashboard) ────────────────────────────────────────
+const DASH_CAT_LABELS: Record<string, string> = {
+  verbouwing: 'Verbouwing', onderhoud: 'Onderhoud', reparatie: 'Reparatie',
+  tuin: 'Tuin', verzekering: 'Verzekering', energie: 'Energie',
+  belasting: 'Belasting', materiaal: 'Materiaal', arbeid: 'Arbeid',
+  vergunning: 'Vergunning', transport: 'Transport', overig: 'Overig',
+};
+
 function WoningkostenCard({ data }: { data: { total: number; categories: Record<string, number> } | null }) {
   const cats = Object.entries(data?.categories ?? {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
   const total = data?.total ?? 0;
-  const CAT_LABELS: Record<string, string> = {
-    verbouwing: 'Verbouwing', onderhoud: 'Onderhoud', reparatie: 'Reparatie',
-    tuin: 'Tuin', verzekering: 'Verzekering', energie: 'Energie',
-    belasting: 'Belasting', materiaal: 'Materiaal', arbeid: 'Arbeid',
-    vergunning: 'Vergunning', transport: 'Transport', overig: 'Overig',
-  };
   return (
-    <div className="rounded-2xl bg-white border overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5"
+    <div className="rounded-2xl bg-white border overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
       style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
-      <div className="px-4 pt-4 pb-3 flex items-center gap-1.5">
-        <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: '#288760' }}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-        <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Woonkosten</span>
+      <div className="px-5 pt-5 pb-1 flex items-center justify-between">
+        <h2 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Kostenverdeling</h2>
+        <Link href="/woningkosten" className="text-xs font-semibold" style={{ color: '#288760' }}>Bekijk alles →</Link>
       </div>
-      {total === 0 ? (
-        <div className="px-4 pb-4 flex flex-col gap-1">
-          <p className="text-xl font-black" style={{ color: '#D1D5DB' }}>€ 0</p>
-          <p className="text-xs" style={{ color: '#9CA3AF' }}>Nog geen kosten geregistreerd</p>
-          <Link href="/woningkosten" className="text-xs font-semibold mt-1" style={{ color: '#288760' }}>Kosten toevoegen →</Link>
+      {cats.length === 0 ? (
+        <div className="px-5 pb-5 pt-3">
+          <p className="text-sm" style={{ color: '#9CA3AF' }}>Nog geen kosten geregistreerd.</p>
+          <Link href="/woningkosten" className="text-xs font-semibold mt-1 inline-block" style={{ color: '#288760' }}>Kosten toevoegen →</Link>
         </div>
       ) : (
-        <div className="px-4 pb-4 flex items-center gap-4">
+        <div className="px-5 pb-5 pt-3 flex items-center gap-5">
           <div className="shrink-0">
-            <CategoryDonut cats={cats} total={total} size={80} />
+            <CategoryDonut cats={cats} total={total} size={110} />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-base font-black leading-tight mb-2" style={{ color: '#1A1A1A' }}>
-              {new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(total)}
-            </p>
-            <div className="space-y-1">
-              {cats.slice(0, 3).map(([cat, val]) => (
-                <div key={cat} className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: CAT_COLORS[cat] ?? '#94A3B8' }} />
-                  <span className="text-[10px] truncate flex-1" style={{ color: '#6B7280' }}>{CAT_LABELS[cat] ?? cat}</span>
-                  <span className="text-[10px] font-semibold shrink-0" style={{ color: '#374151' }}>
-                    {new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val)}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <Link href="/woningkosten" className="text-[11px] font-semibold mt-2 inline-block" style={{ color: '#288760' }}>Bekijk woonkosten →</Link>
+          <div className="flex-1 min-w-0 space-y-2">
+            {cats.map(([cat, val]) => (
+              <div key={cat} className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CAT_COLORS[cat] ?? '#94A3B8' }} />
+                <span className="text-xs flex-1 truncate" style={{ color: '#374151' }}>{DASH_CAT_LABELS[cat] ?? cat}</span>
+                <span className="text-xs font-semibold shrink-0" style={{ color: '#1A1A1A' }}>
+                  {new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val)}
+                </span>
+                <span className="text-xs w-7 text-right shrink-0" style={{ color: '#9CA3AF' }}>
+                  {total > 0 ? `${Math.round((val / total) * 100)}%` : ''}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
