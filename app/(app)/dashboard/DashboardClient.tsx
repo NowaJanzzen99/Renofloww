@@ -311,9 +311,7 @@ const DASH_CAT_LABELS: Record<string, string> = {
   vergunning: 'Vergunning', transport: 'Transport', overig: 'Overig',
 };
 
-function WoningkostenCard({ data }: { data: { total: number; categories: Record<string, number> } | null }) {
-  const cats = Object.entries(data?.categories ?? {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
-  const total = data?.total ?? 0;
+function WoningkostenCard({ cats }: { cats: [string, number][] }) {
 
   return (
     <div className="rounded-2xl bg-white border overflow-hidden transition-all duration-200 hover:-translate-y-0.5 h-full"
@@ -324,8 +322,8 @@ function WoningkostenCard({ data }: { data: { total: number; categories: Record<
       </div>
       {cats.length === 0 ? (
         <div className="px-5 pb-5 pt-3">
-          <p className="text-sm" style={{ color: '#9CA3AF' }}>Nog geen kosten geregistreerd.</p>
-          <Link href="/woningkosten" className="text-xs font-semibold mt-2 inline-block" style={{ color: '#288760' }}>Kosten toevoegen →</Link>
+          <p className="text-sm" style={{ color: '#9CA3AF' }}>Nog geen kosten voor dit project.</p>
+          <Link href="/projects" className="text-xs font-semibold mt-2 inline-block" style={{ color: '#288760' }}>Kosten toevoegen →</Link>
         </div>
       ) : (
         <div className="px-5 pb-5 pt-3">
@@ -368,7 +366,8 @@ export default function DashboardClient({
   const [aiTipLoading, setAiTipLoading] = useState(false);
   const [woningData, setWoningData] = useState<WoningData | null>(null);
   const [woningLoading, setWoningLoading] = useState(false);
-  const [woonkosten, setWoonkosten] = useState<{ total: number; categories: Record<string, number> } | null>(null);
+  // Kostenverdeling afgeleid van expenses — reageert automatisch op projectwisseling
+  // (geen aparte fetch nodig, expenses state is al reactief)
 
   // Budget: sum all projects in "alle" mode, otherwise from current project
   const budget = useMemo(() =>
@@ -514,6 +513,16 @@ export default function DashboardClient({
 
   // Upcoming tasks (due after today, not completed, sorted by due_date)
   // Note: inline the completion check here — isTaskCompleted is defined later in the component
+  // Kostenverdeling — direct afgeleid van expenses, reageert automatisch op projectwisseling
+  const kostenVerdeling = useMemo(() => {
+    const cats: Record<string, number> = {};
+    expenses.forEach(e => {
+      const key = e.category || 'overig';
+      cats[key] = (cats[key] || 0) + Number(e.amount);
+    });
+    return Object.entries(cats).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]) as [string, number][];
+  }, [expenses]);
+
   const upcomingTasks = useMemo(() => {
     const today = localDateStr();
     return allTasks
@@ -584,34 +593,6 @@ export default function DashboardClient({
       .finally(() => setWoningLoading(false));
   }, [house]);
 
-  useEffect(() => {
-    const loadWoonkosten = async () => {
-      try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        // Match exact same house as woningkosten page (single primary house)
-        const { data: house } = await supabase.from('houses').select('id').eq('user_id', user.id).single();
-        const projectIds = allProjects.map(p => p.id);
-        const [onderhoudRes, expRes] = await Promise.all([
-          house ? supabase.from('onderhoud_kosten').select('amount, category').eq('house_id', house.id) : Promise.resolve({ data: [] }),
-          projectIds.length > 0 ? supabase.from('expenses').select('amount, category').in('project_id', projectIds) : Promise.resolve({ data: [] }),
-        ]);
-        const cats: Record<string, number> = {};
-        (expRes.data || []).forEach((e: { amount: number; category: string | null }) => {
-          const key = e.category || 'overig';
-          cats[key] = (cats[key] || 0) + Number(e.amount);
-        });
-        (onderhoudRes.data || []).forEach((k: { amount: number; category: string | null }) => {
-          const key = k.category || 'overig';
-          cats[key] = (cats[key] || 0) + Number(k.amount);
-        });
-        const total = Object.values(cats).reduce((s, v) => s + v, 0);
-        setWoonkosten({ total, categories: cats });
-      } catch { /* silent */ }
-    };
-    loadWoonkosten();
-  }, [allProjects]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -778,9 +759,8 @@ export default function DashboardClient({
         tuin: 'Tuin', verzekering: 'Verzekering', energie: 'Energie',
         belasting: 'Belasting', overig: 'Overig',
       };
-      const total = woonkosten?.total ?? 0;
-      const cats = woonkosten?.categories ?? {};
-      const sorted = Object.entries(cats).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+      const sorted = kostenVerdeling;
+      const total = sorted.reduce((s, [, v]) => s + (v as number), 0);
       const top3 = sorted.slice(0, 3);
       return (
         <div className="rounded-2xl p-3 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
@@ -1198,7 +1178,7 @@ export default function DashboardClient({
           </div>
 
           {/* Kostenverdeling */}
-          <WoningkostenCard data={woonkosten} />
+          <WoningkostenCard cats={kostenVerdeling} />
 
         </div>{/* end row 1 */}
 
