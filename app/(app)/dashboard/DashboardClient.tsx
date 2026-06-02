@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, timeAgo } from '@/lib/utils';
 import type { Profile, Project, Task, Expense, Room, House } from '@/types';
 import GanttChart from '@/components/GanttChart';
-import { CAT_COLORS, CategoryDonut } from '@/app/(app)/woningkosten/WoningkostenClient';
+import { KostenDonut, CAT_COLORS } from '@/components/KostenDonut';
 
 interface WoningData {
   estimate: number | null;
@@ -329,7 +329,7 @@ function WoningkostenCard({ data }: { data: { total: number; categories: Record<
       ) : (
         <div className="px-5 pb-5 pt-3 flex items-center gap-5">
           <div className="shrink-0">
-            <CategoryDonut cats={cats} total={total} size={110} />
+            <KostenDonut cats={cats} total={total} size={110} />
           </div>
           <div className="flex-1 min-w-0 space-y-2">
             {cats.map(([cat, val]) => (

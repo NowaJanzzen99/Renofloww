@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { House, OnderhoudKost, OnderhoudCategorie } from '@/types';
+import { KostenDonut, CAT_COLORS } from '@/components/KostenDonut';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -274,72 +275,6 @@ function AddKostModal({
   );
 }
 
-// ─── Category colors ──────────────────────────────────────────────────────────
-
-export const CAT_COLORS: Record<string, string> = {
-  verbouwing: '#288760', onderhoud: '#3B82F6', reparatie: '#F59E0B',
-  tuin: '#10B981', verzekering: '#8B5CF6', energie: '#EC4899',
-  belasting: '#6B7280', materiaal: '#F97316', arbeid: '#0EA5E9',
-  vergunning: '#6366F1', transport: '#A78BFA', overig: '#94A3B8',
-};
-
-// ─── SVG donut chart ──────────────────────────────────────────────────────────
-
-function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
-  const rad = (angleDeg - 90) * Math.PI / 180;
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-}
-
-function arcPath(cx: number, cy: number, r: number, start: number, end: number) {
-  if (end - start >= 360) end = start + 359.99;
-  const s = polarToCartesian(cx, cy, r, start);
-  const e = polarToCartesian(cx, cy, r, end);
-  const large = end - start > 180 ? 1 : 0;
-  return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
-}
-
-export function CategoryDonut({ cats, total, size = 120 }: { cats: [string, number][]; total: number; size?: number }) {
-  let angle = 0;
-  const segments = cats.map(([cat, val]) => {
-    const sweep = total > 0 ? (val / total) * 360 : 0;
-    const seg = { cat, start: angle, end: angle + sweep };
-    angle += sweep;
-    return seg;
-  });
-  const gap = 1.5;
-  const formatted = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(total);
-  return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      <svg viewBox="0 0 100 100" width={size} height={size}>
-        {segments.map(({ cat, start, end }) => (
-          <path
-            key={cat}
-            d={arcPath(50, 50, 36, start + gap / 2, end - gap / 2)}
-            fill="none"
-            stroke={CAT_COLORS[cat] ?? '#94A3B8'}
-            strokeWidth="16"
-            strokeLinecap="round"
-          />
-        ))}
-        <circle cx="50" cy="50" r="27" fill="white" />
-      </svg>
-      {/* HTML overlay — always renders correctly */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        pointerEvents: 'none',
-      }}>
-        <span style={{ fontSize: size * 0.085, fontWeight: 800, color: '#1A1A1A', lineHeight: 1.1, textAlign: 'center' }}>
-          {formatted}
-        </span>
-        <span style={{ fontSize: size * 0.065, color: '#9CA3AF', fontWeight: 500, marginTop: 1 }}>
-          totaal
-        </span>
-      </div>
-    </div>
-  );
-}
-
 // ─── Bar chart helper ──────────────────────────────────────────────────────────
 
 function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
@@ -541,7 +476,7 @@ export default function WoningkostenClient({ house: initialHouse, projectExpense
           <h2 className="text-base font-semibold mb-4" style={{ color: '#1A1A1A' }}>Per categorie</h2>
           <div className="flex items-center gap-6">
             <div className="shrink-0">
-              <CategoryDonut cats={categoryTotals} total={totalInvested} size={140} />
+              <KostenDonut cats={categoryTotals} total={totalInvested} size={140} />
             </div>
             <div className="flex-1 space-y-2 min-w-0">
               {categoryTotals.map(([cat, val]) => (
