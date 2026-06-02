@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, timeAgo } from '@/lib/utils';
 import type { Profile, Project, Task, Expense, Room, House } from '@/types';
 import GanttChart from '@/components/GanttChart';
-import { KostenDonut, CAT_COLORS } from '@/components/KostenDonut';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface WoningData {
   estimate: number | null;
@@ -304,41 +304,69 @@ function WoningwaardeCard({ house, data, loading }: { house: House | null; data:
 }
 
 // ─── Kostenverdeling card (dashboard) ────────────────────────────────────────
+const DASH_CAT_COLORS: Record<string, string> = {
+  verbouwing: '#288760', onderhoud: '#3EAA7A', reparatie: '#6EC99B',
+  tuin: '#1A5140',       verzekering: '#4ade80', energie: '#B7E5BA',
+  belasting: '#9CA3AF',  materiaal: '#288760',   arbeid: '#3EAA7A',
+  vergunning: '#6EC99B', transport: '#1A5140',   overig: '#9CA3AF',
+};
 const DASH_CAT_LABELS: Record<string, string> = {
   verbouwing: 'Verbouwing', onderhoud: 'Onderhoud', reparatie: 'Reparatie',
   tuin: 'Tuin', verzekering: 'Verzekering', energie: 'Energie',
   belasting: 'Belasting', materiaal: 'Materiaal', arbeid: 'Arbeid',
   vergunning: 'Vergunning', transport: 'Transport', overig: 'Overig',
 };
+const fmt0 = (n: number) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
 function WoningkostenCard({ data }: { data: { total: number; categories: Record<string, number> } | null }) {
   const cats = Object.entries(data?.categories ?? {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
   const total = data?.total ?? 0;
+  const pieData = cats.map(([cat, val]) => ({ name: DASH_CAT_LABELS[cat] ?? cat, value: val, cat }));
+
   return (
     <div className="rounded-2xl bg-white border overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
       style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
       <div className="px-5 pt-5 pb-1 flex items-center justify-between">
-        <h2 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Kostenverdeling</h2>
+        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Kostenverdeling</p>
         <Link href="/woningkosten" className="text-xs font-semibold" style={{ color: '#288760' }}>Bekijk alles →</Link>
       </div>
       {cats.length === 0 ? (
         <div className="px-5 pb-5 pt-3">
           <p className="text-sm" style={{ color: '#9CA3AF' }}>Nog geen kosten geregistreerd.</p>
-          <Link href="/woningkosten" className="text-xs font-semibold mt-1 inline-block" style={{ color: '#288760' }}>Kosten toevoegen →</Link>
+          <Link href="/woningkosten" className="text-xs font-semibold mt-2 inline-block" style={{ color: '#288760' }}>Kosten toevoegen →</Link>
         </div>
       ) : (
         <div className="px-5 pb-5 pt-3 flex items-center gap-5">
-          <div className="shrink-0">
-            <KostenDonut cats={cats} total={total} size={110} />
+          {/* Donut met totaal in midden */}
+          <div style={{ position: 'relative', width: 130, height: 130, flexShrink: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={38} outerRadius={60} paddingAngle={2} dataKey="value" startAngle={90} endAngle={-270}>
+                  {pieData.map((entry) => (
+                    <Cell key={entry.cat} fill={DASH_CAT_COLORS[entry.cat] ?? '#9CA3AF'} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v) => typeof v === 'number' ? fmt0(v) : v} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              pointerEvents: 'none',
+            }}>
+              <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, lineHeight: 1 }}>totaal</span>
+              <span style={{ fontSize: 13, color: '#1A1A1A', fontWeight: 800, lineHeight: 1.3, textAlign: 'center' }}>
+                {fmt0(total)}
+              </span>
+            </div>
           </div>
+          {/* Legenda */}
           <div className="flex-1 min-w-0 space-y-2">
             {cats.map(([cat, val]) => (
               <div key={cat} className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CAT_COLORS[cat] ?? '#94A3B8' }} />
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: DASH_CAT_COLORS[cat] ?? '#9CA3AF' }} />
                 <span className="text-xs flex-1 truncate" style={{ color: '#374151' }}>{DASH_CAT_LABELS[cat] ?? cat}</span>
-                <span className="text-xs font-semibold shrink-0" style={{ color: '#1A1A1A' }}>
-                  {new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val)}
-                </span>
+                <span className="text-xs font-semibold shrink-0" style={{ color: '#1A1A1A' }}>{fmt0(val)}</span>
                 <span className="text-xs w-7 text-right shrink-0" style={{ color: '#9CA3AF' }}>
                   {total > 0 ? `${Math.round((val / total) * 100)}%` : ''}
                 </span>
