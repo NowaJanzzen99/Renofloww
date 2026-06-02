@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { House, OnderhoudKost, OnderhoudCategorie } from '@/types';
-import { KostenDonut, CAT_COLORS } from '@/components/KostenDonut';
+import { KostenVerdelingDonut } from '@/components/KostenVerdelingDonut';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -474,23 +474,16 @@ export default function WoningkostenClient({ house: initialHouse, projectExpense
       {categoryTotals.length > 0 && (
         <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <h2 className="text-base font-semibold mb-4" style={{ color: '#1A1A1A' }}>Per categorie</h2>
-          <div className="flex items-center gap-6">
-            <div className="shrink-0">
-              <KostenDonut cats={categoryTotals} total={totalInvested} size={140} />
-            </div>
-            <div className="flex-1 space-y-2 min-w-0">
-              {categoryTotals.map(([cat, val]) => (
-                <div key={cat} className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CAT_COLORS[cat] ?? '#94A3B8' }} />
-                  <span className="text-xs flex-1 truncate" style={{ color: '#374151' }}>{catLabel(cat)}</span>
-                  <span className="text-xs font-semibold shrink-0" style={{ color: '#1A1A1A' }}>{formatCurrency(val)}</span>
-                  <span className="text-xs shrink-0 w-8 text-right" style={{ color: '#9CA3AF' }}>
-                    {totalInvested > 0 ? `${Math.round((val / totalInvested) * 100)}%` : ''}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <KostenVerdelingDonut
+            items={categoryTotals.map(([cat, val]) => ({
+              key: cat,
+              label: catLabel(cat),
+              value: val,
+              pct: totalInvested > 0 ? Math.round((val / totalInvested) * 100) : 0,
+            }))}
+            total={totalInvested}
+            size={140}
+          />
         </div>
       )}
 

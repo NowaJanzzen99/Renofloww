@@ -8,6 +8,7 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, Legend, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
+import { KostenVerdelingDonut } from '@/components/KostenVerdelingDonut';
 
 // ── Brand palette ─────────────────────────────────────────────────────────────
 const GREEN = '#288760';
@@ -474,42 +475,11 @@ export default function AnalyticsPage() {
                     <p className="text-sm" style={{ color: '#9CA3AF' }}>Nog geen kosten geregistreerd</p>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-5">
-                    {/* Donut met totaal in midden */}
-                    <div style={{ position: 'relative', width: 140, height: 140, flexShrink: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie data={categoryData} cx="50%" cy="50%" innerRadius={44} outerRadius={65} paddingAngle={2} dataKey="value" startAngle={90} endAngle={-270}>
-                            {categoryData.map((entry) => (
-                              <Cell key={entry.category} fill={CATEGORY_COLORS[entry.category] || '#9CA3AF'} />
-                            ))}
-                          </Pie>
-                          <Tooltip content={<PieTooltip />} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        pointerEvents: 'none',
-                      }}>
-                        <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, lineHeight: 1 }}>totaal</span>
-                        <span style={{ fontSize: 13, color: '#1A1A1A', fontWeight: 800, lineHeight: 1.3, textAlign: 'center' }}>
-                          {formatCurrency(totalExpenses)}
-                        </span>
-                      </div>
-                    </div>
-                    {/* Legenda */}
-                    <div className="flex-1 min-w-0 space-y-2">
-                      {categoryData.map((c) => (
-                        <div key={c.category} className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[c.category] || '#9CA3AF' }} />
-                          <span className="text-xs flex-1 truncate" style={{ color: '#374151' }}>{c.icon} {c.displayName}</span>
-                          <span className="text-xs font-semibold shrink-0" style={{ color: '#1A1A1A' }}>{formatCurrency(c.value)}</span>
-                          <span className="text-xs w-7 text-right shrink-0" style={{ color: '#9CA3AF' }}>{c.pct}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <KostenVerdelingDonut
+                    items={categoryData.map(c => ({ key: c.category, label: `${c.icon} ${c.displayName}`, value: c.value, pct: c.pct }))}
+                    total={totalExpenses}
+                    size={140}
+                  />
                 )}
               </div>
 
