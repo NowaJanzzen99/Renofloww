@@ -3,20 +3,36 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 
-// Palette — brand green als primair, aangevuld met kleuren die al in de app zitten
-// Duidelijk van elkaar te onderscheiden maar samenhangend
+// Palette — brand groen als primair, aangevuld met kleuren die passen bij een professionele
+// renovatie-app: teal, amber, blauw, violet, leisteen — samenhangend maar duidelijk te onderscheiden
 const GREEN_PALETTE = [
   '#288760', // brand groen
-  '#3B82F6', // blauw
-  '#F59E0B', // amber
-  '#0D9488', // teal
-  '#8B5CF6', // paars
-  '#F97316', // oranje
-  '#06B6D4', // cyaan
-  '#EC4899', // roze
-  '#6366F1', // indigo
-  '#9CA3AF', // grijs
+  '#0F766E', // teal (groen-blauw, verwant)
+  '#D97706', // amber/goud (warm, aards)
+  '#0369A1', // diepblauw (professioneel)
+  '#1A5140', // donker groen (schaduw van brand)
+  '#7C3AED', // violet (matcht streak/premium kleur in app)
+  '#16A34A', // smaragdgroen (frisse variant)
+  '#B45309', // bruin-amber (aards)
+  '#64748B', // leisteen (neutraal)
+  '#9CA3AF', // lichtgrijs (fallback)
 ];
+
+// Emojis per categorie — consistent met woningkosten pagina en analytics
+const CAT_EMOJIS: Record<string, string> = {
+  materiaal:   '🧱',
+  arbeid:      '👷',
+  vergunning:  '📋',
+  transport:   '🚚',
+  onderhoud:   '🔧',
+  reparatie:   '🛠️',
+  tuin:        '🌿',
+  verzekering: '🛡️',
+  energie:     '⚡',
+  belasting:   '🏦',
+  verbouwing:  '🔨',
+  overig:      '📦',
+};
 
 export interface KostenItem {
   key: string;
@@ -116,7 +132,11 @@ export function KostenVerdelingDonut({ items, size = 140 }: Props) {
               className="rounded-full shrink-0"
               style={{ width: 8, height: 8, backgroundColor: GREEN_PALETTE[i % GREEN_PALETTE.length] }}
             />
-            <span className="text-xs flex-1 truncate" style={{ color: '#374151' }}>{item.label}</span>
+            <span className="text-xs flex-1 truncate" style={{ color: '#374151' }}>
+              {CAT_EMOJIS[item.key] && !item.label.startsWith(CAT_EMOJIS[item.key])
+                ? `${CAT_EMOJIS[item.key]} ${item.label}`
+                : item.label}
+            </span>
             <span className="text-xs font-semibold shrink-0" style={{ color: '#1A1A1A' }}>
               {formatCurrency(item.value)}
             </span>
