@@ -32,7 +32,8 @@ Alleen geldig JSON, geen markdown.`,
       messages: [{ role: 'user', content: userMessage }],
     });
 
-    const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : '{}';
+    const rawText = message.content[0].type === 'text' ? message.content[0].text.trim() : '{}';
+    const raw = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
     let tip = '';
     let action: string | null = null;
     try {
