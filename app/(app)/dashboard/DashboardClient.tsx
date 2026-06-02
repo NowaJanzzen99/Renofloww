@@ -590,20 +590,21 @@ export default function DashboardClient({
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        // Get all house IDs for the user
-        const { data: houses } = await supabase.from('houses').select('id').eq('user_id', user.id);
-        const houseIds = (houses || []).map((h: { id: string }) => h.id);
+        // Match exact same house as woningkosten page (single primary house)
+        const { data: house } = await supabase.from('houses').select('id').eq('user_id', user.id).single();
         const projectIds = allProjects.map(p => p.id);
         const [onderhoudRes, expRes] = await Promise.all([
-          houseIds.length > 0 ? supabase.from('onderhoud_kosten').select('amount, category').in('house_id', houseIds) : Promise.resolve({ data: [] }),
+          house ? supabase.from('onderhoud_kosten').select('amount, category').eq('house_id', house.id) : Promise.resolve({ data: [] }),
           projectIds.length > 0 ? supabase.from('expenses').select('amount, category').in('project_id', projectIds) : Promise.resolve({ data: [] }),
         ]);
         const cats: Record<string, number> = {};
-        (expRes.data || []).forEach((e: { amount: number; category: string }) => {
-          cats[e.category] = (cats[e.category] || 0) + Number(e.amount);
+        (expRes.data || []).forEach((e: { amount: number; category: string | null }) => {
+          const key = e.category || 'overig';
+          cats[key] = (cats[key] || 0) + Number(e.amount);
         });
-        (onderhoudRes.data || []).forEach((k: { amount: number; category: string }) => {
-          cats[k.category] = (cats[k.category] || 0) + Number(k.amount);
+        (onderhoudRes.data || []).forEach((k: { amount: number; category: string | null }) => {
+          const key = k.category || 'overig';
+          cats[key] = (cats[key] || 0) + Number(k.amount);
         });
         const total = Object.values(cats).reduce((s, v) => s + v, 0);
         setWoonkosten({ total, categories: cats });

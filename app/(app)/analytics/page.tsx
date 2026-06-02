@@ -187,7 +187,10 @@ export default function AnalyticsPage() {
   // ── Category breakdown ──────────────────────────────────────────────────────
   const categoryData = useMemo(() => {
     const acc: Record<string, number> = {};
-    expenses.forEach((e) => { acc[e.category] = (acc[e.category] || 0) + Number(e.amount); });
+    expenses.forEach((e) => {
+      const key = e.category || 'overig';
+      acc[key] = (acc[key] || 0) + Number(e.amount);
+    });
     return Object.entries(acc)
       .map(([category, amount]) => ({
         name: `${CATEGORY_ICONS[category] || ''} ${CATEGORY_LABELS[category] || category}`,

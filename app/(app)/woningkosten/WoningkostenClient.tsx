@@ -325,7 +325,10 @@ export default function WoningkostenClient({ house: initialHouse, projectExpense
   // ── Category breakdown ─────────────────────────────────────────────────────
   const categoryTotals = useMemo(() => {
     const map: Record<string, number> = {};
-    allCosts.forEach((c) => { map[c.category] = (map[c.category] || 0) + c.amount; });
+    allCosts.forEach((c) => {
+      const key = c.category || 'overig';
+      map[key] = (map[key] || 0) + c.amount;
+    });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [allCosts]);
 
