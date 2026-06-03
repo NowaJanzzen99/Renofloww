@@ -1251,8 +1251,53 @@ export default function DashboardClient({
 
         </div>{/* end row 1 */}
 
-        {/* Row 2: Woningwaarde – full width */}
-        <WoningwaardeCard house={house} data={woningData} loading={woningLoading} />
+        {/* Row 2: Woningwaarde + Gantt naast elkaar */}
+        {(() => {
+          const hasGantt = allProjectsMode
+            ? allProjects.filter(p => currentRooms.some(r => r.project_id === p.id)).length > 0
+            : !!(currentProject && currentRooms.length > 0);
+
+          const ganttCard = allProjectsMode ? (
+            allProjects.filter(p => currentRooms.some(r => r.project_id === p.id)).length > 0 && (
+              <div className="rounded-2xl p-5 sm:p-6 bg-white border overflow-hidden h-full" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+                <h2 className="text-sm font-bold uppercase tracking-wide mb-5" style={{ color: '#9CA3AF' }}>Planning — alle projecten</h2>
+                <div className="space-y-6">
+                  {allProjects.filter(p => currentRooms.some(r => r.project_id === p.id)).map(p => {
+                    const pRooms = currentRooms.filter(r => r.project_id === p.id);
+                    return (
+                      <div key={p.id}>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold" style={{ color: '#374151' }}>{p.name}</p>
+                          <Link href={`/projects/${p.id}?tab=overzicht`} className="text-xs font-semibold" style={{ color: '#288760' }}>Bekijk →</Link>
+                        </div>
+                        <GanttChart rooms={pRooms} projectStart={p.start_date} projectEnd={p.end_date} compact />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )
+          ) : (
+            currentProject && currentRooms.length > 0 && (
+              <div className="rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden h-full" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Planning</h2>
+                  <Link href={`/projects/${currentProject.id}?tab=overzicht#planning`} className="text-xs font-semibold" style={{ color: '#288760' }}>
+                    Bewerk planning →
+                  </Link>
+                </div>
+                <GanttChart rooms={currentRooms} projectStart={currentProject.start_date} projectEnd={currentProject.end_date} compact />
+              </div>
+            )
+          );
+
+          return (
+            <div className={`grid gap-4 items-start ${hasGantt ? 'lg:grid-cols-2' : ''}`}>
+              <WoningwaardeCard house={house} data={woningData} loading={woningLoading} />
+              {ganttCard}
+            </div>
+          );
+        })()}
 
         {/* Empty project state */}
         {!currentProject && !allProjectsMode && allProjects.length === 0 && (
@@ -1262,49 +1307,6 @@ export default function DashboardClient({
             <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Maak je eerste verbouwingsproject aan om te beginnen.</p>
             <Link href="/projects" className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#288760' }}>Project aanmaken</Link>
           </div>
-        )}
-
-        {/* Row 3: Gantt – full width */}
-        {allProjectsMode ? (
-          allProjects.filter(p => currentRooms.some(r => r.project_id === p.id)).length > 0 && (
-            <div className="rounded-2xl p-5 sm:p-6 bg-white border overflow-hidden" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
-              <h2 className="text-sm font-bold uppercase tracking-wide mb-5" style={{ color: '#9CA3AF' }}>Planning — alle projecten</h2>
-              <div className="space-y-6">
-                {allProjects.filter(p => currentRooms.some(r => r.project_id === p.id)).map(p => {
-                  const pRooms = currentRooms.filter(r => r.project_id === p.id);
-                  return (
-                    <div key={p.id}>
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold" style={{ color: '#374151' }}>{p.name}</p>
-                        <Link href={`/projects/${p.id}?tab=overzicht`} className="text-xs font-semibold" style={{ color: '#288760' }}>Bekijk →</Link>
-                      </div>
-                      <GanttChart rooms={pRooms} projectStart={p.start_date} projectEnd={p.end_date} compact />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )
-        ) : (
-          currentProject && currentRooms.length > 0 && (
-            <div
-              className="rounded-2xl p-5 sm:p-6 bg-white border transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-              style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
-            >
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Planning</h2>
-                <Link href={`/projects/${currentProject.id}?tab=overzicht#planning`} className="text-xs font-semibold" style={{ color: '#288760' }}>
-                  Bewerk planning →
-                </Link>
-              </div>
-              <GanttChart
-                rooms={currentRooms}
-                projectStart={currentProject.start_date}
-                projectEnd={currentProject.end_date}
-                compact
-              />
-            </div>
-          )
         )}
 
         {/* Compact streak banner */}
