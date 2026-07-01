@@ -41,7 +41,7 @@ function quarterToDate(period: string): Date {
 }
 
 // ─── Eurostat quarterly house price index for NL ──────────────────────────────
-async function fetchEurostatHPI(): Promise<{ data: QuarterPoint[]; isFallback: boolean }> {
+async function fetchEurostatHPI(forceFresh: boolean): Promise<{ data: QuarterPoint[]; isFallback: boolean }> {
   try {
     const url =
       'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hpi_q' +
@@ -49,7 +49,7 @@ async function fetchEurostatHPI(): Promise<{ data: QuarterPoint[]; isFallback: b
 
     const res = await fetch(url, {
       headers: { Accept: 'application/json' },
-      next: { revalidate: 86400 }, // CDN cache 24 h
+      ...(forceFresh ? { cache: 'no-store' as const } : { next: { revalidate: 86400 } }), // CDN cache 24 h, bypassed on manual refresh
       signal: AbortSignal.timeout(10000),
     });
 
@@ -78,7 +78,7 @@ async function fetchEurostatHPI(): Promise<{ data: QuarterPoint[]; isFallback: b
 }
 
 // ─── ECB monthly mortgage rate for NL ─────────────────────────────────────────
-async function fetchMortgageRate(): Promise<{ rate: number; period: string } | null> {
+async function fetchMortgageRate(forceFresh: boolean): Promise<{ rate: number; period: string } | null> {
   try {
     const url =
       'https://data-api.ecb.europa.eu/service/data/MIR/M.NL.B.A2C.AM.R.A.2250.EUR.N' +
@@ -86,7 +86,7 @@ async function fetchMortgageRate(): Promise<{ rate: number; period: string } | n
 
     const res = await fetch(url, {
       headers: { Accept: 'application/json' },
-      next: { revalidate: 86400 },
+      ...(forceFresh ? { cache: 'no-store' as const } : { next: { revalidate: 86400 } }),
       signal: AbortSignal.timeout(8000),
     });
 
@@ -129,10 +129,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const purchaseDateStr  = searchParams.get('purchase_date');
   const purchasePriceStr = searchParams.get('purchase_price');
+  const forceFresh       = searchParams.get('refresh') === '1';
 
   const [{ data: allQuarters, isFallback }, mortgageResult] = await Promise.all([
-    fetchEurostatHPI(),
-    fetchMortgageRate(),
+    fetchEurostatHPI(forceFresh),
+    fetchMortgageRate(forceFresh),
   ]);
 
   if (allQuarters.length === 0) {

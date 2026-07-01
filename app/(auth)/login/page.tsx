@@ -32,14 +32,16 @@ export default function LoginPage() {
         } else {
           setError('Er is iets misgegaan. Probeer het opnieuw.');
         }
+        setLoading(false);
         return;
       }
 
+      // Loading blijft actief tot de navigatie naar /dashboard voltooid is —
+      // anders springt de knop terug voordat de pagina daadwerkelijk overgaat.
       router.push('/dashboard');
       router.refresh();
     } catch {
       setError('Er is een onverwachte fout opgetreden. Probeer het opnieuw.');
-    } finally {
       setLoading(false);
     }
   };
@@ -123,9 +125,15 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
           style={{ backgroundColor: '#288760' }}
         >
+          {loading && (
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          )}
           {loading ? 'Inloggen...' : 'Inloggen'}
         </button>
       </form>

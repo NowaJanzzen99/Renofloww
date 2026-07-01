@@ -468,28 +468,16 @@ export default function WoningwaardeClient({ houses: initialHouses, totalInveste
   const [loadingMarket, setLoadingMarket] = useState(false);
   const [marketError, setMarketError] = useState<string | null>(null);
 
-  const fetchMarketData = async (h: House | null = house) => {
-    if (!h?.purchase_price && !h?.purchase_date) {
-      setLoadingMarket(true);
-      setMarketError(null);
-      try {
-        const res = await fetch('/api/woningwaarde');
-        if (!res.ok) throw new Error('API fout');
-        setMarketData(await res.json());
-      } catch {
-        setMarketError('Marktdata tijdelijk niet beschikbaar.');
-      } finally {
-        setLoadingMarket(false);
-      }
-      return;
-    }
+  const fetchMarketData = async (h: House | null = house, forceFresh = false) => {
     setLoadingMarket(true);
     setMarketError(null);
     try {
       const params = new URLSearchParams();
       if (h?.purchase_price) params.set('purchase_price', String(h.purchase_price));
       if (h?.purchase_date) params.set('purchase_date', h.purchase_date);
-      const res = await fetch(`/api/woningwaarde?${params}`);
+      if (forceFresh) params.set('refresh', '1');
+      const qs = params.toString();
+      const res = await fetch(`/api/woningwaarde${qs ? `?${qs}` : ''}`);
       if (!res.ok) throw new Error('API fout');
       setMarketData(await res.json());
     } catch {
@@ -707,7 +695,7 @@ export default function WoningwaardeClient({ houses: initialHouses, totalInveste
                   isFallback={marketData.isFallback}
                   latestPeriod={marketData.latestPeriod}
                   mortgageRate={marketData.mortgageRate ?? null}
-                  onRefresh={() => fetchMarketData()}
+                  onRefresh={() => fetchMarketData(house, true)}
                   refreshing={loadingMarket}
                 />
               </div>
