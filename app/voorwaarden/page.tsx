@@ -73,9 +73,10 @@ export default function VoorwaardenPage() {
 
         <Section title="5. Abonnement, betaling en opzegging">
           <ul className="list-disc pl-5 space-y-1">
-            <li>Betaalde abonnementen worden per maand gefactureerd en verwerkt via onze betaalpartner Stripe.</li>
-            <li>Het abonnement wordt automatisch maandelijks verlengd totdat je opzegt.</li>
-            <li>Je kunt je abonnement op elk moment opzeggen via je accountinstellingen. Bij opzegging blijft je toegang actief tot het einde van de lopende betaalperiode; er vindt geen terugbetaling plaats over de reeds lopende periode.</li>
+            <li>Wij bieden een maandabonnement en een jaarabonnement aan, verwerkt via onze betaalpartner Stripe. Bij het jaarabonnement wordt het volledige jaarbedrag in één keer bij aanvang van de periode gefactureerd.</li>
+            <li>Het abonnement wordt automatisch verlengd voor eenzelfde periode (maand of jaar) totdat je opzegt.</li>
+            <li>Je kunt je abonnement op elk moment opzeggen via je accountinstellingen. Bij opzegging blijft je toegang actief tot het einde van de lopende betaalperiode — bij een jaarabonnement dus tot het einde van dat jaar; er vindt geen terugbetaling plaats over de reeds betaalde, nog lopende periode.</li>
+            <li>Je abonnement vertegenwoordigt een betalingsverplichting voor de volledige lopende periode (maand of jaar). Het verwijderen van je account ontslaat je niet van deze verplichting: is je abonnement nog niet opgezegd, dan moet je dit eerst doen voordat je je account kunt verwijderen.</li>
             <li>Wij kunnen onze prijzen wijzigen. Prijswijzigingen worden minimaal 30 dagen van tevoren per e-mail aangekondigd en gaan pas in bij je eerstvolgende betaalperiode.</li>
             <li>Bij een mislukte betaling behouden wij ons het recht voor de toegang tot betaalde functionaliteit op te schorten totdat de betaling alsnog is voldaan.</li>
           </ul>

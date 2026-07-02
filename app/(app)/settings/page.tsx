@@ -36,6 +36,32 @@ export default function SettingsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Subscription state
+  type SubscriptionInfo = {
+    hasSubscription: boolean;
+    stillCommitted?: boolean;
+    cancelAtPeriodEnd?: boolean;
+    currentPeriodEnd?: string | null;
+    interval?: 'month' | 'year' | null;
+    status?: string;
+  };
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  const loadSubscription = async () => {
+    setSubscriptionLoading(true);
+    try {
+      const res = await fetch('/api/stripe/subscription');
+      const data = await res.json();
+      setSubscription(data);
+    } catch {
+      setSubscription(null);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
@@ -52,6 +78,7 @@ export default function SettingsPage() {
       setLoading(false);
     };
     load();
+    loadSubscription();
 
     // Check URL hash for tab
     const hash = window.location.hash.replace('#', '');
@@ -121,6 +148,28 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    setCancelling(true);
+    try {
+      const res = await fetch('/api/stripe/cancel', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showMessage(data.error || 'Opzeggen is mislukt. Probeer het opnieuw.', true);
+        return;
+      }
+      setSubscription(data);
+      showMessage(
+        data.currentPeriodEnd
+          ? `Abonnement opgezegd. Je hebt nog toegang tot ${formatDate(data.currentPeriodEnd)}, daarna wordt het niet meer verlengd.`
+          : 'Abonnement opgezegd.'
+      );
+    } catch {
+      showMessage('Er is een onverwachte fout opgetreden. Probeer het opnieuw.', true);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (deleteConfirm !== 'VERWIJDER') return;
     setDeleting(true);
@@ -131,6 +180,10 @@ export default function SettingsPage() {
         showMessage(data.error || 'Verwijderen van account is mislukt. Probeer het opnieuw.', true);
         setShowDeleteModal(false);
         setDeleteConfirm('');
+        if (data.requiresCancellation) {
+          setSubscription((prev) => prev ? { ...prev, stillCommitted: true } : prev);
+          setActiveTab('Abonnement');
+        }
         return;
       }
       const supabase = createClient();
@@ -306,7 +359,41 @@ export default function SettingsPage() {
                 <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>Je hebt volledige toegang tot alle functies.</p>
               </div>
             </div>
-          ) : trialActive ? (
+          ) : null}
+
+          {/* Cancel / cancellation status */}
+          {profile?.is_pro && subscription?.hasSubscription && (
+            <div className="rounded-2xl p-5 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+              {subscription.cancelAtPeriodEnd ? (
+                <>
+                  <p className="text-sm font-semibold mb-1" style={{ color: '#1A1A1A' }}>Abonnement opgezegd</p>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>
+                    Je hebt nog toegang tot {subscription.currentPeriodEnd ? formatDate(subscription.currentPeriodEnd) : 'het einde van je huidige periode'}.
+                    Daarna wordt je {subscription.interval === 'year' ? 'jaar' : 'maand'}abonnement niet verlengd en volgt er geen afschrijving meer.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold mb-1" style={{ color: '#1A1A1A' }}>Abonnement beheren</p>
+                  <p className="text-xs mb-4" style={{ color: '#6B7280' }}>
+                    Je hebt een {subscription.interval === 'year' ? 'jaarabonnement' : 'maandabonnement'}
+                    {subscription.currentPeriodEnd && <> dat loopt tot <strong>{formatDate(subscription.currentPeriodEnd)}</strong></>}.
+                    Bij opzeggen behoud je toegang tot die datum; er vindt geen restitutie plaats over de resterende periode.
+                  </p>
+                  <button
+                    onClick={handleCancelSubscription}
+                    disabled={cancelling}
+                    className="px-4 py-2.5 rounded-xl text-sm font-semibold border disabled:opacity-60"
+                    style={{ borderColor: '#FECACA', color: '#EF4444' }}
+                  >
+                    {cancelling ? 'Bezig...' : 'Abonnement opzeggen'}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {!profile?.is_pro && (trialActive ? (
             <div className="rounded-2xl p-5 border" style={{ borderColor: '#6EE7B7', backgroundColor: '#F0FDF4' }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -326,7 +413,7 @@ export default function SettingsPage() {
               <p className="text-sm font-semibold mb-0.5" style={{ color: '#EF4444' }}>Proefperiode verlopen</p>
               <p className="text-xs" style={{ color: '#6B7280' }}>Upgrade naar Pro om je verbouwing te blijven beheren.</p>
             </div>
-          )}
+          ))}
 
           {/* Features overview */}
           {!profile?.is_pro && (
@@ -466,18 +553,40 @@ export default function SettingsPage() {
           </p>
           <div className="rounded-xl border p-4" style={{ borderColor: '#FECACA' }}>
             <h3 className="text-sm font-semibold mb-1" style={{ color: '#EF4444' }}>Account verwijderen</h3>
-            <p className="text-sm mb-4" style={{ color: '#6B7280' }}>
-              Je account en alle bijbehorende gegevens (projecten, taken, kosten, documenten, foto&apos;s)
-              worden direct en permanent verwijderd — dit kan niet ongedaan worden gemaakt.
-              {profile?.is_pro && ' Een actief abonnement wordt hierbij automatisch opgezegd.'}
-            </p>
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
-              style={{ backgroundColor: '#EF4444' }}
-            >
-              Account verwijderen
-            </button>
+
+            {subscriptionLoading ? (
+              <p className="text-sm" style={{ color: '#6B7280' }}>Abonnementsstatus controleren...</p>
+            ) : subscription?.stillCommitted ? (
+              <>
+                <p className="text-sm mb-4" style={{ color: '#6B7280' }}>
+                  Je hebt nog een actief {subscription.interval === 'year' ? 'jaar' : 'maand'}abonnement
+                  {subscription.currentPeriodEnd && <> tot <strong>{formatDate(subscription.currentPeriodEnd)}</strong></>}.
+                  Je moet dit eerst opzeggen voordat je je account kunt verwijderen — daarna kun je hier terugkomen.
+                </p>
+                <button
+                  onClick={() => setActiveTab('Abonnement')}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
+                  style={{ backgroundColor: '#288760' }}
+                >
+                  Ga naar Abonnement om op te zeggen →
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm mb-4" style={{ color: '#6B7280' }}>
+                  Je account en alle bijbehorende gegevens (projecten, taken, kosten, documenten, foto&apos;s)
+                  worden direct en permanent verwijderd — dit kan niet ongedaan worden gemaakt.
+                  {subscription?.hasSubscription && subscription.cancelAtPeriodEnd && ' Let op: je opgezegde abonnement loopt nog door tot het einde van de periode — als je nu verwijdert, verlies je die resterende toegang meteen.'}
+                </p>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
+                  style={{ backgroundColor: '#EF4444' }}
+                >
+                  Account verwijderen
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

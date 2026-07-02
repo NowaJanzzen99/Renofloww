@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { stripe } from '@/lib/stripe';
+import { stripe, getSubscriptionSummary } from '@/lib/stripe';
 
 export async function POST() {
   const supabase = await createClient();
@@ -17,20 +17,45 @@ export async function POST() {
     .eq('id', user.id)
     .single();
 
-  // Actief abonnement moet eerst geannuleerd worden — anders blijft Stripe
-  // een gebruiker belasten die geen account (en dus geen toegang) meer heeft.
+  // Een lopend abonnement (nog niet opgezegd) moet eerst bewust worden
+  // opgezegd via de Abonnement-tab — account verwijderen mag geen sluiproute
+  // zijn om onder een jaar-/maandcommitment uit te komen.
   if (profile?.stripe_subscription_id) {
+    let summary;
     try {
-      await stripe.subscriptions.cancel(profile.stripe_subscription_id);
-    } catch (err) {
-      const alreadyGone =
-        typeof err === 'object' && err !== null && 'code' in err && err.code === 'resource_missing';
-      if (!alreadyGone) {
-        console.error('Kon Stripe-abonnement niet opzeggen bij account verwijderen:', err);
-        return NextResponse.json(
-          { error: 'Kon je abonnement niet opzeggen. Probeer het opnieuw of neem contact op met support.' },
-          { status: 502 }
-        );
+      summary = await getSubscriptionSummary(profile.stripe_subscription_id);
+    } catch {
+      summary = null; // abonnement bestaat niet (meer) bij Stripe — geen blokkade nodig
+    }
+
+    if (summary?.stillCommitted) {
+      return NextResponse.json(
+        {
+          error: 'Je hebt nog een actief abonnement. Zeg dit eerst op via het tabblad "Abonnement" voordat je je account kunt verwijderen.',
+          requiresCancellation: true,
+          interval: summary.interval,
+          currentPeriodEnd: summary.currentPeriodEnd,
+        },
+        { status: 409 }
+      );
+    }
+
+    // Abonnement is al opgezegd (cancel_at_period_end) of al terminaal —
+    // hier alsnog hard annuleren als vangnet, zodat er nooit een spookabonnement
+    // doorloopt op een verwijderd account.
+    if (summary && summary.status !== 'canceled') {
+      try {
+        await stripe.subscriptions.cancel(profile.stripe_subscription_id);
+      } catch (err) {
+        const alreadyGone =
+          typeof err === 'object' && err !== null && 'code' in err && err.code === 'resource_missing';
+        if (!alreadyGone) {
+          console.error('Kon Stripe-abonnement niet opzeggen bij account verwijderen:', err);
+          return NextResponse.json(
+            { error: 'Kon je abonnement niet opzeggen. Probeer het opnieuw of neem contact op met support.' },
+            { status: 502 }
+          );
+        }
       }
     }
   }
