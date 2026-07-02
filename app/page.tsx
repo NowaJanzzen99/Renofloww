@@ -74,41 +74,17 @@ const steps = [
   {
     number: '01',
     title: 'Maak je project aan',
-    description: 'Geef je verbouwing een naam, kies het type (keuken, badkamer, uitbouw...) en stel je totaalbudget in.',
+    description: 'Geef je verbouwing een naam, kies het type — keuken, badkamer, uitbouw of iets anders — en stel meteen je totaalbudget in. Binnen een paar klikken staat je project klaar om mee te werken.',
   },
   {
     number: '02',
     title: 'Plan, voeg toe en vergelijk',
-    description: 'Maak een Gantt planning, voeg aannemers en offertes toe en registreer elke uitgave per categorie en ruimte.',
+    description: 'Bouw een Gantt planning per ruimte, voeg je aannemers en hun offertes toe en vergelijk ze direct naast elkaar. Registreer elke uitgave per categorie zodat je nooit het overzicht kwijtraakt.',
   },
   {
     number: '03',
     title: 'Houd controle met AI en analytics',
-    description: 'Stel vragen aan onze AI assistent die jouw project kent, en bekijk realtime rapportages over budget en voortgang.',
-  },
-];
-
-const reviews = [
-  {
-    name: 'Marieke de Vries',
-    location: 'Amsterdam',
-    project: 'Badkamer renovatie',
-    text: 'Eindelijk een app die écht helpt bij het bijhouden van mijn verbouwing. De budget tracker heeft me al twee keer gewaarschuwd voordat ik over mijn budget ging.',
-    rating: 5,
-  },
-  {
-    name: 'Thomas Bakker',
-    location: 'Rotterdam',
-    project: 'Complete keukenrenovatie',
-    text: 'Het vergelijken van offertes is geweldig. Ik had drie aannemers en kon hun offertes direct naast elkaar zien. De Gantt planning hielp me alle fases overzichtelijk te houden.',
-    rating: 5,
-  },
-  {
-    name: 'Sandra Hendriks',
-    location: 'Utrecht',
-    project: 'Woonkamer uitbreiding',
-    text: 'De AI assistent is ongelofelijk handig. Ik vroeg of ik een vergunning nodig had voor mijn dakkapel en kreeg direct een duidelijk antwoord op basis van mijn eigen project.',
-    rating: 5,
+    description: 'Stel vragen aan de AI assistent die jouw project door en door kent, en bekijk realtime rapportages over budget, voortgang en openstaande taken — altijd actueel, altijd binnen handbereik.',
   },
 ];
 
@@ -222,11 +198,11 @@ export default function LandingPage() {
                 14 dagen gratis proberen
               </div>
               <h1 className="text-5xl sm:text-6xl font-bold leading-tight mb-6" style={{ color: '#1A1A1A' }}>
-                Verbouw<br />
-                <span style={{ color: '#288760' }}>zonder stress</span>
+                Stop met gissen.<br />
+                <span style={{ color: '#288760' }}>Begin met Renofloww.</span>
               </h1>
               <p className="text-xl mb-8 leading-relaxed" style={{ color: '#6B7280' }}>
-                Budget, aannemers, offertes, Gantt planning en een AI assistent die jouw project kent — alles op één plek.
+                Budget, aannemers, planning en AI — alles voor jouw verbouwing op één plek.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
@@ -327,6 +303,19 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust bar */}
+      <section className="pb-12 sm:pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 text-sm" style={{ color: '#6B7280' }}>
+            <span>14 dagen gratis proberen</span>
+            <span style={{ color: '#D1D5DB' }}>·</span>
+            <span>Geen creditcard vereist</span>
+            <span style={{ color: '#D1D5DB' }}>·</span>
+            <span>Opgezet in 5 minuten</span>
           </div>
         </div>
       </section>
@@ -477,20 +466,20 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-20" style={{ backgroundColor: '#1A5140' }}>
+      <section className="py-28 sm:py-32" style={{ backgroundColor: '#1A5140' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-20">
             <h2 className="text-4xl font-bold text-white mb-4">Hoe het werkt</h2>
             <p className="text-lg" style={{ color: '#B7E5BA' }}>In drie stappen je verbouwing onder controle</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-10 lg:gap-12">
             {steps.map((step) => (
               <div key={step.number} className="text-center">
-                <div className="inline-flex w-16 h-16 rounded-full items-center justify-center text-xl font-bold mb-6" style={{ backgroundColor: '#288760', color: 'white' }}>
+                <div className="inline-flex w-20 h-20 rounded-full items-center justify-center text-3xl font-bold mb-8" style={{ backgroundColor: '#288760', color: 'white' }}>
                   {step.number}
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3">{step.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: '#B7E5BA' }}>{step.description}</p>
+                <h3 className="text-2xl font-bold text-white mb-4">{step.title}</h3>
+                <p className="text-base leading-relaxed max-w-sm mx-auto" style={{ color: '#B7E5BA' }}>{step.description}</p>
               </div>
             ))}
           </div>
@@ -598,34 +587,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Social Proof */}
-      <section className="py-20" style={{ backgroundColor: '#F8FAF9' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4" style={{ color: '#1A1A1A' }}>Wat gebruikers zeggen</h2>
-            <p className="text-lg" style={{ color: '#6B7280' }}>Duizenden Nederlanders verbouwen al zonder stress</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {reviews.map((review) => (
-              <div key={review.name} className="rounded-2xl p-6 bg-white border" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: review.rating }).map((_, i) => (
-                    <svg key={i} className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" style={{ color: '#F59E0B' }}>
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-sm leading-relaxed mb-4" style={{ color: '#1A1A1A' }}>"{review.text}"</p>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{review.name}</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>{review.location} · {review.project}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* FAQ */}
       <section className="py-20 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -653,11 +614,11 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/register"
-              className="inline-flex items-center justify-center px-8 py-4 rounded-xl text-base font-semibold bg-white transition-opacity hover:opacity-90"
-              style={{ color: '#288760' }}
+              className="inline-flex items-center justify-center px-10 py-5 rounded-xl text-lg font-bold bg-white transition-all hover:opacity-90 hover:-translate-y-0.5"
+              style={{ color: '#1A5140', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
             >
               Gratis starten
-              <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
