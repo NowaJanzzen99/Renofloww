@@ -689,7 +689,13 @@ export default function LandingPage() {
               <Link href="/login" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Inloggen</Link>
               <Link href="/register" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Registreren</Link>
             </div>
-            <p className="text-sm" style={{ color: '#5CA87C' }}>© 2025 Renofloww. Alle rechten voorbehouden.</p>
+          </div>
+          <div className="mt-8 pt-6 border-t flex flex-col md:flex-row justify-between items-center gap-4" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
+            <p className="text-sm" style={{ color: '#5CA87C' }}>© 2026 Renofloww (Sharply, KVK 76336840). Alle rechten voorbehouden.</p>
+            <div className="flex items-center gap-6">
+              <Link href="/privacy" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Privacybeleid</Link>
+              <Link href="/voorwaarden" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Algemene voorwaarden</Link>
+            </div>
           </div>
         </div>
       </footer>

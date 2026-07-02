@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const [naam, setNaam] = useState('');
   const [email, setEmail] = useState('');
   const [wachtwoord, setWachtwoord] = useState('');
+  const [akkoord, setAkkoord] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -19,6 +20,11 @@ export default function RegisterPage() {
 
     if (wachtwoord.length < 8) {
       setError('Wachtwoord moet minimaal 8 tekens bevatten.');
+      return;
+    }
+
+    if (!akkoord) {
+      setError('Je moet akkoord gaan met de algemene voorwaarden en het privacybeleid.');
       return;
     }
 
@@ -164,6 +170,28 @@ export default function RegisterPage() {
           <p className="mt-1 text-xs" style={{ color: '#6B7280' }}>Minimaal 8 tekens</p>
         </div>
 
+        <div className="flex items-start gap-2.5">
+          <input
+            id="akkoord"
+            type="checkbox"
+            required
+            checked={akkoord}
+            onChange={(e) => setAkkoord(e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded shrink-0"
+            style={{ accentColor: '#288760' }}
+          />
+          <label htmlFor="akkoord" className="text-sm" style={{ color: '#6B7280' }}>
+            Ik ga akkoord met de{' '}
+            <Link href="/voorwaarden" target="_blank" className="font-medium underline" style={{ color: '#288760' }}>
+              algemene voorwaarden
+            </Link>{' '}
+            en het{' '}
+            <Link href="/privacy" target="_blank" className="font-medium underline" style={{ color: '#288760' }}>
+              privacybeleid
+            </Link>.
+          </label>
+        </div>
+
         {error && (
           <div
             className="px-4 py-3 rounded-xl text-sm"
@@ -175,7 +203,7 @@ export default function RegisterPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !akkoord}
           className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
           style={{ backgroundColor: '#288760' }}
         >
