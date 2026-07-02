@@ -128,10 +128,16 @@ export default function VoorwaardenPage() {
         <Section title="10. Beëindiging">
           <p>
             Je kunt je account op elk moment verwijderen via je accountinstellingen of door contact
-            met ons op te nemen. Wij kunnen je account opschorten of beëindigen bij overtreding van
-            deze voorwaarden, bij langdurige inactiviteit van een gratis account, of bij het staken
-            van de dienst — in dat laatste geval met een redelijke opzegtermijn en de mogelijkheid
-            om je gegevens te exporteren.
+            met ons op te nemen. Verwijdering is direct en permanent. Heb je op dat moment een actief
+            betaald abonnement, dan wordt dit automatisch opgezegd; er vindt geen terugbetaling plaats
+            over de reeds lopende betaalperiode, conform artikel 5. Het verwijderen van je account
+            schort geen reeds vervallen betalingsverplichtingen op.
+          </p>
+          <p>
+            Wij kunnen je account opschorten of beëindigen bij overtreding van deze voorwaarden, bij
+            langdurige inactiviteit van een gratis account, of bij het staken van de dienst — in dat
+            laatste geval met een redelijke opzegtermijn en de mogelijkheid om je gegevens te
+            exporteren.
           </p>
         </Section>
 

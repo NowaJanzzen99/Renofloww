@@ -124,10 +124,11 @@ export default function PrivacyPage() {
 
         <Section title="7. Bewaartermijn">
           <p>
-            Wij bewaren jouw gegevens zolang je een account bij ons hebt. Na het verwijderen van je
-            account verwijderen wij jouw persoonsgegevens binnen 30 dagen, tenzij we wettelijk
-            verplicht zijn bepaalde gegevens (zoals facturen, op grond van de fiscale bewaarplicht
-            van 7 jaar) langer te bewaren.
+            Wij bewaren jouw gegevens zolang je een account bij ons hebt. Wanneer je je account
+            verwijdert via je accountinstellingen, worden je profiel, projecten, taken, kosten,
+            documenten en foto&apos;s direct en permanent uit onze systemen verwijderd — dit kan
+            niet ongedaan worden gemaakt. Facturatiegegevens bij onze betaalpartner Stripe worden,
+            los van je account, bewaard op grond van de fiscale bewaarplicht van 7 jaar.
           </p>
         </Section>
 

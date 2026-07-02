@@ -34,6 +34,7 @@ export default function SettingsPage() {
   // Delete account state
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -122,9 +123,26 @@ export default function SettingsPage() {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirm !== 'VERWIJDER') return;
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/');
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/account/delete', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showMessage(data.error || 'Verwijderen van account is mislukt. Probeer het opnieuw.', true);
+        setShowDeleteModal(false);
+        setDeleteConfirm('');
+        return;
+      }
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push('/');
+    } catch {
+      showMessage('Er is een onverwachte fout opgetreden. Probeer het opnieuw.', true);
+      setShowDeleteModal(false);
+      setDeleteConfirm('');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const trialEndsAt = profile?.trial_ends_at ? new Date(profile.trial_ends_at) : null;
@@ -449,7 +467,9 @@ export default function SettingsPage() {
           <div className="rounded-xl border p-4" style={{ borderColor: '#FECACA' }}>
             <h3 className="text-sm font-semibold mb-1" style={{ color: '#EF4444' }}>Account verwijderen</h3>
             <p className="text-sm mb-4" style={{ color: '#6B7280' }}>
-              Je gegevens worden 30 dagen bewaard na verwijdering, daarna worden ze permanent verwijderd.
+              Je account en alle bijbehorende gegevens (projecten, taken, kosten, documenten, foto&apos;s)
+              worden direct en permanent verwijderd — dit kan niet ongedaan worden gemaakt.
+              {profile?.is_pro && ' Een actief abonnement wordt hierbij automatisch opgezegd.'}
             </p>
             <button
               onClick={() => setShowDeleteModal(true)}
@@ -479,16 +499,16 @@ export default function SettingsPage() {
               style={{ borderColor: '#FECACA', color: '#1A1A1A' }}
             />
             <div className="flex gap-3">
-              <button onClick={() => { setShowDeleteModal(false); setDeleteConfirm(''); }} className="flex-1 py-2.5 rounded-xl text-sm font-medium border" style={{ borderColor: '#E5E7EB', color: '#6B7280' }}>
+              <button onClick={() => { setShowDeleteModal(false); setDeleteConfirm(''); }} disabled={deleting} className="flex-1 py-2.5 rounded-xl text-sm font-medium border disabled:opacity-40" style={{ borderColor: '#E5E7EB', color: '#6B7280' }}>
                 Annuleren
               </button>
               <button
                 onClick={handleDeleteAccount}
-                disabled={deleteConfirm !== 'VERWIJDER'}
+                disabled={deleteConfirm !== 'VERWIJDER' || deleting}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-40"
                 style={{ backgroundColor: '#EF4444' }}
               >
-                Account verwijderen
+                {deleting ? 'Bezig met verwijderen...' : 'Account verwijderen'}
               </button>
             </div>
           </div>
