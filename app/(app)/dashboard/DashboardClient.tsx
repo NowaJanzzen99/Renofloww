@@ -707,15 +707,18 @@ export default function DashboardClient({
   const cardContent: Record<string, React.ReactNode> = {
     budget: (
       <div
-        className="rounded-2xl p-4 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
-        style={{ backgroundColor: '#FFFFFF', borderColor: '#D1E8DC', boxShadow: '0 4px 24px rgba(40,135,96,0.10), 0 1px 4px rgba(0,0,0,0.04)' }}
+        className="rounded-2xl p-5 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5 relative overflow-hidden"
+        style={{ backgroundColor: '#FFFFFF', borderColor: '#E5EDE9', boxShadow: '0 4px 24px rgba(40,135,96,0.10), 0 1px 4px rgba(0,0,0,0.04)' }}
       >
-        <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#9CA3AF' }}>Budget</p>
+        {/* subtle ambient glow, tinted to current status color */}
+        <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${budgetColor}1A 0%, transparent 70%)` }} />
+
+        <p className="text-[10px] font-bold uppercase tracking-widest mb-4 relative" style={{ color: '#9CA3AF' }}>Budget</p>
 
         {budget === 0 ? (
           /* Geen budget ingesteld */
-          <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-dashed" style={{ borderColor: '#D1E8DC' }}>
+          <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center relative">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-dashed" style={{ borderColor: '#D1E8DC', backgroundColor: '#F8FCFA' }}>
               <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: '#288760', opacity: 0.5 }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-6-6h12" />
               </svg>
@@ -728,16 +731,23 @@ export default function DashboardClient({
           </div>
         ) : (
           <>
-            {/* Grote donut met % en status in midden */}
-            <div className="flex justify-center mb-4">
-              <div style={{ position: 'relative', width: 96, height: 96, flexShrink: 0 }}>
+            {/* Grote donut met gradient ring en % in het midden */}
+            <div className="flex justify-center mb-5 relative">
+              <div style={{ position: 'relative', width: 120, height: 120, flexShrink: 0 }}>
                 {(() => {
-                  const r = 38; const circ = 2 * Math.PI * r;
+                  const r = 46; const circ = 2 * Math.PI * r;
                   const filled = Math.min(budgetPercentage / 100, 1) * circ;
+                  const gradId = 'budgetRingGrad';
                   return (
-                    <svg viewBox="0 0 96 96" width={96} height={96}>
-                      <circle cx="48" cy="48" r={r} fill="none" stroke="#F3F4F6" strokeWidth="10" />
-                      <circle cx="48" cy="48" r={r} fill="none" stroke={budgetColor} strokeWidth="10"
+                    <svg viewBox="0 0 120 120" width={120} height={120}>
+                      <defs>
+                        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor={budgetColor} stopOpacity="0.6" />
+                          <stop offset="100%" stopColor={budgetColor} stopOpacity="1" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="60" cy="60" r={r} fill="none" stroke="#F1F5F3" strokeWidth="12" />
+                      <circle cx="60" cy="60" r={r} fill="none" stroke={`url(#${gradId})`} strokeWidth="12"
                         strokeLinecap="round"
                         strokeDasharray={`${filled} ${circ - filled}`}
                         strokeDashoffset={circ / 4}
@@ -747,28 +757,46 @@ export default function DashboardClient({
                   );
                 })()}
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 20, fontWeight: 800, color: budgetColor, lineHeight: 1 }}>{budgetPercentage}%</span>
-                  <span style={{ fontSize: 9, color: '#9CA3AF', marginTop: 1, fontWeight: 600, letterSpacing: '0.05em' }}>GEBRUIKT</span>
+                  <span style={{ fontSize: 26, fontWeight: 800, color: budgetColor, lineHeight: 1, letterSpacing: '-0.02em' }}>{budgetPercentage}%</span>
+                  <span style={{ fontSize: 9, color: '#9CA3AF', marginTop: 3, fontWeight: 700, letterSpacing: '0.08em' }}>GEBRUIKT</span>
                 </div>
               </div>
             </div>
 
-            {/* Twee sleutelcijfers */}
-            <div className="space-y-2 mt-auto">
-              <div className="flex items-center justify-between">
-                <span style={{ fontSize: 11, color: '#6B7280' }}>Uitgegeven</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: budgetColor }}>{formatShort(totalExpenses)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span style={{ fontSize: 11, color: '#6B7280' }}>Resterend</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1A1A' }}>{formatShort(Math.max(budget - totalExpenses, 0))}</span>
-              </div>
-              {/* Dunne progress bar + totaal */}
-              <div>
-                <div className="w-full rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6', height: 4 }}>
-                  <div style={{ width: `${budgetPercentage}%`, height: '100%', backgroundColor: budgetColor, borderRadius: 9999, transition: 'width 0.5s' }} />
+            {/* Sleutelcijfers als icon-tegels */}
+            <div className="grid grid-cols-2 gap-2 mb-3 relative">
+              <div className="rounded-xl p-2.5 flex items-center gap-2" style={{ backgroundColor: `${budgetColor}0F` }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${budgetColor}22` }}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke={budgetColor} strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h10v10M7 17L17 7" />
+                  </svg>
                 </div>
-                <p style={{ fontSize: 9, color: '#C4CACC', marginTop: 3 }}>Totaal budget: {formatShort(budget)}</p>
+                <div className="min-w-0">
+                  <p style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, lineHeight: 1.2 }}>Uitgegeven</p>
+                  <p className="truncate" style={{ fontSize: 14, fontWeight: 800, color: budgetColor, lineHeight: 1.3 }}>{formatShort(totalExpenses)}</p>
+                </div>
+              </div>
+              <div className="rounded-xl p-2.5 flex items-center gap-2" style={{ backgroundColor: '#F8FAF9' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#EEF2F0' }}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#1A1A1A" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <p style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, lineHeight: 1.2 }}>Resterend</p>
+                  <p className="truncate" style={{ fontSize: 14, fontWeight: 800, color: '#1A1A1A', lineHeight: 1.3 }}>{formatShort(Math.max(budget - totalExpenses, 0))}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Dunne gradient progress bar + totaal */}
+            <div className="mt-auto relative">
+              <div className="w-full rounded-full overflow-hidden" style={{ backgroundColor: '#F1F5F3', height: 6 }}>
+                <div style={{ width: `${budgetPercentage}%`, height: '100%', background: `linear-gradient(90deg, ${budgetColor}99, ${budgetColor})`, borderRadius: 9999, transition: 'width 0.5s' }} />
+              </div>
+              <div className="flex items-center justify-between mt-1.5">
+                <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 500 }}>Totaal budget</span>
+                <span style={{ fontSize: 10, color: '#6B7280', fontWeight: 700 }}>{formatShort(budget)}</span>
               </div>
             </div>
           </>
