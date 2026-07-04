@@ -765,26 +765,26 @@ export default function DashboardClient({
 
             {/* Sleutelcijfers als icon-tegels */}
             <div className="grid grid-cols-2 gap-2 mb-3 relative">
-              <div className="rounded-xl p-2.5 flex items-center gap-2" style={{ backgroundColor: `${budgetColor}0F` }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${budgetColor}22` }}>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke={budgetColor} strokeWidth={2}>
+              <div className="rounded-xl p-2.5 flex items-center gap-2" style={{ backgroundColor: '#FEF2F2' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#FECACA' }}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#EF4444" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h10v10M7 17L17 7" />
                   </svg>
                 </div>
                 <div className="min-w-0">
                   <p style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, lineHeight: 1.2 }}>Uitgegeven</p>
-                  <p className="truncate" style={{ fontSize: 14, fontWeight: 800, color: budgetColor, lineHeight: 1.3 }}>{formatShort(totalExpenses)}</p>
+                  <p className="truncate" style={{ fontSize: 14, fontWeight: 800, color: '#EF4444', lineHeight: 1.3 }}>{formatShort(totalExpenses)}</p>
                 </div>
               </div>
-              <div className="rounded-xl p-2.5 flex items-center gap-2" style={{ backgroundColor: '#F8FAF9' }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#EEF2F0' }}>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#1A1A1A" strokeWidth={2}>
+              <div className="rounded-xl p-2.5 flex items-center gap-2" style={{ backgroundColor: '#F0FDF4' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#B7E5BA' }}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#288760" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div className="min-w-0">
                   <p style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, lineHeight: 1.2 }}>Resterend</p>
-                  <p className="truncate" style={{ fontSize: 14, fontWeight: 800, color: '#1A1A1A', lineHeight: 1.3 }}>{formatShort(Math.max(budget - totalExpenses, 0))}</p>
+                  <p className="truncate" style={{ fontSize: 14, fontWeight: 800, color: '#288760', lineHeight: 1.3 }}>{formatShort(Math.max(budget - totalExpenses, 0))}</p>
                 </div>
               </div>
             </div>
