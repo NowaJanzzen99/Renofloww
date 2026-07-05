@@ -807,14 +807,10 @@ export default function DashboardClient({
         {/* zelfde ambient glow als de Budget-kaart, voor visuele balans */}
         <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #2887601A 0%, transparent 70%)' }} />
 
-        <div className="flex items-center justify-between mb-3 relative">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #288760, #5CA87C)' }}>
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
-            </div>
+        <div className="flex items-center justify-between mb-4 relative">
+          <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>AI-advies</span>
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#288760' }} />
           </div>
           <button onClick={() => fetchAiTip(true)} disabled={aiTipLoading} className="p-1 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors" title="Vernieuwen">
             <svg className={`w-3.5 h-3.5 ${aiTipLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#C4CACC' }}>
@@ -825,10 +821,17 @@ export default function DashboardClient({
 
         <div className="flex-1 flex flex-col justify-center relative">
           {aiTipLoading && !aiTip ? (
-            <div className="flex gap-1.5 items-center justify-center">
-              {[0, 1, 2].map(i => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#288760', animationDelay: `${i * 0.15}s`, opacity: 0.6 }} />
-              ))}
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #288760, #5CA87C)' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+              </div>
+              <div className="rounded-2xl px-3.5 py-3.5 flex items-center gap-1.5" style={{ backgroundColor: '#F0FDF4', borderBottomLeftRadius: 4 }}>
+                {[0, 1, 2].map(i => (
+                  <div key={i} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#288760', animationDelay: `${i * 0.15}s`, opacity: 0.6 }} />
+                ))}
+              </div>
             </div>
           ) : aiTip ? (
             (() => {
@@ -841,13 +844,16 @@ export default function DashboardClient({
                 : '💡';
               return (
                 <>
-                  <div className="rounded-xl p-3" style={{ backgroundColor: '#F8FAF9' }}>
-                    <p className="text-sm leading-relaxed font-medium" style={{ color: '#1A1A1A' }}>
-                      <span className="mr-1.5">{emoji}</span>{aiTip}
-                    </p>
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #288760, #5CA87C)' }}>
+                      <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>
+                    </div>
+                    <div className="rounded-2xl px-3.5 py-3" style={{ backgroundColor: '#F0FDF4', borderBottomLeftRadius: 4 }}>
+                      <p className="text-sm leading-relaxed font-medium" style={{ color: '#14432E' }}>{aiTip}</p>
+                    </div>
                   </div>
                   {aiTipAction && (
-                    <Link href={aiTipAction.href} className="text-sm font-semibold mt-3 inline-block" style={{ color: '#288760' }}>
+                    <Link href={aiTipAction.href} className="text-sm font-semibold mt-3 inline-block" style={{ color: '#288760', marginLeft: 42 }}>
                       {aiTipAction.label}
                     </Link>
                   )}
@@ -855,9 +861,16 @@ export default function DashboardClient({
               );
             })()
           ) : (
-            <p className="text-sm text-center" style={{ color: '#C4CACC' }}>
-              {allProjects.length === 0 ? 'Voeg een project toe voor tips' : 'Laden...'}
-            </p>
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #288760, #5CA87C)' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+              </div>
+              <p className="text-sm pt-1.5" style={{ color: '#9CA3AF' }}>
+                {allProjects.length === 0 ? 'Voeg een project toe voor tips' : 'Laden...'}
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -1219,11 +1232,11 @@ export default function DashboardClient({
               <h2 className="text-sm font-semibold" style={{ color: '#9CA3AF' }}>Vandaag</h2>
               <Link
                 href={currentProject ? `/projects/${currentProject.id}?tab=taken` : '/projects'}
-                className="flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg transition-colors hover:bg-gray-50"
-                style={{ color: '#9CA3AF' }}
+                className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors hover:opacity-80"
+                style={{ color: '#288760', backgroundColor: '#F0FDF4' }}
                 title="Plannen maken"
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-6-6h12" />
                 </svg>
                 Plannen
