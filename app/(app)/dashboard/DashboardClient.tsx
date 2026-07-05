@@ -764,7 +764,7 @@ export default function DashboardClient({
             </div>
 
             {/* Sleutelcijfers als icon-tegels */}
-            <div className="grid grid-cols-2 gap-2 mb-3 relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 relative">
               <div className="rounded-xl p-2.5 flex items-center gap-2" style={{ backgroundColor: '#FBF5F5' }}>
                 <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="#E88A8A" strokeWidth={1.75}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h10v10M7 17L17 7" />
