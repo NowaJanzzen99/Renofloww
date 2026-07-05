@@ -843,16 +843,33 @@ export default function DashboardClient({
                 ))}
               </div>
             ) : aiTip ? (
-              <>
-                <div className="rounded-2xl px-3.5 py-3" style={{ backgroundColor: '#F0FDF4' }}>
-                  <p className="text-sm leading-relaxed font-medium" style={{ color: '#14432E' }}>{aiTip}</p>
-                </div>
-                {aiTipAction && (
-                  <Link href={aiTipAction.href} className="text-sm font-semibold mt-3 inline-block whitespace-nowrap" style={{ color: '#288760' }}>
-                    {aiTipAction.label}
-                  </Link>
-                )}
-              </>
+              (() => {
+                const urgent = /achterstallig|te laat|achter|mislukt|verlopen|dringend/i.test(aiTip);
+                return (
+                  <>
+                    <span
+                      className="inline-flex w-fit items-center text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full mb-2"
+                      style={urgent
+                        ? { color: '#B91C1C', backgroundColor: '#FEF2F2' }
+                        : { color: '#1A5140', backgroundColor: '#DCF5EA' }}
+                    >
+                      {urgent ? 'Urgent' : 'Advies'}
+                    </span>
+                    <div className="rounded-2xl px-3.5 py-3" style={{ backgroundColor: '#F0FDF4' }}>
+                      <p className="text-sm leading-relaxed font-medium" style={{ color: '#14432E' }}>{aiTip}</p>
+                    </div>
+                    {aiTipAction && (
+                      <Link
+                        href={aiTipAction.href}
+                        className="text-xs font-bold mt-3 inline-flex w-fit items-center whitespace-nowrap px-3 py-2 rounded-xl text-white transition-opacity hover:opacity-90"
+                        style={{ backgroundColor: '#288760' }}
+                      >
+                        {aiTipAction.label}
+                      </Link>
+                    )}
+                  </>
+                );
+              })()
             ) : (
               <p className="text-sm" style={{ color: '#9CA3AF' }}>
                 {allProjects.length === 0 ? 'Voeg een project toe voor tips' : 'Laden...'}
