@@ -85,31 +85,15 @@ export default function RenoflowwLogo({
 
   // ── Icon-only variant (tablet sidebar) ───────────────────────────────────
   if (variant === 'icon') {
-    const dim    = { sm: 28, md: 36, lg: 44 }[size];
-    const radius = Math.round(dim * 0.28);
-    const inner  = Math.round(dim * 0.60);
+    const dim = { sm: 28, md: 36, lg: 44 }[size];
+    const src = textColor === 'white' ? '/logo-mark-white.png' : '/logo-mark.png';
     return (
-      <div
-        style={{
-          width: dim,
-          height: dim,
-          borderRadius: radius,
-          background: 'linear-gradient(135deg, #1a5140 0%, #288760 100%)',
-          boxShadow: textColor === 'white' ? 'none' : '0 2px 8px rgba(40,135,96,0.28)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        {/* Simplified house icon */}
-        <svg viewBox="0 0 24 24" fill="none" style={{ width: inner, height: inner }}>
-          <path
-            d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V10.5Z"
-            fill="white"
-          />
-        </svg>
-      </div>
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt="Renofloww"
+        style={{ width: dim, height: dim, objectFit: 'contain', flexShrink: 0 }}
+      />
     );
   }
 

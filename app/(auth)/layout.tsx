@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import RenoflowwLogo from '@/components/RenoflowwLogo';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,9 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-base bg-white/20">
-            R
-          </div>
+          <RenoflowwLogo variant="icon" size="md" textColor="white" />
           <span className="font-bold text-xl text-white">Renofloww</span>
         </Link>
 
@@ -47,9 +46,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {/* Mobile logo */}
         <div className="lg:hidden mb-8">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#288760' }}>
-              R
-            </div>
+            <RenoflowwLogo variant="icon" size="sm" />
             <span className="font-bold text-lg" style={{ color: '#1A1A1A' }}>Renofloww</span>
           </Link>
         </div>

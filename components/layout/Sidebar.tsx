@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import RenoflowwLogo from '@/components/RenoflowwLogo';
 import type { Profile } from '@/types';
 
 // ─── Storage key for the dropdown's open/closed state ───────────────────────
@@ -145,12 +146,7 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="px-5 py-4 border-b" style={{ borderColor: '#E5E7EB' }}>
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-base shrink-0"
-              style={{ background: 'linear-gradient(135deg, #1a5140 0%, #288760 100%)', boxShadow: '0 2px 8px rgba(40,135,96,0.35)' }}
-            >
-              R
-            </div>
+            <RenoflowwLogo variant="icon" size="md" />
             <span className="text-xl font-black tracking-tight" style={{ color: '#288760' }}>Renofloww</span>
           </Link>
         </div>
@@ -372,9 +368,7 @@ export default function Sidebar() {
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }}
       >
         <div className="p-3 border-b flex justify-center" style={{ borderColor: '#E5E7EB' }}>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#288760' }}>
-            R
-          </div>
+          <RenoflowwLogo variant="icon" size="sm" />
         </div>
 
         <nav className="flex-1 p-2 space-y-1 flex flex-col items-center">
