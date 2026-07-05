@@ -801,40 +801,61 @@ export default function DashboardClient({
     ),
     aitip: (
       <div
-        className="rounded-2xl p-3 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5"
+        className="rounded-2xl p-4 border flex flex-col h-full transition-all duration-200 hover:-translate-y-0.5 relative overflow-hidden"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
       >
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{ color: '#288760' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
-            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>AI-advies</span>
+        {/* zelfde ambient glow als de Budget-kaart, voor visuele balans */}
+        <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #2887601A 0%, transparent 70%)' }} />
+
+        <div className="flex items-center justify-between mb-3 relative">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #288760, #5CA87C)' }}>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+            </div>
+            <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>AI-advies</span>
           </div>
-          <button onClick={() => fetchAiTip(true)} disabled={aiTipLoading} className="p-0.5 rounded disabled:opacity-40" title="Vernieuwen">
-            <svg className={`w-3 h-3 ${aiTipLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#C4CACC' }}>
+          <button onClick={() => fetchAiTip(true)} disabled={aiTipLoading} className="p-1 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors" title="Vernieuwen">
+            <svg className={`w-3.5 h-3.5 ${aiTipLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#C4CACC' }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
         </div>
-        <div className="flex-1">
+
+        <div className="flex-1 flex flex-col justify-center relative">
           {aiTipLoading && !aiTip ? (
-            <div className="flex gap-1 items-center">
+            <div className="flex gap-1.5 items-center justify-center">
               {[0, 1, 2].map(i => (
-                <div key={i} className="w-1 h-1 rounded-full animate-bounce" style={{ backgroundColor: '#288760', animationDelay: `${i * 0.15}s`, opacity: 0.6 }} />
+                <div key={i} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#288760', animationDelay: `${i * 0.15}s`, opacity: 0.6 }} />
               ))}
             </div>
           ) : aiTip ? (
-            <>
-              <p className="text-xs leading-snug" style={{ color: '#374151', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{aiTip}</p>
-              {aiTipAction && (
-                <Link href={aiTipAction.href} className="text-xs font-semibold mt-2 inline-block" style={{ color: '#288760' }}>
-                  {aiTipAction.label}
-                </Link>
-              )}
-            </>
+            (() => {
+              const label = aiTipAction?.label ?? '';
+              const emoji = /taken|taak/i.test(label) ? '📋'
+                : /planning|gantt/i.test(label) ? '🗓️'
+                : /offerte/i.test(label) ? '📄'
+                : /kosten/i.test(label) ? '🧾'
+                : /budget/i.test(label) ? '💶'
+                : '💡';
+              return (
+                <>
+                  <div className="rounded-xl p-3" style={{ backgroundColor: '#F8FAF9' }}>
+                    <p className="text-sm leading-relaxed font-medium" style={{ color: '#1A1A1A' }}>
+                      <span className="mr-1.5">{emoji}</span>{aiTip}
+                    </p>
+                  </div>
+                  {aiTipAction && (
+                    <Link href={aiTipAction.href} className="text-sm font-semibold mt-3 inline-block" style={{ color: '#288760' }}>
+                      {aiTipAction.label}
+                    </Link>
+                  )}
+                </>
+              );
+            })()
           ) : (
-            <p className="text-xs" style={{ color: '#C4CACC' }}>
+            <p className="text-sm text-center" style={{ color: '#C4CACC' }}>
               {allProjects.length === 0 ? 'Voeg een project toe voor tips' : 'Laden...'}
             </p>
           )}
@@ -1194,8 +1215,19 @@ export default function DashboardClient({
             style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
           >
             {/* Header */}
-            <div className="px-5 pt-5 pb-3">
+            <div className="px-5 pt-5 pb-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold" style={{ color: '#9CA3AF' }}>Vandaag</h2>
+              <Link
+                href={currentProject ? `/projects/${currentProject.id}?tab=taken` : '/projects'}
+                className="flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg transition-colors hover:bg-gray-50"
+                style={{ color: '#9CA3AF' }}
+                title="Plannen maken"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-6-6h12" />
+                </svg>
+                Plannen
+              </Link>
             </div>
 
             {/* Vandaag lijst */}
