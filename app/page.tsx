@@ -643,7 +643,7 @@ export default function LandingPage() {
               </div>
               <span className="font-bold text-lg text-white">Renofloww</span>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
               <a href="#functies" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Functies</a>
               <a href="#ai" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>AI assistent</a>
               <a href="#prijzen" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Prijzen</a>
@@ -652,8 +652,8 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-8 pt-6 border-t flex flex-col md:flex-row justify-between items-center gap-4" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
-            <p className="text-sm" style={{ color: '#5CA87C' }}>© 2026 Renofloww (Sharply, KVK 76336840). Alle rechten voorbehouden.</p>
-            <div className="flex items-center gap-6">
+            <p className="text-sm text-center" style={{ color: '#5CA87C' }}>© 2026 Renofloww (Sharply, KVK 76336840). Alle rechten voorbehouden.</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
               <Link href="/privacy" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Privacybeleid</Link>
               <Link href="/voorwaarden" className="text-sm transition-opacity hover:opacity-80" style={{ color: '#B7E5BA' }}>Algemene voorwaarden</Link>
             </div>
