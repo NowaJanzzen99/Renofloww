@@ -77,24 +77,33 @@ export default function InstellingenTab({ project, onProjectUpdated }: Props) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const ext = file.name.split('.').pop() ?? 'jpg';
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
       const path = `${user.id}/${project.id}/cover.${ext}`;
-      const { error: uploadError } = await supabase.storage.from('photos').upload(path, file, { upsert: true });
-      if (uploadError) { setCoverError('Upload mislukt.'); return; }
+
+      // Eerst een eventueel bestaand bestand op dit pad verwijderen en dan
+      // een schone insert doen — upsert vereist bredere storage-rechten
+      // (select + insert + update) en gaf hier "upload mislukt". Delete +
+      // insert gebruiken alleen rechten die elders in de app al bewezen werken.
+      await supabase.storage.from('photos').remove([path]);
+      const { error: uploadError } = await supabase.storage.from('photos').upload(path, file);
+      if (uploadError) { setCoverError(`Upload mislukt: ${uploadError.message}`); return; }
 
       const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(path);
+      // Cache-busting: zonder dit blijft de browser de vorige foto tonen,
+      // omdat de URL (bij hetzelfde bestandspad) exact hetzelfde blijft.
+      const freshUrl = `${publicUrl}?v=${Date.now()}`;
       const { data, error } = await supabase
         .from('projects')
-        .update({ cover_photo_url: publicUrl })
+        .update({ cover_photo_url: freshUrl })
         .eq('id', project.id)
         .select()
         .single();
 
-      if (error) { setCoverError('Opslaan mislukt.'); return; }
-      setCoverPhotoUrl(publicUrl);
+      if (error) { setCoverError(`Opslaan mislukt: ${error.message}`); return; }
+      setCoverPhotoUrl(freshUrl);
       if (data) onProjectUpdated(data);
-    } catch {
-      setCoverError('Er is een fout opgetreden.');
+    } catch (err) {
+      setCoverError('Er is een fout opgetreden: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setUploadingCover(false);
       e.target.value = '';
@@ -103,6 +112,12 @@ export default function InstellingenTab({ project, onProjectUpdated }: Props) {
 
   const removeCoverPhoto = async () => {
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      // Best-effort: ook het bestand zelf opruimen (alle bekende extensies).
+      const paths = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic'].map((ext) => `${user.id}/${project.id}/cover.${ext}`);
+      await supabase.storage.from('photos').remove(paths);
+    }
     const { data, error } = await supabase
       .from('projects')
       .update({ cover_photo_url: null })
