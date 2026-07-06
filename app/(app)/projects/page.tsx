@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import type { Project } from '@/types';
+import { PROJECT_TYPES, PROJECT_TYPE_EMOJI } from '@/lib/projectTypes';
+import type { Project, ProjectType } from '@/types';
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   lopend: { label: 'Lopend', color: '#3B82F6', bg: '#EFF6FF' },
@@ -14,14 +15,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
   active: { label: 'Lopend', color: '#3B82F6', bg: '#EFF6FF' },
 };
 
-const typeEmoji: Record<string, string> = {
-  badkamer: '🚿',
-  keuken: '🍳',
-  woonkamer: '🛋️',
-  slaapkamer: '🛏️',
-  gehele_woning: '🏠',
-  anders: '✏️',
-};
+const typeEmoji = PROJECT_TYPE_EMOJI;
 
 function ProjectCard({ project }: { project: Project & { total_expenses?: number } }) {
   const status = statusConfig[project.status] || statusConfig.gepland;
@@ -42,7 +36,12 @@ function ProjectCard({ project }: { project: Project & { total_expenses?: number
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">{typeEmoji[project.type] || '🏠'}</span>
+          {project.cover_photo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={project.cover_photo_url} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+          ) : (
+            <span className="text-2xl">{typeEmoji[project.type] || '🏠'}</span>
+          )}
           <div>
             <h3 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>{project.name}</h3>
             {project.start_date && (
@@ -95,12 +94,33 @@ function ProjectCard({ project }: { project: Project & { total_expenses?: number
 
 function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreated: (project: Project) => void }) {
   const [naam, setNaam] = useState('');
-  const [type, setType] = useState('badkamer');
+  const [selectedTypes, setSelectedTypes] = useState<ProjectType[]>(['badkamer']);
   const [budget, setBudget] = useState('');
   const [startDatum, setStartDatum] = useState('');
   const [eindDatum, setEindDatum] = useState('');
+  const [houseId, setHouseId] = useState('');
+  const [houses, setHouses] = useState<{ id: string; address: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadHouses = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from('houses').select('id, address').eq('user_id', user.id);
+      setHouses(data || []);
+    };
+    loadHouses();
+  }, []);
+
+  const toggleType = (t: ProjectType) => {
+    setSelectedTypes((prev) =>
+      prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]
+    );
+  };
+  const primaryType: ProjectType =
+    selectedTypes.length === 1 ? selectedTypes[0] : selectedTypes.length > 1 ? 'anders' : 'anders';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,11 +137,12 @@ function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreate
         .insert({
           user_id: user.id,
           name: naam,
-          type,
+          type: primaryType,
           budget: budget ? parseFloat(budget.replace(/\./g, '').replace(',', '.')) : null,
           start_date: startDatum || null,
           end_date: eindDatum || null,
           status: 'lopend',
+          house_id: houseId || null,
         })
         .select()
         .single();
@@ -166,18 +187,50 @@ function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreate
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Type</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none"
-              style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
-            >
-              {Object.entries(typeEmoji).map(([val, emoji]) => (
-                <option key={val} value={val}>{emoji} {val.charAt(0).toUpperCase() + val.slice(1).replace('_', ' ')}</option>
-              ))}
-            </select>
+            <label className="block text-sm font-medium mb-2" style={{ color: '#1A1A1A' }}>
+              Type verbouwing
+              <span className="ml-1 text-xs font-normal" style={{ color: '#9CA3AF' }}>(meerdere mogelijk)</span>
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {PROJECT_TYPES.map(({ type: t, label, emoji }) => {
+                const selected = selectedTypes.includes(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => toggleType(t)}
+                    className="flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl border text-center transition-all"
+                    style={{
+                      borderColor: selected ? '#288760' : '#E5E7EB',
+                      backgroundColor: selected ? '#F0FAF5' : 'white',
+                      color: selected ? '#288760' : '#6B7280',
+                      fontWeight: selected ? 600 : 400,
+                    }}
+                    title={label}
+                  >
+                    <span className="text-lg">{emoji}</span>
+                    <span className="text-[10px] leading-tight truncate w-full">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+          {houses.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Woning</label>
+              <select
+                value={houseId}
+                onChange={(e) => setHouseId(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none"
+                style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
+              >
+                <option value="">Geen woning gekoppeld</option>
+                {houses.map((h) => (
+                  <option key={h.id} value={h.id}>{h.address || 'Woning zonder adres'}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: '#1A1A1A' }}>Budget</label>
             <div className="relative">

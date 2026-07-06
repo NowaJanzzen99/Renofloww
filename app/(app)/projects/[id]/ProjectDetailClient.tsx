@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { PROJECT_TYPE_LABEL } from '@/lib/projectTypes';
 import type { Project, Room, Task, Contractor, Quote, Expense, ExtraWork } from '@/types';
 import OverzichtTab from '@/components/projects/tabs/OverzichtTab';
 import RuimtesTab from '@/components/projects/tabs/RuimtesTab';
@@ -259,7 +260,7 @@ export default function ProjectDetailClient({
 
               <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
                 {project.type
-                  ? ({ badkamer: 'Badkamer', keuken: 'Keuken', woonkamer: 'Woonkamer', slaapkamer: 'Slaapkamer', gehele_woning: 'Gehele woning', anders: 'Anders' }[project.type] || project.type.replace(/_/g, ' '))
+                  ? (PROJECT_TYPE_LABEL[project.type] || project.type.replace(/_/g, ' '))
                   : 'Project'}
                 {project.start_date && (
                   <>

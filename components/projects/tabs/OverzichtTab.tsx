@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { PROJECT_TYPE_LABEL } from '@/lib/projectTypes';
 import type { Project, Room, Task, Expense, Contractor, Quote } from '@/types';
 import GanttChart from '@/components/GanttChart';
 
@@ -288,10 +289,6 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
             <h3 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Project informatie</h3>
           </div>
           {(() => {
-            const typeLabels: Record<string, string> = {
-              badkamer: 'Badkamer', keuken: 'Keuken', woonkamer: 'Woonkamer',
-              slaapkamer: 'Slaapkamer', gehele_woning: 'Gehele woning', anders: 'Anders',
-            };
             const statusLabels2: Record<string, string> = {
               gepland: 'Gepland', lopend: 'Lopend', gepauzeerd: 'Gepauzeerd', afgerond: 'Afgerond',
             };
@@ -302,7 +299,7 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
               afgerond: { color: '#6B7280', bg: '#F3F4F6' },
             };
             const rows = [
-              { label: 'Type', value: typeLabels[project.type] || project.type?.replace(/_/g, ' ') || '—', badge: null },
+              { label: 'Type', value: PROJECT_TYPE_LABEL[project.type] || project.type?.replace(/_/g, ' ') || '—', badge: null },
               { label: 'Status', value: statusLabels2[project.status] || project.status, badge: statusBadgeColors[project.status] },
               { label: 'Startdatum', value: formatDate(project.start_date) || '—', badge: null },
               { label: 'Einddatum', value: formatDate(project.end_date) || '—', badge: null },

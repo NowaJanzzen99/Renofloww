@@ -4,16 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import RenoflowwLogo from '@/components/RenoflowwLogo';
+import { PROJECT_TYPES } from '@/lib/projectTypes';
 import type { ProjectType, WoningType } from '@/types';
 
-const projectTypes: { type: ProjectType; label: string; emoji: string }[] = [
-  { type: 'badkamer',     label: 'Badkamer',      emoji: '🚿' },
-  { type: 'keuken',       label: 'Keuken',         emoji: '🍳' },
-  { type: 'woonkamer',    label: 'Woonkamer',      emoji: '🛋️' },
-  { type: 'slaapkamer',   label: 'Slaapkamer',     emoji: '🛏️' },
-  { type: 'gehele_woning',label: 'Gehele woning',  emoji: '🏠' },
-  { type: 'anders',       label: 'Anders',          emoji: '✏️' },
-];
+const projectTypes = PROJECT_TYPES;
 
 const woningTypes: { type: WoningType; label: string; emoji: string }[] = [
   { type: 'appartement',        label: 'Appartement',     emoji: '🏢' },

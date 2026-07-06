@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { PROJECT_TYPES } from '@/lib/projectTypes';
 import type { Project, ProjectType } from '@/types';
 
 interface Props {
@@ -10,14 +11,7 @@ interface Props {
   onProjectUpdated: (p: Project) => void;
 }
 
-const projectTypes: { type: ProjectType; label: string; emoji: string }[] = [
-  { type: 'badkamer', label: 'Badkamer', emoji: '🚿' },
-  { type: 'keuken', label: 'Keuken', emoji: '🍳' },
-  { type: 'woonkamer', label: 'Woonkamer', emoji: '🛋️' },
-  { type: 'slaapkamer', label: 'Slaapkamer', emoji: '🛏️' },
-  { type: 'gehele_woning', label: 'Gehele woning', emoji: '🏠' },
-  { type: 'anders', label: 'Anders', emoji: '✏️' },
-];
+const projectTypes = PROJECT_TYPES;
 
 function parseAmount(v: string) {
   return v ? parseFloat(v.replace(/\./g, '').replace(',', '.')) : null;
@@ -37,14 +31,32 @@ export default function InstellingenTab({ project, onProjectUpdated }: Props) {
   const [startDatum, setStartDatum] = useState(project.start_date ?? '');
   const [eindDatum, setEindDatum] = useState(project.end_date ?? '');
   const [beschrijving, setBeschrijving] = useState(project.description ?? '');
+  const [houseId, setHouseId] = useState(project.house_id ?? '');
+  const [houses, setHouses] = useState<{ id: string; address: string | null }[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Coverfoto state
+  const [coverPhotoUrl, setCoverPhotoUrl] = useState(project.cover_photo_url ?? '');
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
 
   // Delete state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const loadHouses = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from('houses').select('id, address').eq('user_id', user.id);
+      setHouses(data || []);
+    };
+    loadHouses();
+  }, []);
 
   const toggleType = (t: ProjectType) => {
     setSelectedTypes((prev) =>
@@ -54,6 +66,54 @@ export default function InstellingenTab({ project, onProjectUpdated }: Props) {
 
   const primaryType: ProjectType =
     selectedTypes.length === 1 ? selectedTypes[0] : selectedTypes.length > 1 ? 'anders' : 'anders';
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    setCoverError(null);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const ext = file.name.split('.').pop() ?? 'jpg';
+      const path = `${user.id}/${project.id}/cover.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('photos').upload(path, file, { upsert: true });
+      if (uploadError) { setCoverError('Upload mislukt.'); return; }
+
+      const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(path);
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ cover_photo_url: publicUrl })
+        .eq('id', project.id)
+        .select()
+        .single();
+
+      if (error) { setCoverError('Opslaan mislukt.'); return; }
+      setCoverPhotoUrl(publicUrl);
+      if (data) onProjectUpdated(data);
+    } catch {
+      setCoverError('Er is een fout opgetreden.');
+    } finally {
+      setUploadingCover(false);
+      e.target.value = '';
+    }
+  };
+
+  const removeCoverPhoto = async () => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('projects')
+      .update({ cover_photo_url: null })
+      .eq('id', project.id)
+      .select()
+      .single();
+    if (!error) {
+      setCoverPhotoUrl('');
+      if (data) onProjectUpdated(data);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +132,7 @@ export default function InstellingenTab({ project, onProjectUpdated }: Props) {
         start_date: startDatum || null,
         end_date: eindDatum || null,
         description: beschrijving || null,
+        house_id: houseId || null,
       })
       .eq('id', project.id)
       .select()
@@ -138,13 +199,32 @@ export default function InstellingenTab({ project, onProjectUpdated }: Props) {
             />
           </div>
 
+          {/* Woning koppelen */}
+          {houses.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: '#1A1A1A' }}>Woning</label>
+              <select
+                value={houseId}
+                onChange={(e) => setHouseId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
+              >
+                <option value="">Geen woning gekoppeld</option>
+                {houses.map((h) => (
+                  <option key={h.id} value={h.id}>{h.address || 'Woning zonder adres'}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs" style={{ color: '#9CA3AF' }}>Bepaalt bij welke woning dit project meetelt op de Woningkosten-pagina.</p>
+            </div>
+          )}
+
           {/* Type — multi-select */}
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: '#1A1A1A' }}>
               Type verbouwing
               <span className="ml-1 text-xs font-normal" style={{ color: '#9CA3AF' }}>(meerdere mogelijk)</span>
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {projectTypes.map(({ type, label, emoji }) => {
                 const selected = selectedTypes.includes(type);
                 return (
@@ -249,6 +329,43 @@ export default function InstellingenTab({ project, onProjectUpdated }: Props) {
             {saving ? 'Opslaan...' : saveSuccess ? '✓ Opgeslagen!' : 'Wijzigingen opslaan'}
           </button>
         </form>
+      </div>
+
+      {/* Coverfoto — apart, want wordt direct opgeslagen bij uploaden */}
+      <div className="rounded-2xl bg-white border p-6" style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+        <h2 className="text-base font-semibold mb-1" style={{ color: '#1A1A1A' }}>Coverfoto</h2>
+        <p className="text-sm mb-4" style={{ color: '#6B7280' }}>
+          Toon een eigen foto in plaats van de emoji op de projectkaart en bovenaan dit project. Wordt direct opgeslagen.
+        </p>
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border" style={{ backgroundColor: '#F0FDF4', borderColor: '#E5E7EB' }}>
+            {coverPhotoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={coverPhotoUrl} alt="Coverfoto" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl">{projectTypes.find((t) => t.type === primaryType)?.emoji ?? '🏠'}</span>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <label
+              className="px-3 py-2 rounded-lg text-sm font-medium border cursor-pointer inline-block w-fit"
+              style={{ borderColor: '#E5E7EB', color: '#1A1A1A' }}
+            >
+              {uploadingCover ? 'Bezig met uploaden...' : coverPhotoUrl ? 'Foto vervangen' : 'Foto uploaden'}
+              <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} disabled={uploadingCover} />
+            </label>
+            {coverPhotoUrl && (
+              <button onClick={removeCoverPhoto} className="text-xs font-medium text-left" style={{ color: '#EF4444' }}>
+                Verwijder foto (gebruik weer emoji)
+              </button>
+            )}
+          </div>
+        </div>
+        {coverError && (
+          <div className="mt-3 px-3 py-2 rounded-xl text-sm" style={{ backgroundColor: '#FEF2F2', color: '#EF4444' }}>
+            {coverError}
+          </div>
+        )}
       </div>
 
       {/* Danger zone — delete project */}

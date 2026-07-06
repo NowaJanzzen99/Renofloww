@@ -22,6 +22,15 @@ export type ProjectType =
   | 'keuken'
   | 'woonkamer'
   | 'slaapkamer'
+  | 'zolder'
+  | 'kelder'
+  | 'garage'
+  | 'tuin'
+  | 'toilet'
+  | 'hal'
+  | 'kantoor'
+  | 'dak_gevel'
+  | 'berging'
   | 'gehele_woning'
   | 'anders';
 
@@ -37,6 +46,8 @@ export type Project = {
   start_date: string | null;
   end_date: string | null;
   description: string | null;
+  house_id: string | null;
+  cover_photo_url: string | null;
   created_at: string;
 };
 
