@@ -24,12 +24,44 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             Budget, aannemers, offertes en planning — alles op één plek.
           </p>
 
-          {/* Testimonial */}
-          <div className="rounded-2xl p-6" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
-            <blockquote className="text-base font-medium text-white leading-relaxed mb-3">
-              "Eindelijk heb ik overzicht over mijn verbouwing. De budget tracker heeft me al twee keer behoed voor overschrijdingen."
-            </blockquote>
-            <p className="text-sm" style={{ color: '#B7E5BA' }}>— Marieke de Vries, Amsterdam · Badkamer renovatie</p>
+          {/* Product preview — laat de echte app zien i.p.v. een quote */}
+          <div className="rounded-2xl overflow-hidden" style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.25)' }}>
+            <div className="px-4 py-2.5 flex items-center gap-1.5" style={{ backgroundColor: '#F3F4F6' }}>
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#EF4444' }} />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#F59E0B' }} />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10B981' }} />
+              <span className="ml-2 text-[11px]" style={{ color: '#9CA3AF' }}>renofloww.nl/dashboard</span>
+            </div>
+            <div className="p-5" style={{ background: 'linear-gradient(135deg, #1A5140 0%, #288760 50%, #5CA87C 100%)' }}>
+              <p className="text-xs text-white/70 mb-1">Overzicht</p>
+              <p className="text-base font-bold text-white mb-4">Badkamer renovatie</p>
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {[
+                  { label: 'Budget gebruikt', value: '64%' },
+                  { label: 'Taken vandaag', value: '3' },
+                  { label: 'Openst. offertes', value: '2' },
+                ].map((stat) => (
+                  <div key={stat.label} className="rounded-lg p-2.5" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                    <p className="text-lg font-bold text-white leading-none">{stat.value}</p>
+                    <p className="text-[10px] text-white/70 mt-1 leading-tight">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
+                <p className="text-[10px] text-white/80 mb-2 font-medium">Gantt planning</p>
+                {[
+                  { label: 'Sloop', pct: 100, done: true },
+                  { label: 'Tegels', pct: 65, done: false },
+                ].map((row) => (
+                  <div key={row.label} className="flex items-center gap-2 mb-1.5 last:mb-0">
+                    <span className="text-white/70 text-[10px] w-10 shrink-0">{row.label}</span>
+                    <div className="flex-1 rounded-full h-2.5 overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${row.pct}%`, backgroundColor: row.done ? '#5CA87C' : 'rgba(255,255,255,0.55)' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
