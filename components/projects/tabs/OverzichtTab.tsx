@@ -196,6 +196,8 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
             value: budget > 0 ? `${budgetPct}%` : '—',
             sub: `${formatCurrency(totalExpenses)} van ${formatCurrency(budget)}`,
             accent: budgetAccent,
+            tab: 'instellingen',
+            editable: true,
             icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -207,20 +209,11 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
             value: `${completedTasks}/${taskCount}`,
             sub: taskCount > 0 ? `${Math.round((completedTasks / taskCount) * 100)}% klaar` : 'Nog geen taken',
             accent: '#3B82F6',
+            tab: 'taken',
+            editable: false,
             icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-            ),
-          },
-          {
-            label: 'Aannemers',
-            value: `${contractorCount}`,
-            sub: contractorCount === 1 ? '1 actief' : `${contractorCount} actief`,
-            accent: '#8B5CF6',
-            icon: (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             ),
           },
@@ -229,9 +222,24 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
             value: `${pendingQuotes}`,
             sub: pendingQuotes === 0 ? 'Geen openstaand' : `${pendingQuotes} in behandeling`,
             accent: '#F59E0B',
+            tab: 'offertes',
+            editable: false,
             icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Aannemers',
+            value: `${contractorCount}`,
+            sub: contractorCount === 1 ? '1 actief' : `${contractorCount} actief`,
+            accent: '#8B5CF6',
+            tab: 'aannemers',
+            editable: false,
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             ),
           },
@@ -239,20 +247,30 @@ export default function OverzichtTab({ project, rooms: initialRooms, tasks, expe
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {cards.map((card) => (
-              <div
+              <button
                 key={card.label}
-                className="rounded-2xl p-4 bg-white border transition-all hover:shadow-md"
+                onClick={() => onTabChange(card.tab)}
+                className="text-left rounded-2xl p-4 bg-white border transition-all hover:shadow-md hover:-translate-y-0.5"
                 style={{ borderColor: '#E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
+                title={card.editable ? 'Bewerk budget in Instellingen' : `Ga naar ${card.label}`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F0FDF4' }}>
                     <span style={{ color: '#288760' }}>{card.icon}</span>
                   </div>
+                  {card.editable && (
+                    <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg" style={{ color: '#288760', backgroundColor: '#F0FDF4' }}>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Wijzig
+                    </span>
+                  )}
                 </div>
                 <p className="text-2xl font-black mb-0.5" style={{ color: card.label === 'Budget gebruikt' ? card.accent : '#1A1A1A' }}>{card.value}</p>
                 <p className="text-xs font-medium mb-0.5" style={{ color: '#6B7280' }}>{card.label}</p>
                 <p className="text-xs" style={{ color: '#9CA3AF' }}>{card.sub}</p>
-              </div>
+              </button>
             ))}
           </div>
         );

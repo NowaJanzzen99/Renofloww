@@ -16,13 +16,16 @@ import DocumentenTab from '@/components/projects/tabs/DocumentenTab';
 import FotosTab from '@/components/projects/tabs/FotosTab';
 import InstellingenTab from '@/components/projects/tabs/InstellingenTab';
 
+// Volgorde: overzicht eerst, dan de tabs die dagelijks/frequent gebruikt worden
+// (taken, kosten), dan planning/mensen (ruimtes, aannemers, offertes), dan
+// minder frequente extra's (meerwerk, documenten, foto's), instellingen laatst.
 const tabs = [
   { id: 'overzicht',    label: 'Overzicht' },
-  { id: 'ruimtes',      label: 'Ruimtes' },
   { id: 'taken',        label: 'Taken' },
+  { id: 'kosten',       label: 'Kosten' },
+  { id: 'ruimtes',      label: 'Ruimtes' },
   { id: 'aannemers',    label: 'Aannemers' },
   { id: 'offertes',     label: 'Offertes' },
-  { id: 'kosten',       label: 'Kosten' },
   { id: 'meerwerk',     label: 'Meerwerk' },
   { id: 'documenten',   label: 'Documenten' },
   { id: 'fotos',        label: "Foto's" },

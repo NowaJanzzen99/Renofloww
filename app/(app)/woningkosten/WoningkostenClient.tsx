@@ -294,10 +294,21 @@ export default function WoningkostenClient({ house: initialHouse, projectExpense
   const [showHouseModal, setShowHouseModal] = useState(false);
   const [showAddKost, setShowAddKost] = useState(false);
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
+
+  // ── Projectfilter ──────────────────────────────────────────────────────────
+  const filteredProjectExpenses = useMemo(
+    () => selectedProjectId === 'all' ? projectExpenses : projectExpenses.filter((e) => e.project_id === selectedProjectId),
+    [projectExpenses, selectedProjectId]
+  );
+  const filteredOnderhoud = useMemo(
+    () => selectedProjectId === 'all' ? onderhoud : onderhoud.filter((k) => k.project_id === selectedProjectId),
+    [onderhoud, selectedProjectId]
+  );
 
   // ── Computed totals ────────────────────────────────────────────────────────
-  const totalVerbouwing = useMemo(() => projectExpenses.reduce((s, e) => s + e.amount, 0), [projectExpenses]);
-  const totalOnderhoud  = useMemo(() => onderhoud.reduce((s, k) => s + Number(k.amount), 0), [onderhoud]);
+  const totalVerbouwing = useMemo(() => filteredProjectExpenses.reduce((s, e) => s + e.amount, 0), [filteredProjectExpenses]);
+  const totalOnderhoud  = useMemo(() => filteredOnderhoud.reduce((s, k) => s + Number(k.amount), 0), [filteredOnderhoud]);
   const totalInvested   = totalVerbouwing + totalOnderhoud;
   const realOwnership   = house?.purchase_price ? Number(house.purchase_price) + totalInvested : null;
 
@@ -309,18 +320,18 @@ export default function WoningkostenClient({ house: initialHouse, projectExpense
   };
 
   const allCosts: CombinedEntry[] = useMemo(() => {
-    const p: CombinedEntry[] = projectExpenses.map((e) => ({
+    const p: CombinedEntry[] = filteredProjectExpenses.map((e) => ({
       id: e.id, date: e.date, amount: e.amount,
       description: e.description, category: e.category,
       source: 'project', label: e.project_name,
     }));
-    const o: CombinedEntry[] = onderhoud.map((k) => ({
+    const o: CombinedEntry[] = filteredOnderhoud.map((k) => ({
       id: k.id, date: k.date, amount: Number(k.amount),
       description: k.description, category: k.category,
       source: 'onderhoud', label: 'Onderhoud',
     }));
     return [...p, ...o].sort((a, b) => b.date.localeCompare(a.date));
-  }, [projectExpenses, onderhoud]);
+  }, [filteredProjectExpenses, filteredOnderhoud]);
 
   // ── Category breakdown ─────────────────────────────────────────────────────
   const categoryTotals = useMemo(() => {
@@ -392,6 +403,49 @@ export default function WoningkostenClient({ house: initialHouse, projectExpense
           )}
         </div>
       </div>
+
+      {/* ── Projectfilter ──────────────────────────────────────────── */}
+      {projects.length > 1 && (
+        <div>
+          {/* Mobiel: dropdown */}
+          <select
+            value={selectedProjectId}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+            className="sm:hidden w-full px-3 py-2.5 rounded-xl border text-sm font-medium"
+            style={{ borderColor: '#E5E7EB', color: '#1A1A1A', backgroundColor: '#FFFFFF' }}
+          >
+            <option value="all">Alle projecten</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+
+          {/* Desktop: pills */}
+          <div className="hidden sm:flex items-center gap-1.5 flex-wrap">
+            <button
+              onClick={() => setSelectedProjectId('all')}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors"
+              style={selectedProjectId === 'all'
+                ? { backgroundColor: '#288760', color: '#FFFFFF', borderColor: '#288760' }
+                : { backgroundColor: '#FFFFFF', color: '#6B7280', borderColor: '#E5E7EB' }}
+            >
+              Alle projecten
+            </button>
+            {projects.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setSelectedProjectId(p.id)}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors"
+                style={selectedProjectId === p.id
+                  ? { backgroundColor: '#288760', color: '#FFFFFF', borderColor: '#288760' }
+                  : { backgroundColor: '#FFFFFF', color: '#6B7280', borderColor: '#E5E7EB' }}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── House profile card ─────────────────────────────────────── */}
       {!house ? (
